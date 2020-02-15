@@ -1,0 +1,41 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:CleanMachineDemo">
+
+    <SolidColorBrush x:Key="DefaultFillColor" Color="AntiqueWhite"/>
+    <local:SelectionToColorConverter x:Key="SelectionToStateFillColorConverter" Selected="Honeydew" Deselected="AntiqueWhite"/>
+    
+    <Style TargetType="{x:Type local:StateSymbol}">
+        <!--<Setter Property="OverridesDefaultStyle" Value="True" />-->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:StateSymbol}">
+                    <Grid x:Name="StateGrid" Background="Transparent">
+                        <Grid.Resources>
+                            <RectangleGeometry x:Key="CurvedRectangle" Rect="0,0,120,60" RadiusX="20" RadiusY="20"/>
+                        </Grid.Resources>
+
+                        <Grid x:Name="FramePanel" >
+                            <Path x:Name="PART_RectangleFrame" Stroke="Black" Stretch="Uniform" StrokeThickness="1" 
+                                  Fill="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=DataContext.IsSelected, 
+                                        Converter={StaticResource SelectionToStateFillColorConverter}, FallbackValue={StaticResource DefaultFillColor}}"
+                                  Data="{StaticResource CurvedRectangle}" />
+                        </Grid>
+
+                        <Grid x:Name="InfoPanel" >
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock HorizontalAlignment="Right" Text="State: "/>
+                                <TextBlock HorizontalAlignment="Left" Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=StateName}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid.RenderTransform>
+                            <TranslateTransform X="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=X, TargetNullValue=0}"
+                                                Y="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Y, TargetNullValue=0}"/>
+                        </Grid.RenderTransform>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

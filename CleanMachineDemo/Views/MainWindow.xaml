@@ -1,0 +1,18 @@
+﻿<Window x:Class="CleanMachineDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CleanMachineDemo"
+        mc:Ignorable="d"
+        Title="CleanMachine Framework Demo" 
+        Height="454" Width="524">
+
+    <StackPanel Orientation="Vertical">
+        <!-- This view presents the control panel that manipulates the demo data model. -->
+        <local:ControlPanel DataContext="{Binding ControlPanelVM}" />
+
+        <!-- This view presents the State Machine diagram. -->
+        <local:StateMachineView DataContext="{Binding StateMachineVM}" />
+    </StackPanel>
+</Window>

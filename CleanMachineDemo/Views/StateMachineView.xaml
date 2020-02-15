@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="CleanMachineDemo.StateMachineView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:CleanMachineDemo"
+             mc:Ignorable="d" 
+             d:DesignHeight="315" d:DesignWidth="510"
+             Height="315" Width="510">
+
+    <Canvas x:Name="PART_DiagramCanvas">
+        <local:StateSymbol x:Name="StateOne" StateName="One" X="195" Y="30" />
+        <local:StateSymbol x:Name="StateTwo" StateName="Two" X="20" Y="120" />
+        <local:StateSymbol x:Name="StateThree" StateName="Three" X="370" Y="120" />
+        <local:StateSymbol x:Name="StateFour" StateName="Four" X="195" Y="225" />
+
+        <local:TransitionSymbol TransitionName="One-->Two" Height="81" X="192.5" Y="77.5" Angle="52"
+                                SnapToState="{Binding ElementName=StateOne}" />
+        <local:TransitionSymbol TransitionName="One-->Three" Height="96" X="309" Y="62.5" Angle="-52"
+                                SnapToState="{Binding ElementName=StateOne}"/>
+        <local:TransitionSymbol TransitionName="Three-->One" Height="96" X="365" Y="148" Angle="128"
+                                SnapToState="{Binding ElementName=StateThree}"/>
+        <local:TransitionSymbol TransitionName="Two-->Four" Height="91" X="129" Y="174" Angle="-52"
+                                SnapToState="{Binding ElementName=StateTwo}"/>
+        <local:TransitionSymbol TransitionName="Four-->Three" Height="91" X="305" Y="232" Angle="-128"
+                                SnapToState="{Binding ElementName=StateFour}"/>
+        <local:TransitionSymbol TransitionName="Four-->Four" IsRecursive="True" X="314" Y="245" Angle="0"
+                                SnapToState="{Binding ElementName=StateFour}"/>
+    </Canvas>
+</UserControl>
