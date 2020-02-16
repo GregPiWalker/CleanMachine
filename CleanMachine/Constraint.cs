@@ -1,12 +1,16 @@
 ﻿using CleanMachine.Interfaces;
+using log4net;
 using System;
 
 namespace CleanMachine
 {
     public class Constraint : IConstraint
     {
-        public Constraint(string name, Func<bool> condition)
+        private readonly ILog _logger;
+
+        public Constraint(string name, Func<bool> condition, ILog logger)
         {
+            _logger = logger;
             Name = name;
             Condition = condition;
         }
@@ -16,7 +20,7 @@ namespace CleanMachine
         /// </summary>
         public Func<bool> Condition { get; protected set; }
 
-        public bool SuppressLogging { get; set; }
+        public bool VerboseLogging { get; set; }
 
         public string Name { get; private set; }
 
@@ -36,8 +40,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                //LogService.Log(LogType, LogMessageType.Error, GetType().Name,
-                //    string.Format(CultureInfo.InvariantCulture, "Exception while evaluating '{0}' constraint.", Name), ex);
+                _logger.Error($"{ex.GetType().Name} while evaluating '{Name}' constraint.", ex);
                 throw;
             }
         }
@@ -54,11 +57,11 @@ namespace CleanMachine
             }
 
             var result = Condition();
-            if (!SuppressLogging && result && !string.IsNullOrEmpty(Name))
+            if (VerboseLogging && result && !string.IsNullOrEmpty(Name))
             {
-                //LogService.Log(LogType, LogMessageType.Trace, GetType().Name,
-                //    string.Format(CultureInfo.InvariantCulture, "Condition was satisfied for '{0}' constraint.", Name));
+                _logger.Debug($"Condition was satisfied for '{Name}' constraint.");
             }
+
             return result;
         }
     }

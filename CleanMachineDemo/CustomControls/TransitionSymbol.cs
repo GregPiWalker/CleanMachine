@@ -146,11 +146,11 @@ namespace CleanMachineDemo
             _viewModel.Deselect();
         }
 
-        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-        {
-            base.OnMouseLeftButtonDown(e);
-            Select();
-        }
+        //protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        //{
+        //    base.OnMouseLeftButtonDown(e);
+        //    Select();
+        //}
 
         private void ApplyStraightLineStyle()
         {

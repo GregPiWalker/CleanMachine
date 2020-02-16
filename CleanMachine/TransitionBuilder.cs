@@ -21,7 +21,7 @@ namespace CleanMachine
 
         public TransitionBuilder GuardWith(Func<bool> condition, string name)
         {
-            _transition.Guard = new Constraint(name, condition);
+            _transition.Guard = new Constraint(name, condition, _logger);
             return this;
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reactive.Disposables;
 
 namespace CleanMachine
 {
@@ -25,7 +26,7 @@ namespace CleanMachine
 
     public class TriggerEventArgs : EventArgs
     {
-        public object TriggerContext { get; set; }
+        public BooleanDisposable TriggerContext { get; set; }
 
         public object Cause { get; set; }
 

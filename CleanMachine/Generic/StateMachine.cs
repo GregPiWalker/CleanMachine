@@ -3,7 +3,7 @@ using log4net;
 
 namespace CleanMachine.Generic
 {
-    public class StateMachine<TState> : StateMachine where TState : struct
+    public sealed class StateMachine<TState> : StateMachine where TState : struct
     {
         public StateMachine(string name, ILog logger)
             : base(name, logger)
@@ -49,7 +49,7 @@ namespace CleanMachine.Generic
             return CreateTransition(supplierState.ToString(), consumerState.ToString());
         }
 
-        protected State FindState(TState state)
+        internal State FindState(TState state)
         {
             return FindState(state.ToString());
         }

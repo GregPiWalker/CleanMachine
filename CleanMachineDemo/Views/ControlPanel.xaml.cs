@@ -15,17 +15,6 @@ namespace CleanMachineDemo
             InitializeComponent();
         }
 
-        //public override void OnApplyTemplate()
-        //{
-        //    base.OnApplyTemplate();
-        //}
-
-        //private void TriggerButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var viewModel = DataContext as ControlPanelViewModel;
-        //    viewModel?.Model.TriggerAll();
-        //}
-
         private void ExpressionTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (Keyboard.IsKeyDown(Key.Enter))

@@ -64,6 +64,7 @@ namespace CleanMachineDemo
         
         public void TriggerAll()
         {
+            _logger.Debug($"{nameof(DemoModel)}: raising '{nameof(TriggerEvent)}' event.");
             TriggerEvent?.Invoke(this, new DemoEventArgs());
         }
 
@@ -79,10 +80,15 @@ namespace CleanMachineDemo
             //TODO: rename builder as editor?
             using (var builder = DemoBuilder.BuildStateMachine(this, StateMachine))
             {
-                // TODO: set any state behaviors
-                //builder.AddDoBehavior();
-                //StateMachine[DemoState.One].
+                // If we loop around the state machine, reset the loop count variable;
+                StateMachine[DemoState.One].AddDoBehavior(s => { Reset(); });
             }
+        }
+
+        private void Reset()
+        {
+            LoopCount = 3;
+            BoolFunc = null;
         }
 
         private void HandleStateEntered(object sender, StateEnteredEventArgs args)

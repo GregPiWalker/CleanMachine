@@ -17,5 +17,7 @@ namespace CleanMachine.Interfaces
         bool IsCurrentState { get; }
 
         ReadOnlyCollection<ITransition> Transitions { get; }
+
+        void AddDoBehavior(Action<IState> behavior);
     }
 }

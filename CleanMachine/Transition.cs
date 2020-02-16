@@ -8,18 +8,18 @@ using log4net;
 
 namespace CleanMachine
 {
-    public class Transition : ITransition
+    public sealed class Transition : ITransition
     {
         private readonly List<TriggerBase> _triggers = new List<TriggerBase>();
         private readonly string _context;
         private Constraint _guard;
         private Action _effect;
         private bool _enabled;
-        private object _activationContext;
-        protected readonly IScheduler _scheduler;
-        protected readonly ILog _logger;
+        private BooleanDisposable _activationContext;
+        private readonly IScheduler _scheduler;
+        private readonly ILog _logger;
 
-        public Transition(string context, State fromState, State toState, IScheduler scheduler, ILog logger)
+        public Transition(string context, State fromState, State toState, ILog logger, IScheduler scheduler = null)
         {
             _context = context;
             _scheduler = scheduler;
@@ -37,7 +37,7 @@ namespace CleanMachine
 
         public event EventHandler<Interfaces.TransitionEventArgs> Succeeded;
         public event EventHandler<Interfaces.TransitionEventArgs> Failed;
-        //public event EventHandler<Interfaces.TriggerEventArgs> TriggerOccurred;
+        
         internal event EventHandler<TriggerEventArgs> Requested;
 
         public string Name { get; private set; }
@@ -82,7 +82,7 @@ namespace CleanMachine
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder($"{_context}({Name}): ");
+            StringBuilder sb = new StringBuilder($"\"{_context}({Name}): ");
             for (int i = 0; i < _triggers.Count; i++)
             {
                 sb.Append(_triggers[i].ToString());
@@ -105,10 +105,10 @@ namespace CleanMachine
                 sb.Append(" / ").Append(Effect.ToString());
             }
 
-            return sb.ToString();
+            return sb.Append("\"").ToString();
         }
 
-        public virtual bool CanTransition(EventArgs sourceArgs)
+        public bool CanTransition(EventArgs sourceArgs)
         {
             return _enabled && (Guard == null || Guard.IsTrue());
         }
@@ -163,9 +163,10 @@ namespace CleanMachine
                 return false;
             }
 
+            _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning on behalf of '{args.Trigger.ToString()}' trigger.");
             From.Exit(this);
             To.Enter(this);
-            _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition succeeded.");
+            _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition complete.");
             
             if (Effect != null)
             {
@@ -189,7 +190,7 @@ namespace CleanMachine
         /// Enable all <see cref="TriggerBase"/>s and set the current activation context.
         /// </summary>
         /// <param name="stateSelectionContext">The new state selection context to hold as an activation context.</param>
-        internal void Enable(object stateSelectionContext)
+        internal void Enable(BooleanDisposable stateSelectionContext)
         {
             _activationContext = stateSelectionContext;
             _enabled = true;
@@ -242,7 +243,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                //TODO: log it
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Succeeded)}' event from {Name} transition.", ex);
             }
         }
 
@@ -255,7 +256,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                //TODO: log it
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Failed)}' event from {Name} transition.", ex);
             }
         }
     }

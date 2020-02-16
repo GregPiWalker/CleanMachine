@@ -12,6 +12,8 @@ namespace CleanMachine.Interfaces
         /// </summary>
         string Name { get; }
 
+        bool VerboseLogging { get; set; }
+
         /// <summary>
         /// 
         /// </summary>

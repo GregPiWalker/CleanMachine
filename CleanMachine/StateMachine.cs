@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Threading;
+using System.Reactive.Disposables;
 
 namespace CleanMachine
 {
@@ -13,20 +14,28 @@ namespace CleanMachine
     {
         protected readonly List<Transition> _transitions = new List<Transition>();
         protected readonly List<State> _states = new List<State>();
-        protected readonly IScheduler _eventScheduler;
-        protected readonly IScheduler _triggerScheduler;
+        protected readonly IScheduler _behaviorScheduler;
+        protected readonly IScheduler _transitionScheduler;
         protected State _currentState;
         protected State _initialState;
-        private readonly object _transitionLock = new object();
+        //private readonly object _transitionLock = new object();
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="logger"></param>
+        /// <param name="behaveAsync">Indicates whether behaviors are executed on a different thread from the
+        /// state machine transitions and events.  Defaults to false.</param>
         public StateMachine(string name, ILog logger, bool behaveAsync = false)
         {
             Name = name;
             Logger = logger;
 
+            _transitionScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Transition Scheduler", IsBackground = true }; });
             if (behaveAsync)
             {
-                _eventScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = "StateMachine(name)", IsBackground = true }; });
+                _behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Behavior Scheduler", IsBackground = true }; });
             }
         }
 
@@ -114,7 +123,7 @@ namespace CleanMachine
         {
             foreach (var stateName in stateNames)
             {
-                var state = new State(stateName, Logger);
+                var state = new State(stateName, Logger, _behaviorScheduler);
                 _states.Add(state);
                 state.EntryCompleted += HandleStateEntered;
                 state.ExitCompleted += HandleStateExited;
@@ -172,8 +181,10 @@ namespace CleanMachine
                 throw new InvalidOperationException($"StateMachine {Name}:  initial state was not configured.");
             }
 
-            lock (_transitionLock)
+            _transitionScheduler.Schedule(() =>
             {
+                //lock (_transitionLock)
+                //{
                 if (!_initialState.CanEnter(null))
                 {
                     throw new InvalidOperationException($"StateMachine {Name}:  initial state {_initialState.Name} could not be entered.");
@@ -184,11 +195,58 @@ namespace CleanMachine
                 _currentState = _initialState;
 
                 OnStateChanged(null, new TriggerEventArgs() { Cause = this });
+                
+                //}
+            });
+        }
+
+        private IDisposable AttemptTransition(TransitionEventArgs args)
+        {
+            if (args.TriggerArgs.TriggerContext.IsDisposed)
+            {
+                Logger.Debug($"{Name}.{nameof(AttemptTransition)}: invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
+                return Disposable.Empty;
             }
+
+            // This regulates all transition triggers so that only one can lead to success.
+            //lock (_transitionLock)
+            //{
+                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
+                if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
+                {
+                    Logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
+                    return Disposable.Empty;
+                }
+
+                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
+                if (!args.TriggerArgs.Trigger.IsActive)
+                {
+                    //TODO: this may not be a valid case anymore since I removed all async internal operations
+                    Logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
+                    return Disposable.Empty;
+                }
+                
+                if (args.Transition.AttemptTransition(args.TriggerArgs))
+                {
+                    _currentState = args.Transition.To;
+                    OnStateChanged(args.Transition, args.TriggerArgs);
+                }
+                else
+                {
+                    //OnTransitionFailed(transition, args);
+                }
+            //}
+
+            return args.TriggerArgs.TriggerContext;
         }
 
         private void HandleTransitionRequest(object sender, TriggerEventArgs args)
         {
+            if (args.TriggerContext.IsDisposed)
+            {
+                return;
+            }
+
             var currentState = _currentState;
             if (currentState == null || !currentState.IsEnabled)
             {
@@ -197,43 +255,10 @@ namespace CleanMachine
 
             var transition = sender as Transition;
             var transitionArgs = transition.ToTransitionArgs(args);
-            //ActionBlock.Post(a);
-            AttemptTransition(transitionArgs);
+            
+            // This regulates all transition triggers so that only one can lead to success.  The first
+            // successful transition will dispose of all other trigger handlers that were competing for action.
+            _transitionScheduler.Schedule(transitionArgs, (_, a) => { return AttemptTransition(a); });
         }
-
-        private void AttemptTransition(TransitionEventArgs args)
-        {
-            // This regulates all transition triggers so that only one can lead to success.
-            lock (_transitionLock)
-            {
-                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
-                if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
-                {
-                    Logger.Debug($"{Name}.{nameof(HandleTransitionRequest)}: transition rejected for trigger {args.TriggerArgs.Trigger.Name}.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
-                    return;
-                }
-
-                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
-                if (!args.TriggerArgs.Trigger.IsActive)
-                {
-                    //TODO: this may not be a valid case anymore since I removed all async internal operations
-                    Logger.Debug($"{Name}.{nameof(HandleTransitionRequest)}: transition rejected for trigger {args.TriggerArgs.Trigger.Name}. Trigger is currently inactive.");
-                    return;
-                }
-                
-                if (args.Transition.AttemptTransition(args.TriggerArgs))
-                {
-                    _currentState = args.Transition.To;
-                    OnStateChanged(args.Transition, args.TriggerArgs);
-
-                    //ActionBlock.Dispose();
-                    //ActionBlock = new ActionBlock();
-                }
-                else
-                {
-                    //OnTransitionFailed(transition, args);
-                }
-            }
-        }    
     }
 }

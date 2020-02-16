@@ -22,6 +22,8 @@ namespace CleanMachineDemo
             _expression = "false";
             CompileExpression();
             _expression = string.Empty;
+
+            Model.PropertyChanged += HandleModelPropertyChanged;
         }
 
         public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
@@ -80,6 +82,21 @@ namespace CleanMachineDemo
             {
                 Model.BoolFunc = () => false;
                 HasErrors = true;
+            }
+        }
+
+        private void ResetExpression()
+        {
+            _expression = "false";
+            CompileExpression();
+            Expression = string.Empty;
+        }
+
+        private void HandleModelPropertyChanged(object sender, PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(Model.BoolFunc) && Model.BoolFunc == null)
+            {
+                ResetExpression();
             }
         }
     }

@@ -47,7 +47,7 @@ namespace CleanMachineDemo
 
         private static void BuildStateThree(DemoModel model, MachineBuilder<DemoState> builder)
         {
-            var three = builder.EditState(DemoState.Two);
+            var three = builder.EditState(DemoState.Three);
 
             // Transition from THREE to ONE
             var threeToOne = three.TransitionTo(DemoState.One)

@@ -22,13 +22,8 @@ namespace CleanMachine
         private Action<ITransition> _entryBehavior;
         private Action<ITransition> _exitBehavior;
         private bool _isCurrentState;
-
-        public State(string name, ILog logger)
-            : this(name, new TaskPoolScheduler(Task.Factory), logger)
-        {
-        }
-
-        public State(string name, IScheduler behaviorScheduler, ILog logger)
+        
+        public State(string name, ILog logger, IScheduler behaviorScheduler = null)
         {
             Name = name;
             _scheduler = behaviorScheduler;
@@ -66,11 +61,21 @@ namespace CleanMachine
 
         internal bool Editable { get; private set; }
 
-        internal object SelectionContext { get; private set; }
+        internal BooleanDisposable SelectionContext { get; private set; }
 
         public override string ToString()
         {
             return Name;
+        }
+
+        public void AddDoBehavior(Action<IState> behavior)
+        {
+            if (!Editable)
+            {
+                throw new InvalidOperationException($"State {Name} must be editable in order to add a DO behavior.");
+            }
+
+            _doBehaviors.Add(behavior);
         }
 
         internal void Edit()
@@ -95,16 +100,6 @@ namespace CleanMachine
             }
 
             _logger.Debug($"State {Name}:  editing completed.");
-        }
-
-        internal void AddDoBehavior(Action<IState> behavior)
-        {
-            if (!Editable)
-            {
-                throw new InvalidOperationException($"State {Name} must be editable in order to add a DO behavior.");
-            }
-
-            _doBehaviors.Add(behavior);
         }
 
         internal void SetEntryBehavior(Action<ITransition> behavior)
@@ -245,7 +240,7 @@ namespace CleanMachine
 
         internal Transition CreateTransitionTo(string context, State consumer)
         {
-            var transition = new Transition(context, this, consumer, _scheduler, _logger);
+            var transition = new Transition(context, this, consumer, _logger, _scheduler);
             AddTransition(transition);
             return transition;
         }
@@ -261,7 +256,7 @@ namespace CleanMachine
         {
             // Start a new state selection context in order to associate all incoming trigger handlers
             // with a single state selection.
-            SelectionContext = new object();
+            SelectionContext = new BooleanDisposable();
             _logger.Info($"State {Name}: enabling all transitions.");
             _outboundTransitions.ForEach(t => t.Enable(SelectionContext));
             IsEnabled = true;
@@ -269,8 +264,8 @@ namespace CleanMachine
 
         internal void Disable()
         {
-            // Clear the selection context so that trigger handlers can be cancelled.
-            SelectionContext = null;
+            // Dispose of the selection context so that trigger handlers can be cancelled.
+            SelectionContext?.Dispose();
             _logger.Info($"State {Name}: disabling all transitions.");
             _outboundTransitions.ForEach(t => t.Disable());
             IsEnabled = false;
