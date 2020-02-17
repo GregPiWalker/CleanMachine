@@ -19,21 +19,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="source"></param>
         public PropertyChangedTrigger(INotifyPropertyChanged source, ILog logger)
-            : this(source, null, logger, false)
-        {
-        }
-
-        /// <summary>
-        /// Create a trigger that responds to PropertyChanged events on INotifyPropertyChanged implementations.
-        /// Providing a value in propertyNameChain causes the trigger to only trip on a property name match.
-        /// As long as every property in a chain references an INotifyPropertyChanged, the name may specify
-        /// a nested property, such as "Object1.Object2.Object3.Property1"
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="propertyNameChain">optional property name chain to use as a filter</param>
-        /// <param name="logger"></param>
-        public PropertyChangedTrigger(INotifyPropertyChanged source, string propertyNameChain, ILog logger)
-            : this(source, propertyNameChain, logger, false)
+            : this(source, null, logger)
         {
         }
         
@@ -46,9 +32,8 @@ namespace CleanMachine
         /// <param name="source"></param>
         /// <param name="propertyNameChain">optional property name chain to use as a filter</param>
         /// <param name="logger"></param>
-        /// <param name="isAsync"></param>
-        public PropertyChangedTrigger(INotifyPropertyChanged source, string propertyNameChain, ILog logger, bool isAsync)
-            : base($"{source.GetType().Name}.{nameof(source.PropertyChanged)}", source, logger, isAsync)
+        public PropertyChangedTrigger(INotifyPropertyChanged source, string propertyNameChain, ILog logger)
+            : base($"{source.GetType().Name}.{nameof(source.PropertyChanged)}", source, logger)
         {
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))
             {

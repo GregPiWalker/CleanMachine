@@ -11,26 +11,14 @@ namespace CleanMachine
     public abstract class TriggerBase : ITrigger
     {
         protected readonly ILog _logger;
-        protected readonly bool _isAsync;
         private readonly object _sync = new object();
-        private bool _exists;
 
         public TriggerBase(string name, object source, ILog logger)
-            : this(name, source, logger, false)
         {
             _logger = logger;
             Name = name;
             Source = source;
             IsActive = false;
-        }
-
-        public TriggerBase(string name, object source, ILog logger, bool isAsync)
-        {
-            _logger = logger;
-            Name = name;
-            Source = source;
-            IsActive = false;
-            _isAsync = isAsync;
         }
 
         public event EventHandler<TriggerEventArgs> Triggered;
@@ -85,25 +73,7 @@ namespace CleanMachine
         {
             if (IsActive && CanTrigger(causeEventArgs))
             {
-                if (_isAsync)
-                {
-                    // Only let one instance of this trigger execute at a time.
-                    lock (_sync)
-                    {
-                        if (_exists)
-                        {
-                            return;
-                        }
-
-                        _exists = true;
-                        Task.Run(() => { OnTriggered(cause, causeEventArgs); })
-                            .ContinueWith((t) => { lock (_sync) _exists = false; });
-                    }
-                }
-                else
-                {
-                    OnTriggered(cause, causeEventArgs);
-                }
+                OnTriggered(cause, causeEventArgs);
             }
         }
 

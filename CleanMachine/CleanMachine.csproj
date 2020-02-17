@@ -65,10 +65,10 @@
   <ItemGroup>
     <Compile Include="CollectionChangedTrigger.cs" />
     <Compile Include="Generic\StateExitedTrigger.cs" />
-    <Compile Include="MachineBuilder.cs" />
+    <Compile Include="MachineEditor.cs" />
     <Compile Include="PropertyBinding.cs" />
     <Compile Include="PropertyChangedTrigger.cs" />
-    <Compile Include="StateBuilder.cs" />
+    <Compile Include="StateEditor.cs" />
     <Compile Include="Constraint.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="Extensions.cs" />
@@ -81,7 +81,7 @@
     <Compile Include="Generic\StateMachine.cs" />
     <Compile Include="StateMachine.cs" />
     <Compile Include="Transition.cs" />
-    <Compile Include="TransitionBuilder.cs" />
+    <Compile Include="TransitionEditor.cs" />
     <Compile Include="TriggerBase.cs" />
   </ItemGroup>
   <ItemGroup>
