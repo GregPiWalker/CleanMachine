@@ -5,9 +5,9 @@ namespace CleanMachineDemo
 {
     public static class DemoBuilder
     {
-        public static MachineBuilder<DemoState> BuildStateMachine(this DemoModel model, StateMachine<DemoState> machine)
+        public static MachineEditor<DemoState> BuildStateMachine(this DemoModel model, StateMachine<DemoState> machine)
         {
-            var builder = MachineBuilder<DemoState>.Edit(machine);
+            var builder = MachineEditor<DemoState>.Edit(machine);
             machine.SetInitialState(DemoState.One);
             BuildStateOne(model, builder);
             BuildStateTwo(model, builder);
@@ -17,7 +17,7 @@ namespace CleanMachineDemo
             return builder;
         }
 
-        private static void BuildStateOne(DemoModel model, MachineBuilder<DemoState> builder)
+        private static void BuildStateOne(DemoModel model, MachineEditor<DemoState> builder)
         {
             var one = builder.EditState(DemoState.One);
 
@@ -35,7 +35,7 @@ namespace CleanMachineDemo
                 .TriggerWithEvent<DemoModel, DemoEventArgs>(model, nameof(model.TriggerEvent));
         }
 
-        private static void BuildStateTwo(DemoModel model, MachineBuilder<DemoState> builder)
+        private static void BuildStateTwo(DemoModel model, MachineEditor<DemoState> builder)
         {
             var two = builder.EditState(DemoState.Two);
 
@@ -45,7 +45,7 @@ namespace CleanMachineDemo
                 .TriggerWithEvent<DemoModel, DemoEventArgs>(model, nameof(model.TriggerEvent));
         }
 
-        private static void BuildStateThree(DemoModel model, MachineBuilder<DemoState> builder)
+        private static void BuildStateThree(DemoModel model, MachineEditor<DemoState> builder)
         {
             var three = builder.EditState(DemoState.Three);
 
@@ -54,7 +54,7 @@ namespace CleanMachineDemo
                 .TriggerWithEvent<DemoModel, DemoEventArgs>(model, nameof(model.TriggerEvent));
         }
 
-        private static void BuildStateFour(DemoModel model, MachineBuilder<DemoState> builder)
+        private static void BuildStateFour(DemoModel model, MachineEditor<DemoState> builder)
         {
             var four = builder.EditState(DemoState.Four);
 
