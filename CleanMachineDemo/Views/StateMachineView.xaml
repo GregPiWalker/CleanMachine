@@ -9,22 +9,22 @@
              Height="315" Width="510">
 
     <Canvas x:Name="PART_DiagramCanvas">
-        <local:StateSymbol x:Name="StateOne" StateName="One" X="195" Y="30" />
-        <local:StateSymbol x:Name="StateTwo" StateName="Two" X="20" Y="120" />
-        <local:StateSymbol x:Name="StateThree" StateName="Three" X="370" Y="120" />
-        <local:StateSymbol x:Name="StateFour" StateName="Four" X="195" Y="225" />
+        <local:StateSymbol x:Name="StateOne" StateName="One" X="195" Y="30" ToolTip="Left mouse click on me to print diagnostics."/>
+        <local:StateSymbol x:Name="StateTwo" StateName="Two" X="20" Y="120" ToolTip="Left mouse click on me to print diagnostics." />
+        <local:StateSymbol x:Name="StateThree" StateName="Three" X="370" Y="120" ToolTip="Left mouse click on me to print diagnostics." />
+        <local:StateSymbol x:Name="StateFour" StateName="Four" X="195" Y="225" ToolTip="Left mouse click on me to print diagnostics." />
 
         <local:TransitionSymbol TransitionName="One-->Two" Height="81" X="192.5" Y="77.5" Angle="52"
-                                SnapToState="{Binding ElementName=StateOne}" />
+                                SnapToState="{Binding ElementName=StateOne}" ToolTip="Left mouse click on me to print diagnostics."/>
         <local:TransitionSymbol TransitionName="One-->Three" Height="96" X="309" Y="62.5" Angle="-52"
-                                SnapToState="{Binding ElementName=StateOne}"/>
+                                SnapToState="{Binding ElementName=StateOne}" ToolTip="Left mouse click on me to print diagnostics."/>
         <local:TransitionSymbol TransitionName="Three-->One" Height="96" X="365" Y="148" Angle="128"
-                                SnapToState="{Binding ElementName=StateThree}"/>
+                                SnapToState="{Binding ElementName=StateThree}" ToolTip="Left mouse click on me to print diagnostics."/>
         <local:TransitionSymbol TransitionName="Two-->Four" Height="91" X="129" Y="174" Angle="-52"
-                                SnapToState="{Binding ElementName=StateTwo}"/>
+                                SnapToState="{Binding ElementName=StateTwo}" ToolTip="Left mouse click on me to print diagnostics."/>
         <local:TransitionSymbol TransitionName="Four-->Three" Height="91" X="305" Y="232" Angle="-128"
-                                SnapToState="{Binding ElementName=StateFour}"/>
+                                SnapToState="{Binding ElementName=StateFour}" ToolTip="Left mouse click on me to print diagnostics."/>
         <local:TransitionSymbol TransitionName="Four-->Four" IsRecursive="True" X="314" Y="245" Angle="0"
-                                SnapToState="{Binding ElementName=StateFour}"/>
+                                SnapToState="{Binding ElementName=StateFour}" ToolTip="Left mouse click on me to print diagnostics."/>
     </Canvas>
 </UserControl>

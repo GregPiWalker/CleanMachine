@@ -68,6 +68,11 @@ namespace CleanMachine
             return Name;
         }
 
+        public void LogDiagnostics()
+        {
+            //TODO
+        }
+
         public void AddDoBehavior(Action<IState> behavior)
         {
             if (!Editable)

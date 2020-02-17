@@ -4,7 +4,7 @@ namespace CleanMachine
 {
     public static class Extensions
     {
-        public static Interfaces.TriggerEventArgs ToITriggerArgs(this TriggerEventArgs internalArgs)
+        internal static Interfaces.TriggerEventArgs ToITriggerArgs(this TriggerEventArgs internalArgs)
         {
             var triggerArgs = new Interfaces.TriggerEventArgs()
             {
@@ -16,7 +16,7 @@ namespace CleanMachine
             return triggerArgs;
         }
 
-        public static Interfaces.TransitionEventArgs ToITransitionArgs(this TriggerEventArgs internalArgs, Transition transition)
+        internal static Interfaces.TransitionEventArgs ToITransitionArgs(this TriggerEventArgs internalArgs, Transition transition)
         {
             var transitionArgs = new Interfaces.TransitionEventArgs()
             {
@@ -27,7 +27,7 @@ namespace CleanMachine
             return transitionArgs;
         }
 
-        public static Interfaces.TransitionEventArgs ToITransitionArgs(this Transition transition, TriggerEventArgs internalArgs)
+        internal static Interfaces.TransitionEventArgs ToITransitionArgs(this Transition transition, TriggerEventArgs internalArgs)
         {
             var transitionArgs = new Interfaces.TransitionEventArgs()
             {
@@ -38,7 +38,7 @@ namespace CleanMachine
             return transitionArgs;
         }
 
-        public static Interfaces.StateEnteredEventArgs ToIStateEnteredArgs(this Transition transition, TriggerEventArgs internalArgs)
+        internal static Interfaces.StateEnteredEventArgs ToIStateEnteredArgs(this Transition transition, TriggerEventArgs internalArgs)
         {
             var stateArgs = new Interfaces.StateEnteredEventArgs()
             {
@@ -49,7 +49,7 @@ namespace CleanMachine
             return stateArgs;
         }
 
-        public static Interfaces.StateExitedEventArgs ToIStateExitedArgs(this Transition transition, TriggerEventArgs internalArgs)
+        internal static Interfaces.StateExitedEventArgs ToIStateExitedArgs(this Transition transition, TriggerEventArgs internalArgs)
         {
             var stateArgs = new Interfaces.StateExitedEventArgs()
             {
@@ -60,7 +60,7 @@ namespace CleanMachine
             return stateArgs;
         }
 
-        public static StateChangedEventArgs<TState> ToIStateChangedArgs<TState>(this Transition transition, TriggerEventArgs internalArgs)
+        internal static StateChangedEventArgs<TState> ToIStateChangedArgs<TState>(this Transition transition, TriggerEventArgs internalArgs)
         {
             var stateArgs = new StateChangedEventArgs<TState>()
             {
@@ -72,7 +72,7 @@ namespace CleanMachine
             return stateArgs;
         }
 
-        public static StateEnteredEventArgs<TState> ToStateEnteredArgs<TState>(this Interfaces.StateEnteredEventArgs args)
+        internal static StateEnteredEventArgs<TState> ToStateEnteredArgs<TState>(this Interfaces.StateEnteredEventArgs args)
         {
             var stateArgs = new StateEnteredEventArgs<TState>()
             {
@@ -83,7 +83,7 @@ namespace CleanMachine
             return stateArgs;
         }
 
-        public static StateExitedEventArgs<TState> ToStateExitedArgs<TState>(this Interfaces.StateExitedEventArgs args)
+        internal static StateExitedEventArgs<TState> ToStateExitedArgs<TState>(this Interfaces.StateExitedEventArgs args)
         {
             var stateArgs = new StateExitedEventArgs<TState>()
             {
@@ -94,7 +94,7 @@ namespace CleanMachine
             return stateArgs;
         }
 
-        public static TransitionEventArgs ToTransitionArgs(this Transition transition, TriggerEventArgs internalArgs)
+        internal static TransitionEventArgs ToTransitionArgs(this Transition transition, TriggerEventArgs internalArgs)
         {
             var transitionArgs = new TransitionEventArgs()
             {
@@ -104,39 +104,6 @@ namespace CleanMachine
 
             return transitionArgs;
         }
-
-        //public static Interfaces.TransitionEventArgs ToITransitionArgs(this TransitionEventArgs internalArgs)
-        //{
-        //    var transitionArgs = new Interfaces.TransitionEventArgs()
-        //    {
-        //        TriggerArgs = internalArgs.TriggerArgs.ToITriggerArgs(),
-        //        Transition = internalArgs.Transition
-        //    };
-
-        //    return transitionArgs;
-        //}
-
-        //public static Interfaces.StateEnteredEventArgs<TState> ToIStateEnteredArgs<TState>(this Transition transition, TriggerEventArgs internalArgs)
-        //{
-        //    var stateArgs = new Interfaces.StateEnteredEventArgs<TState>()
-        //    {
-        //        State = transition.To.ToEnum<TState>(),
-        //        TransitionArgs = transition.ToITransitionArgs(internalArgs)
-        //    };
-
-        //    return stateArgs;
-        //}
-
-        //public static Interfaces.StateExitedEventArgs<TState> ToIStateExitedArgs<TState>(this Transition transition)
-        //{
-        //    var stateArgs = new Interfaces.StateExitedEventArgs<TState>()
-        //    {
-        //        State = transition.From.ToEnum<TState>(),
-        //        ExitedOn = transition
-        //    };
-
-        //    return stateArgs;
-        //}
 
         public static TState ToEnum<TState>(this Interfaces.IState state)
         {

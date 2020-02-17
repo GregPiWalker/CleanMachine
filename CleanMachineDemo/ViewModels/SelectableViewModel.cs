@@ -1,10 +1,17 @@
-﻿using Prism.Mvvm;
+﻿using log4net;
+using Prism.Mvvm;
 
 namespace CleanMachineDemo
 {
     public class SelectableViewModel : BindableBase
     {
+        protected readonly ILog _logger;
         private bool _isSelected;
+
+        public SelectableViewModel(ILog logger)
+        {
+            _logger = logger;
+        }
 
         public bool IsSelected
         {
@@ -20,6 +27,12 @@ namespace CleanMachineDemo
         public void Deselect()
         {
             IsSelected = false;
+        }
+
+        public virtual void LogDiagnostics()
+        {
+            _logger.Debug($"IsSelected: {IsSelected}");
+            _logger.Debug($"------------------- End Diagnostics -------------------");
         }
     }
 }

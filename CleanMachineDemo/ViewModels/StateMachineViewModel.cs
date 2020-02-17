@@ -1,15 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using log4net;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace CleanMachineDemo
 {
     public class StateMachineViewModel
     {
-        private List<StateViewModel> _states = new List<StateViewModel>();
-        private List<TransitionViewModel> _transitions = new List<TransitionViewModel>();
+        private readonly ILog _logger;
+        private readonly List<StateViewModel> _states = new List<StateViewModel>();
+        private readonly List<TransitionViewModel> _transitions = new List<TransitionViewModel>();
 
-        public StateMachineViewModel(DemoModel demoModel)
+        public StateMachineViewModel(DemoModel demoModel, ILog logger)
         {
+            _logger = logger;
             Model = demoModel;
         }
 
@@ -17,7 +20,7 @@ namespace CleanMachineDemo
 
         public StateViewModel CreateStateViewModel(string stateName)
         {
-            var stateVM = new StateViewModel(stateName, Model.StateMachine);
+            var stateVM = new StateViewModel(stateName, Model.StateMachine, _logger);
             stateVM.PropertyChanged += HandleStatePropertyChanged;
             _states.Add(stateVM);
             return stateVM;
@@ -25,7 +28,7 @@ namespace CleanMachineDemo
 
         public TransitionViewModel CreateTransitionViewModel(string stateName, string transitionName)
         {
-            var transitionVM = new TransitionViewModel(transitionName, Model.StateMachine, stateName);
+            var transitionVM = new TransitionViewModel(transitionName, Model.StateMachine, stateName, _logger);
             transitionVM.PropertyChanged += HandleTransitionPropertyChanged;
             _transitions.Add(transitionVM);
             return transitionVM;

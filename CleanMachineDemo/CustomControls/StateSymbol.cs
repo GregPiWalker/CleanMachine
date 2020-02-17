@@ -48,6 +48,11 @@ namespace CleanMachineDemo
         {
             base.OnApplyTemplate();
 
+            if (_viewModel == null)
+            {
+                _viewModel = DataContext as StateViewModel;
+            }
+
             var rectangle = (Template.FindName("PART_RectangleFrame", this) as Path).Data as RectangleGeometry;
             var rect = rectangle.Rect;
             if (double.IsNaN(Width))
@@ -72,11 +77,21 @@ namespace CleanMachineDemo
 
         }
 
-        //protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-        //{
-        //    base.OnMouseLeftButtonDown(e);
-        //    Select();
-        //}
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+
+            //if (_viewModel == null)
+            //{
+            //    _viewModel = DataContext as StateViewModel;
+            //    if (_viewModel == null)
+            //    {
+            //        return;
+            //    }
+            //}
+
+            _viewModel.LogDiagnostics();
+        }
 
         public void Select()
         {

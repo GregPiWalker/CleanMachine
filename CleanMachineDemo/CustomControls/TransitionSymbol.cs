@@ -15,6 +15,8 @@ namespace CleanMachineDemo
         private TransitionViewModel _viewModel;
         private Path _linePath;
 
+        //public static readonly DependencyProperty LineColorProperty =
+        //    DependencyProperty.Register("LineColor", typeof(Color), typeof(TransitionSymbol));
         public static readonly DependencyProperty TransitionNameProperty =
             DependencyProperty.Register("TransitionName", typeof(string), typeof(TransitionSymbol));
         public static readonly DependencyProperty SnapToStateProperty =
@@ -36,12 +38,35 @@ namespace CleanMachineDemo
         public static readonly DependencyProperty IsRecursiveProperty =
             DependencyProperty.Register("IsRecursive", typeof(bool), typeof(TransitionSymbol));
 
+        public static readonly RoutedEvent FailureEvent =
+            EventManager.RegisterRoutedEvent("Failure", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(TransitionSymbol));
+        public static readonly RoutedEvent SuccessEvent =
+            EventManager.RegisterRoutedEvent("Success", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(TransitionSymbol));
+
         public TransitionSymbol()
         {
             var styles = new ResourceDictionary();
             styles.Source = new Uri($";component/CustomControls/{GetType().Name}.xaml", UriKind.RelativeOrAbsolute);
             Resources.MergedDictionaries.Add(styles);
         }
+
+        public event RoutedEventHandler Failure
+        {
+            add { AddHandler(FailureEvent, value); }
+            remove { RemoveHandler(FailureEvent, value); }
+        }
+
+        public event RoutedEventHandler Success
+        {
+            add { AddHandler(SuccessEvent, value); }
+            remove { RemoveHandler(SuccessEvent, value); }
+        }
+
+        //public Color LineColor
+        //{
+        //    get { return (Color)GetValue(LineColorProperty); }
+        //    set { SetValue(LineColorProperty, value); }
+        //}
 
         public string TransitionName
         {
@@ -107,6 +132,11 @@ namespace CleanMachineDemo
         {
             base.OnApplyTemplate();
 
+            if (_viewModel == null)
+            {
+                _viewModel = DataContext as TransitionViewModel;
+            }
+
             _linePath = Template.FindName("PART_ArrowShaft", this) as Path;
             if (IsRecursive)
             {
@@ -120,37 +150,68 @@ namespace CleanMachineDemo
 
         public void Select()
         {
-            if (_viewModel == null)
-            {
-                _viewModel = DataContext as TransitionViewModel;
-                if (_viewModel == null)
-                {
-                    return;
-                }
-            }
+            //if (_viewModel == null)
+            //{
+            //    _viewModel = DataContext as TransitionViewModel;
+            //    if (_viewModel == null)
+            //    {
+            //        return;
+            //    }
+            //}
 
             _viewModel.Select();
         }
 
         public void Deselect()
         {
-            if (_viewModel == null)
-            {
-                _viewModel = DataContext as TransitionViewModel;
-                if (_viewModel == null)
-                {
-                    return;
-                }
-            }
+            //if (_viewModel == null)
+            //{
+            //    _viewModel = DataContext as TransitionViewModel;
+            //    if (_viewModel == null)
+            //    {
+            //        return;
+            //    }
+            //}
 
             _viewModel.Deselect();
         }
 
-        //protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-        //{
-        //    base.OnMouseLeftButtonDown(e);
-        //    Select();
-        //}
+        public void HandleTransitionFailure(object sender, EventArgs args)
+        {
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
+                RaiseEvent(new RoutedEventArgs(FailureEvent));
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    RaiseEvent(new RoutedEventArgs(FailureEvent));
+                });
+            }
+        }
+
+        public void HandleTransitionSuccess(object sender, EventArgs args)
+        {
+            if (Application.Current.Dispatcher.CheckAccess())
+            {
+                RaiseEvent(new RoutedEventArgs(SuccessEvent));
+            }
+            else
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    RaiseEvent(new RoutedEventArgs(SuccessEvent));
+                });
+            }
+        }
+
+        protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+
+            _viewModel.LogDiagnostics();
+        }
 
         private void ApplyStraightLineStyle()
         {

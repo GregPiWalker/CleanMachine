@@ -108,6 +108,11 @@ namespace CleanMachine
             return sb.Append("\"").ToString();
         }
 
+        public void LogDiagnostics()
+        {
+            //TODO
+        }
+
         public bool CanTransition(EventArgs sourceArgs)
         {
             return _enabled && (Guard == null || Guard.IsTrue());

@@ -12,5 +12,8 @@ namespace CleanMachine.Interfaces
         IState Consumer { get; }
 
         IState Supplier { get; }
+        
+
+        void LogDiagnostics();
     }
 }

@@ -19,5 +19,7 @@ namespace CleanMachine.Interfaces
         ReadOnlyCollection<ITransition> Transitions { get; }
 
         void AddDoBehavior(Action<IState> behavior);
+
+        void LogDiagnostics();
     }
 }

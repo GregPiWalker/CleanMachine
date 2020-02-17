@@ -3,7 +3,10 @@
                     xmlns:local="clr-namespace:CleanMachineDemo">
 
     <SolidColorBrush x:Key="DefaultTransitionColor" Color="Black"/>
-    <local:SelectionToColorConverter x:Key="SelectionToLineColorConverter" Selected="Salmon" Deselected="Black"/>
+    <SolidColorBrush x:Key="FailureTransitionColor" Color="Red"/>
+    <SolidColorBrush x:Key="SuccessTransitionColor" Color="Green"/>
+    <SolidColorBrush x:Key="SelectedTransitionColor" Color="Green"/>
+    <local:SelectionToColorConverter x:Key="SelectionToLineColorConverter" Selected="{StaticResource SelectedTransitionColor}" Deselected="{StaticResource DefaultTransitionColor}"/>
 
     <Style TargetType="{x:Type local:TransitionSymbol}">
         <Setter Property="Template">
@@ -12,6 +15,42 @@
                     <ControlTemplate.Resources>
                         <LineGeometry x:Key="StraightLine" StartPoint="5,0" EndPoint="5,30" />
                         <PathGeometry x:Key="CurvedLine" Figures="m 0,5 C 90,-30 90,60 1,25"/>
+
+                        <!-- This animation makes the transition pulse the failure color for a 1/2 second. -->
+                        <Storyboard x:Key="FailurePulse" >
+                            <!-- Make the arrow head pulse -->
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ArrowheadGeometry" Storyboard.TargetProperty="(Path.StrokeThickness)" Duration="0:0:0.5">
+                                <SplineDoubleKeyFrame KeyTime="00:00:0" Value="3"/>
+                                <SplineDoubleKeyFrame KeyTime="00:00:0.25" Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ArrowheadGeometry" Storyboard.TargetProperty="(Path.Stroke)" Duration="0:0:0.5">
+                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FailureTransitionColor}" />
+                                <DiscreteObjectKeyFrame KeyTime="0:0:0.25" Value="{StaticResource DefaultTransitionColor}" />
+                            </ObjectAnimationUsingKeyFrames>
+                            <!-- Make the arrow shaft pulse -->
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="PART_ArrowShaft" Storyboard.TargetProperty="(Path.StrokeThickness)" Duration="0:0:0.5">
+                                <SplineDoubleKeyFrame KeyTime="00:00:0" Value="3"/>
+                                <SplineDoubleKeyFrame KeyTime="00:00:0.25" Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PART_ArrowShaft" Storyboard.TargetProperty="(Path.Stroke)" Duration="0:0:0.5">
+                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{StaticResource FailureTransitionColor}" />
+                                <DiscreteObjectKeyFrame KeyTime="0:0:0.25" Value="{StaticResource DefaultTransitionColor}" />
+                            </ObjectAnimationUsingKeyFrames>
+                        </Storyboard>
+
+                        <!-- This animation makes the transition pulse for a 1/2 second. -->
+                        <Storyboard x:Key="SuccessPulse" >
+                            <!-- Make the arrow head pulse -->
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ArrowheadGeometry" Storyboard.TargetProperty="(Path.StrokeThickness)" Duration="0:0:0.5">
+                                <SplineDoubleKeyFrame KeyTime="00:00:0" Value="3"/>
+                                <SplineDoubleKeyFrame KeyTime="00:00:0.25" Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <!-- Make the arrow shaft pulse -->
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="PART_ArrowShaft" Storyboard.TargetProperty="(Path.StrokeThickness)" Duration="0:0:0.5">
+                                <SplineDoubleKeyFrame KeyTime="00:00:0" Value="3"/>
+                                <SplineDoubleKeyFrame KeyTime="00:00:0.25" Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard>
                     </ControlTemplate.Resources>
                     
                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
@@ -45,6 +84,20 @@
                             </TransformGroup>
                         </Border.RenderTransform>
                     </Border>
+
+                    <ControlTemplate.Triggers>
+                        <EventTrigger RoutedEvent="Failure">
+                            <EventTrigger.Actions>
+                                <BeginStoryboard Name="BeginFailureStoryboard" Storyboard="{StaticResource FailurePulse}" />
+                            </EventTrigger.Actions>
+                        </EventTrigger>
+                        <EventTrigger RoutedEvent="Success">
+                            <EventTrigger.Actions>
+                                <StopStoryboard BeginStoryboardName="BeginFailureStoryboard" />
+                                <BeginStoryboard Name="BeginSuccessStoryboard" Storyboard="{StaticResource SuccessPulse}" />
+                            </EventTrigger.Actions>
+                        </EventTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

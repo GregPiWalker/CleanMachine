@@ -41,7 +41,10 @@ namespace CleanMachineDemo
                 else if (child is TransitionSymbol)
                 {
                     var symbol = child as TransitionSymbol;
-                    child.DataContext = vm.CreateTransitionViewModel(symbol.SnapToState.StateName, symbol.TransitionName);
+                    var transitionVM = vm.CreateTransitionViewModel(symbol.SnapToState.StateName, symbol.TransitionName);
+                    symbol.DataContext = transitionVM;
+                    transitionVM.Failure += symbol.HandleTransitionFailure;
+                    transitionVM.Success += symbol.HandleTransitionSuccess;
                 }
             }
         }

@@ -2,31 +2,10 @@
 using System.Reactive.Disposables;
 
 namespace CleanMachine
-{
-    public class TransitionEventArgs : EventArgs
-    {
-        public TriggerEventArgs TriggerArgs { get; set; }
-
-        public Transition Transition { get; set; }
-    }
-
-    //public class StateEnteredEventArgs : EventArgs
-    //{
-    //    public State State { get; set; }
-
-    //    public TransitionEventArgs TransitionArgs { get; set; }
-    //}
-
-    //public class StateExitedEventArgs : EventArgs
-    //{
-    //    public State State { get; set; }
-
-    //    public TransitionEventArgs TransitionArgs { get; set; }
-    //}
-
+{    
     public class TriggerEventArgs : EventArgs
     {
-        public BooleanDisposable TriggerContext { get; set; }
+        internal BooleanDisposable TriggerContext { get; set; }
 
         public object Cause { get; set; }
 
@@ -56,5 +35,12 @@ namespace CleanMachine
         public TState State { get; set; }
 
         public Interfaces.TransitionEventArgs TransitionArgs { get; set; }
+    }
+
+    internal class TransitionEventArgs : EventArgs
+    {
+        public TriggerEventArgs TriggerArgs { get; set; }
+
+        public Transition Transition { get; set; }
     }
 }

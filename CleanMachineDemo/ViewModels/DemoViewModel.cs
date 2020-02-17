@@ -13,7 +13,7 @@ namespace CleanMachineDemo
         {
             _model = new DemoModel(_logger);
 
-            StateMachineVM = new StateMachineViewModel(_model);
+            StateMachineVM = new StateMachineViewModel(_model, _logger);
             ControlPanelVM = new ControlPanelViewModel(_model);
         }
 

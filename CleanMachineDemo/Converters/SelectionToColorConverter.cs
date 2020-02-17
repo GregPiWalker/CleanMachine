@@ -9,6 +9,7 @@ namespace CleanMachineDemo
     public class SelectionToColorConverter : IValueConverter
     {
         public SolidColorBrush Selected { get; set; }
+
         public SolidColorBrush Deselected { get; set; }
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
