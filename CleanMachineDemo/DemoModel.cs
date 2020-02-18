@@ -45,7 +45,13 @@ namespace CleanMachineDemo
         public int CollectionCount
         {
             get { return _collectionCount; }
-            set { SetProperty(ref _collectionCount, value, nameof(CollectionCount)); }
+            set
+            {
+                if (SetProperty(ref _collectionCount, value, nameof(CollectionCount)))
+                {
+                    UpdateCollection();
+                }
+            }
         }
 
         public int LoopCount
@@ -74,10 +80,9 @@ namespace CleanMachineDemo
             foreach (var state in StateMachine.States)
             {
                 state.ExitCompleted += HandleStateExited;
-                state.EntryInitiated += HandleStateEntered;
+                //state.EntryInitiated += HandleStateEntered;
             }
-
-            //TODO: rename builder as editor?
+            
             using (var builder = DemoBuilder.BuildStateMachine(this, StateMachine))
             {
                 // If we loop around the state machine, reset the loop count variable;
@@ -89,11 +94,25 @@ namespace CleanMachineDemo
         {
             LoopCount = 3;
             BoolFunc = null;
+            CollectionCount = 0;
         }
 
-        private void HandleStateEntered(object sender, StateEnteredEventArgs args)
+        private void UpdateCollection()
         {
-            
+            if (_observables.Count == _collectionCount)
+            {
+                return;
+            }
+
+            while (_observables.Count < _collectionCount)
+            {
+                _observables.Add(new object());
+            }
+
+            while (_observables.Count > _collectionCount)
+            {
+                _observables.RemoveAt(0);
+            }
         }
 
         /// <summary>

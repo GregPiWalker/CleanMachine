@@ -2,23 +2,22 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
-using System.Globalization;
 
 namespace CleanMachine
 {
     public class CollectionChangedTrigger : TriggerBase
     {
-        private readonly int _tripCount;
+        private readonly int _tripFilter;
 
         public CollectionChangedTrigger(INotifyCollectionChanged source, ILog logger)
             : this(source, -1, logger)
         {
         }
 
-        public CollectionChangedTrigger(INotifyCollectionChanged source, int tripCount, ILog logger)
+        public CollectionChangedTrigger(INotifyCollectionChanged source, int tripFilter, ILog logger)
             : base($"{source.GetType().Name}.{nameof(source.CollectionChanged)}", source, logger)
         {
-            _tripCount = tripCount;
+            _tripFilter = tripFilter;
         }
 
         public INotifyCollectionChanged Collection
@@ -40,21 +39,22 @@ namespace CleanMachine
 
         private void HandleCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
         {
-            //TODO: investigate NewItems and OldItems.  what do they hold?
-            if (args.NewItems != null && args.OldItems != null && args.NewItems.Count != args.OldItems.Count)
+            if (args.NewItems != null || args.OldItems != null)
             {
                 var collection = sender as ICollection;
                 // Get a local copy of the count because making multiple queries in here seems to give different results.
                 var itemCount = collection.Count;
-                if (_tripCount < 0 || _tripCount == itemCount)
+                if (_tripFilter < 0 || _tripFilter == itemCount)
                 {
-                    //TODO: Log ("CollectionChangedTrigger tripping for item count change: {0} items remaining.",
-                    //              Source is ICollection ? collection.Count.ToString(CultureInfo.InvariantCulture) : "unknown"));
+                    if (VerboseLogging)
+                    {
+                        _logger.Debug($"{nameof(CollectionChangedTrigger)} '{Name}' tripping for item count change: {itemCount} items remaining");
+                    }
                     Trip(sender, args);
                 }
-                else
+                else if (VerboseLogging)
                 {
-                    //TODO: log ("CollectionChangedTrigger ignoring change on collection with {0} items.", collection.Count));
+                    _logger.Debug($"{nameof(CollectionChangedTrigger)} '{Name}' ignoring change on collection with {itemCount} items.");
                 }
             }
         }

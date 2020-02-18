@@ -27,6 +27,8 @@ namespace CleanMachine
         
         public object Source { get; protected set; }
         
+        public bool VerboseLogging { get; set; }
+
         public abstract Type SourceType { get; }
 
         /// <summary>

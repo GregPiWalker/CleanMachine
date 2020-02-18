@@ -15,22 +15,22 @@
     <Grid>
         <Button x:Name="button" Content="Trigger All" HorizontalAlignment="Left" Height="21" Margin="18,9,0,0" VerticalAlignment="Top" Width="60" 
                 Command="{Binding TriggerAllCommand}"
-                ToolTip="This button triggers every transition, but Guard conditions regulate success."/>
+                ToolTip="This button triggers every transition, but the current state and Guard conditions regulate success."/>
         <CheckBox x:Name="OnOff" Content="On" HorizontalAlignment="Left" Height="16" Margin="100,13,0,0" VerticalAlignment="Top" Width="40"
                   IsChecked="{Binding Model.OnOff}"
                   ToolTip="This On/Off switch triggers all transitions from state One."/>
         <TextBox x:Name="expressionBox" HorizontalAlignment="Left" Height="22" Margin="150,51,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="161"
                  Text="{Binding Path=Expression, UpdateSourceTrigger=PropertyChanged}" KeyDown="ExpressionTextBox_KeyDown"
-                 ToolTip="Create a boolean expression.  Pressing the ENTER key will compile the expression and trigger the Four-->Three transition."/>
+                 ToolTip="Create a boolean expression.  Pressing the ENTER key will compile the expression and trigger the 'Four-->Three' transition."/>
         <TextBox x:Name="countBox" HorizontalAlignment="Left" Height="22" Margin="217,9,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="25"
                  Text="{Binding Path=Model.CollectionCount, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, Converter={StaticResource IntToStringConverter}}"
-                 ToolTip="This sets a quantity of items in a collection.  It triggers the Two-->Four transition and succeeds when the quantity is 5."/>
+                 ToolTip="This sets a quantity of items in a collection.  It triggers the 'Two-->Four' transition ONLY when the quantity is 5 by using a trigger filter."/>
         <TextBox x:Name="intBox" HorizontalAlignment="Left" Height="22" Margin="40,51,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="25"
                  Text="{Binding Path=Model.Number, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, Converter={StaticResource IntToStringConverter}}"
-                 ToolTip="Triggers the One-->Three transition.  Success is guarded by On/Off being off and value equal to 1."/>
+                 ToolTip="Triggers the 'One-->Three' transition.  Success is guarded by On/Off being off and value equal to 1."/>
         <TextBox x:Name="loopBox" HorizontalAlignment="Left" Height="22" Margin="285,9,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="25"
                  Text="{Binding Path=Model.LoopCount, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, Converter={StaticResource IntToStringConverter}}"
-                 ToolTip="Set a count down value for the Four-->Four circular transition.  Every successful Four-->Four transition will decrement this counter."/>
+                 ToolTip="Set a count down value for the 'Four-->Four' circular transition.  Every successful 'Four-->Four' transition will decrement this counter."/>
         <Label x:Name="intLabel" Content="int" HorizontalAlignment="Left" Height="28" Margin="18,47,0,0" VerticalAlignment="Top" Width="24"/>
         <Label x:Name="loopLabel" Content="Loop" HorizontalAlignment="Left" Height="28" Margin="251,6,0,0" VerticalAlignment="Top" Width="36"/>
         <Label x:Name="countLabel" Content="List Count" HorizontalAlignment="Left" Height="28" Margin="156,6,0,0" VerticalAlignment="Top" Width="64"/>
