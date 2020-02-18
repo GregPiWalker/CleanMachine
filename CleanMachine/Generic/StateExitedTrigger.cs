@@ -1,5 +1,5 @@
-﻿using log4net;
-using CleanMachine.Interfaces;
+﻿using CleanMachine.Interfaces;
+using log4net;
 using System;
 
 namespace CleanMachine.Generic
@@ -7,19 +7,21 @@ namespace CleanMachine.Generic
     /// <summary>
     /// A trigger that listens for the StateExited event from a state machine.
     /// StateEntered is raised before the state's Enter & Do behaviors are done.
-    /// 
-    /// NOTE: This is meant to be used for one StateMachine to observe another.
-    /// It is not recommended to use this trigger to observe the same StateMachine
-    /// in which it is defined.
     /// </summary>
     /// <typeparam name="TState"></typeparam>
     public class StateExitedTrigger<TState> : TriggerBase where TState : struct
     {
         private readonly TState? _filterState;
+        private readonly IState _state;
 
         public StateExitedTrigger(StateMachine<TState> source, TState? tripOnState, ILog logger)
             : base($"{typeof(StateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateExitedEventArgs<TState>).Name}>", source, logger)
         {
+            if (tripOnState.HasValue)
+            {
+                _state = source[tripOnState.Value];
+            }
+
             _filterState = tripOnState;
         }
 
@@ -40,20 +42,39 @@ namespace CleanMachine.Generic
 
         protected override void Enable()
         {
-            StateMachine.StateExited += HandleSourceStateChanged;
+            if (_state == null)
+            {
+                StateMachine.StateExited += HandleMachineStateExited;
+            }
+            else
+            {
+                _state.ExitCompleted += HandleStateExited;
+            }
         }
 
         protected override void Disable()
         {
-            StateMachine.StateExited -= HandleSourceStateChanged;
+            if (_state == null)
+            {
+                StateMachine.StateExited -= HandleMachineStateExited;
+            }
+            else
+            {
+                _state.ExitCompleted -= HandleStateExited;
+            }
         }
 
-        private void HandleSourceStateChanged(object sender, StateExitedEventArgs<TState> args)
+        private void HandleMachineStateExited(object sender, StateExitedEventArgs<TState> args)
         {
             if (!_filterState.HasValue || args.State.Equals(_filterState.Value))
             {
                 Trip(sender, args);
             }
+        }
+
+        private void HandleStateExited(object sender, StateExitedEventArgs args)
+        {
+            Trip(sender, args);
         }
     }
 }

@@ -18,8 +18,6 @@ namespace CleanMachine.Generic
         public event EventHandler<StateEnteredEventArgs<TState>> StateEntered;
         public event EventHandler<StateExitedEventArgs<TState>> StateExited;
 
-        //public event EventHandler<Interfaces.TransitionEventArgs> TransitionFailed;
-
         public TState CurrentState => _currentState.ToEnum<TState>();
 
         public Interfaces.IState this[TState value]

@@ -1,16 +1,11 @@
 ﻿
 using log4net;
-using CleanMachine.Interfaces;
 using System;
 
 namespace CleanMachine.Generic
 {
     /// <summary>
     /// This class is a convenience for creating a trigger that listens for the StateChanged event from a state machine.
-    /// 
-    /// NOTE: This is meant to be used for one StateMachine to observe another.
-    /// It is not recommended to use this trigger to observe the same StateMachine
-    /// in which it is defined.
     /// </summary>
     /// <typeparam name="TState"></typeparam>
     public class StateChangedTrigger<TState> : TriggerBase where TState : struct

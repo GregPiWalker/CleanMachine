@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using CleanMachine.Interfaces;
 using System.Reactive.Concurrency;
-using System.Threading.Tasks;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Collections.ObjectModel;

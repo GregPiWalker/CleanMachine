@@ -1,5 +1,5 @@
-﻿using log4net;
-using CleanMachine.Interfaces;
+﻿using CleanMachine.Interfaces;
+using log4net;
 using System;
 
 namespace CleanMachine.Generic
@@ -7,19 +7,21 @@ namespace CleanMachine.Generic
     /// <summary>
     /// A trigger that listens for the StateEntered event from a state machine.
     /// StateEntered is raised before the state's Enter & Do behaviors are done.
-    /// 
-    /// NOTE: This is meant to be used for one StateMachine to observe another.
-    /// It is not recommended to use this trigger to observe the same StateMachine
-    /// in which it is defined.
     /// </summary>
     /// <typeparam name="TState"></typeparam>
     public class StateEnteredTrigger<TState> : TriggerBase where TState : struct
     {
         private readonly TState? _filterState;
+        private readonly IState _state;
 
         public StateEnteredTrigger(StateMachine<TState> source, TState? tripOnState, ILog logger)
             : base($"{typeof(StateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateEnteredEventArgs<TState>).Name}>", source, logger)
         {
+            if (tripOnState.HasValue)
+            {
+                _state = source[tripOnState.Value];
+            }
+
             _filterState = tripOnState;
         }
 
@@ -40,12 +42,26 @@ namespace CleanMachine.Generic
 
         protected override void Enable()
         {
-            StateMachine.StateEntered += HandleSourceStateChanged;
+            if (_state == null)
+            {
+                StateMachine.StateEntered += HandleSourceStateChanged;
+            }
+            else
+            {
+                _state.EntryCompleted += HandleStateEntered;
+            }
         }
-
+        
         protected override void Disable()
         {
-            StateMachine.StateEntered -= HandleSourceStateChanged;
+            if (_state == null)
+            {
+                StateMachine.StateEntered -= HandleSourceStateChanged;
+            }
+            else
+            {
+                _state.EntryCompleted -= HandleStateEntered;
+            }
         }
 
         private void HandleSourceStateChanged(object sender, StateEnteredEventArgs<TState> args)
@@ -54,6 +70,11 @@ namespace CleanMachine.Generic
             {
                 Trip(sender, args);
             }
+        }
+
+        private void HandleStateEntered(object sender, StateEnteredEventArgs args)
+        {
+            Trip(sender, args);
         }
     }
 }
