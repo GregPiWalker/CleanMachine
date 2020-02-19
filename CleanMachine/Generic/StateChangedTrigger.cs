@@ -24,11 +24,6 @@ namespace CleanMachine.Generic
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        public override Type SourceType => typeof(StateChangedTrigger<TState>);
-
-        /// <summary>
         /// Gets the shadow implementation of the base source.
         /// </summary>
         public StateMachine<TState> Machine

@@ -48,11 +48,6 @@ namespace CleanMachine.Generic
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        public override Type SourceType => typeof(TSource);
-
-        /// <summary>
         /// Gets the shadow implementation of the base Filter in order to provide a conditional parameter.
         /// </summary>
         public Constraint<TEventArgs> Filter { get; protected set; }

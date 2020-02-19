@@ -1,5 +1,4 @@
 ﻿using log4net;
-using System;
 using System.ComponentModel;
 
 namespace CleanMachine
@@ -47,8 +46,6 @@ namespace CleanMachine
             // Either way, hold on to the entire string.  For nested properties, this is needed for deep copying.
             _filterProperty = propertyNameChain;
         }
-
-        public override Type SourceType => typeof(INotifyPropertyChanged);
 
         private INotifyPropertyChanged PropertyOwner => Source as INotifyPropertyChanged;
 

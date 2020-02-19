@@ -30,11 +30,6 @@ namespace CleanMachine.Generic
         {
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public override Type SourceType => typeof(StateEnteredTrigger<TState>);
-
         public StateMachine<TState> StateMachine
         {
             get { return base.Source as StateMachine<TState>; }

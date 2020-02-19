@@ -29,8 +29,6 @@ namespace CleanMachine
         
         public bool VerboseLogging { get; set; }
 
-        public abstract Type SourceType { get; }
-
         /// <summary>
         /// Indicates whether this trigger is connected and responding to surrounding events.
         /// </summary>

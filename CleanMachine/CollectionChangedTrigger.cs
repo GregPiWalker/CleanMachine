@@ -25,8 +25,6 @@ namespace CleanMachine
             get { return Source as INotifyCollectionChanged; }
         }
 
-        public override Type SourceType => typeof(INotifyCollectionChanged);
-
         protected override void Enable()
         {
             Collection.CollectionChanged += HandleCollectionChanged;
