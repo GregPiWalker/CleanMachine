@@ -110,6 +110,7 @@
     </ApplicationDefinition>
     <Compile Include="ChildMachineBuilder.cs" />
     <Compile Include="ChildModel.cs" />
+    <Compile Include="Converters\InvertibleBooleanToVisibilityConverter.cs" />
     <Compile Include="Views\ControlPanel.xaml.cs">
       <DependentUpon>ControlPanel.xaml</DependentUpon>
     </Compile>

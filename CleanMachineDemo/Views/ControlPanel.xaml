@@ -10,15 +10,29 @@
 
     <UserControl.Resources>
         <local:IntToStringConverter x:Key="IntToStringConverter"/>
+        <BooleanToVisibilityConverter x:Key="InvisibilityConverter" />
+        <local:InvertibleBooleanToVisibilityConverter x:Key="InvertibleInvisibilityConverter" />
+
+        <EllipseGeometry x:Key="Circle" Center="5,5" RadiusX="5" RadiusY="5" />
+
+        <Style x:Key="UnderlinedLabelStyle" TargetType="Label">
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextDecorations="Underline"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
-    
+
     <Grid>
         <Button x:Name="button" Content="Trigger All" HorizontalAlignment="Left" Height="21" Margin="18,9,0,0" VerticalAlignment="Top" Width="60" 
                 Command="{Binding TriggerAllCommand}"
                 ToolTip="This button triggers every transition, but the current state and Guard conditions regulate success."/>
         <CheckBox x:Name="OnOff" Content="On" HorizontalAlignment="Left" Height="16" Margin="100,13,0,0" VerticalAlignment="Top" Width="40"
                   IsChecked="{Binding Model.OnOff}"
-                  ToolTip="This On/Off switch triggers all transitions from state One."/>
+                  ToolTip="The On/Off switch starts and stops all of the child models.  It also triggers the One-->Two transition."/>
         <TextBox x:Name="expressionBox" HorizontalAlignment="Left" Height="22" Margin="150,51,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="161"
                  Text="{Binding Path=Expression, UpdateSourceTrigger=PropertyChanged}" KeyDown="ExpressionTextBox_KeyDown"
                  ToolTip="Create a boolean expression.  Pressing the ENTER key will compile the expression and trigger the 'Four-->Three' transition."/>
@@ -31,9 +45,19 @@
         <TextBox x:Name="loopBox" HorizontalAlignment="Left" Height="22" Margin="285,9,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="25"
                  Text="{Binding Path=Model.LoopCount, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, Converter={StaticResource IntToStringConverter}}"
                  ToolTip="Set a count down value for the 'Four-->Four' circular transition.  Every successful 'Four-->Four' transition will decrement this counter."/>
+
+        <Path x:Name="ReadyIndicator" Fill="Green" Width="10" Height="10" Margin="0,34.5,111,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+              Data="{StaticResource Circle}" Visibility="{Binding Path=Model.AreChildrenReady, Converter={StaticResource InvisibilityConverter}}"/>
+        <Path x:Name="BusyIndicator" Fill="Red" Width="10" Height="10" Margin="0,53.5,111,35.95" HorizontalAlignment="Right" VerticalAlignment="Top"
+              Data="{StaticResource Circle}" Visibility="{Binding Path=Model.AreChildrenReady, Converter={StaticResource InvertibleInvisibilityConverter}, ConverterParameter=invert}"/>
+
         <Label x:Name="intLabel" Content="int" HorizontalAlignment="Left" Height="28" Margin="18,47,0,0" VerticalAlignment="Top" Width="24"/>
         <Label x:Name="loopLabel" Content="Loop" HorizontalAlignment="Left" Height="28" Margin="251,6,0,0" VerticalAlignment="Top" Width="36"/>
         <Label x:Name="countLabel" Content="List Count" HorizontalAlignment="Left" Height="28" Margin="156,6,0,0" VerticalAlignment="Top" Width="64"/>
         <Label x:Name="exprLabel" Content="Expression" HorizontalAlignment="Left" Height="28" Margin="87,47,0,0" VerticalAlignment="Top" Width="65"/>
+        <Label x:Name="childrenLabel" Content="Status of Children" HorizontalAlignment="Right" Height="28" Margin="0,6,40.667,0" VerticalAlignment="Top" Width="105"
+               Style="{StaticResource UnderlinedLabelStyle}"/>
+        <Label x:Name="readyLabel" Content="Ready" HorizontalAlignment="Right" Height="28" Margin="0,26.05,68,0" VerticalAlignment="Top" Width="43"/>
+        <Label x:Name="busyLabel" Content="Busy" HorizontalAlignment="Right" Margin="0,45,70.333,27" Width="40.667"/>
     </Grid>
 </UserControl>

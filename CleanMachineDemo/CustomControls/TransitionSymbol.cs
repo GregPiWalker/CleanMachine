@@ -14,9 +14,7 @@ namespace CleanMachineDemo
         private const double ArrowheadOverlap = 2d;
         private TransitionViewModel _viewModel;
         private Path _linePath;
-
-        //public static readonly DependencyProperty LineColorProperty =
-        //    DependencyProperty.Register("LineColor", typeof(Color), typeof(TransitionSymbol));
+        
         public static readonly DependencyProperty TransitionNameProperty =
             DependencyProperty.Register("TransitionName", typeof(string), typeof(TransitionSymbol));
         public static readonly DependencyProperty SnapToStateProperty =
@@ -61,12 +59,6 @@ namespace CleanMachineDemo
             add { AddHandler(SuccessEvent, value); }
             remove { RemoveHandler(SuccessEvent, value); }
         }
-
-        //public Color LineColor
-        //{
-        //    get { return (Color)GetValue(LineColorProperty); }
-        //    set { SetValue(LineColorProperty, value); }
-        //}
 
         public string TransitionName
         {
@@ -236,6 +228,7 @@ namespace CleanMachineDemo
             ArrowheadTransY = Height - ArrowheadHeight - ArrowheadOverlap;
             ArrowheadTransX = 0;
             ArrowheadAngle = 0;
+            Width = 10;
 
             TransformOrigin = new Point(0.5, 0);
         }
@@ -248,6 +241,8 @@ namespace CleanMachineDemo
             ArrowheadTransY = 23.2;
             ArrowheadTransX = 10.9;
             ArrowheadAngle = 110;
+            Height = 58.133;
+            Width = 80.534;
 
             TransformOrigin = new Point(0,0);
         }

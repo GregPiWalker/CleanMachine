@@ -5,6 +5,8 @@ using CleanMachine.Interfaces;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
+using CleanMachine;
+using System.Linq;
 
 namespace CleanMachineDemo
 {
@@ -17,6 +19,7 @@ namespace CleanMachineDemo
         private int _collectionCount;
         private int _loopCount;
         private Func<bool> _boolFunc;
+        private bool _areChildrenReady;
 
         public DemoModel(ILog logger)
         {
@@ -25,7 +28,9 @@ namespace CleanMachineDemo
             BoolFunc = () => false;
             for (int i = 0; i < 5; i++)
             {
-                Children.Add(new ChildModel((i+1).ToString(), _synchronizationContext, logger));
+                var child = new ChildModel((i + 1).ToString(), _synchronizationContext, logger);
+                Children.Add(child);
+                child.StateMachine.StateChanged += HandleChildStateChanged;
             }
 
             CreateStateMachine();
@@ -82,6 +87,12 @@ namespace CleanMachineDemo
         {
             get { return _boolFunc; }
             set { SetProperty(ref _boolFunc, value, nameof(BoolFunc)); }
+        }
+
+        public bool AreChildrenReady
+        {
+            get { return _areChildrenReady; }
+            set { SetProperty(ref _areChildrenReady, value, nameof(AreChildrenReady)); }
         }
 
         public ObservableCollection<object> Observables { get; } = new ObservableCollection<object>();
@@ -171,6 +182,11 @@ namespace CleanMachineDemo
                     LoopCount--;
                 }
             }
+        }
+
+        private void HandleChildStateChanged(object sender, StateChangedEventArgs<ChildState> args)
+        {
+            AreChildrenReady = Children.All(c => c.StateMachine.CurrentState == ChildState.Ready);
         }
     }
 }
