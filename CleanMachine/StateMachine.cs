@@ -19,31 +19,42 @@ namespace CleanMachine
         protected State _currentState;
         protected State _initialState;
         private readonly object _synchronizationContext = new object();
-        
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="synchronizationContext"></param>
+        /// <param name="globalSyncContext"></param>
+        /// <param name="asynchronousTransitions">Indicates whether </param>
         /// <param name="asynchronousBehaviors">Indicates whether behaviors (ENTRY, EXIT, DO, EFFECT) are executed on
         /// a different thread from the state machine transitions and events.</param>
-        public StateMachine(string name, ILog logger, object synchronizationContext, bool asynchronousBehaviors)
+        protected StateMachine(string name, ILog logger, object globalSyncContext, bool asynchronousTransitions, bool asynchronousBehaviors)
         {
-            _synchronizationContext = synchronizationContext;
+            _synchronizationContext = globalSyncContext;
             Name = name;
             Logger = logger;
 
-            _transitionScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Transition Scheduler", IsBackground = true }; });
+            if (asynchronousTransitions)
+            {
+                // When configured with async transitions, this machine can operate with or without a synchronization context.
+                _transitionScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Transition Scheduler", IsBackground = true }; });
+            }
+            else if (globalSyncContext == null)
+            {
+                // When configured with synchronous transitions, this machine must have a local synchronization context.
+                Logger.Debug($"{Name}:  was initialized without transition synchronization.  This is not supported; a default synchronization context will be used.");
+                _synchronizationContext = new object();
+            }
 
-            // If user requested asyncronous UML behaviors, assign a specific thread to a scheduler for the behaviors.
+            // If user requested asyncronous state & transition behaviors, assign a specific thread to a scheduler for the behaviors.
             if (asynchronousBehaviors)
             {
                 _behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Behavior Scheduler", IsBackground = true }; });
 
-                if (synchronizationContext != null)
+                if (globalSyncContext != null)
                 {
-                    Logger.Warn($"{Name}:  inter-machine sychronization and asynchronous behaviors were both requested.  This is not recommended.  Using asynchronous behaviors could bypass aspects of machine sychronization.");
+                    Logger.Warn($"{Name}:  inter-machine synchronization and asynchronous behaviors were both requested.  This is not recommended.  Using asynchronous behaviors could bypass aspects of machine sychronization.");
                 }
             }
         }
@@ -237,29 +248,35 @@ namespace CleanMachine
         /// Enter the Initial state and mark it as the current state.  Also, try
         /// to run to completion from the InitialNode.
         /// </summary>
-        private void EnterInitialState()
+        internal void EnterInitialState()
         {
             if (_initialState == null)
             {
                 throw new InvalidOperationException($"{Name}:  initial state was not configured.");
             }
-            
-            if (_synchronizationContext == null)
+
+            if (_transitionScheduler == null)
             {
-                _transitionScheduler.Schedule(() =>
-                {
-                    EnterInitialStateUnsafe();
-                });
+                EnterInitialStateSafe();
             }
             else
             {
-                _transitionScheduler.Schedule(() =>
+                _transitionScheduler.Schedule(() => EnterInitialStateSafe());
+            }
+        }
+
+        private void EnterInitialStateSafe()
+        {
+            if (_synchronizationContext == null)
+            {
+                EnterInitialStateUnsafe();
+            }
+            else
+            {
+                lock (_synchronizationContext)
                 {
-                    lock (_synchronizationContext)
-                    {
-                        EnterInitialStateUnsafe();
-                    }
-                });
+                    EnterInitialStateUnsafe();
+                }
             }
         }
 
@@ -277,23 +294,35 @@ namespace CleanMachine
             OnStateChanged(null, new TriggerEventArgs() { Cause = this });
         }
 
-        private IDisposable AttemptTransition(TransitionEventArgs args)
+        internal void AttemptTransition(TransitionEventArgs args)
+        {
+            if (_transitionScheduler == null)
+            {
+                AttemptTransitionSafe(args);
+            }
+            else
+            { 
+                _transitionScheduler.Schedule(args, (_, a) => { return AttemptTransitionSafe(a); });
+            }
+        }
+
+        private IDisposable AttemptTransitionSafe(TransitionEventArgs args)
         {
             if (_synchronizationContext == null)
             {
-                if (!TryTransitionUnsafe(args))
+                if (!AttemptTransitionUnsafe(args))
                 {
                     return Disposable.Empty;
                 }
             }
             else
             {
-                // This regulates all transition triggers associated to the given synchronization context.
-                // Within a single StateMachine, this means only one of many transitions can successfully exit the current state.
-                // In the context of several synchronized StateMachines, it means that 
+                // This lock regulates all transition triggers associated to the given synchronization context.
+                // This means that only one of any number of transitions can successfully exit the current state,
+                // whether those transitions all exist in one state machine or are distributed across a set of machines.
                 lock (_synchronizationContext)
                 {
-                    if (!TryTransitionUnsafe(args))
+                    if (!AttemptTransitionUnsafe(args))
                     {
                         return Disposable.Empty;
                     }
@@ -303,18 +332,24 @@ namespace CleanMachine
             return args.TriggerArgs.TriggerContext;
         }
 
-        private bool TryTransitionUnsafe(TransitionEventArgs args)
+        /// <summary>
+        /// The first successful transition will dispose of all other trigger handlers that were competing for action
+        /// by disposing of the state selection context associated to the triggers.
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        private bool AttemptTransitionUnsafe(TransitionEventArgs args)
         {
             if (args.TriggerArgs.TriggerContext.IsDisposed)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransition)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
+                Logger.Debug($"{Name}.{nameof(AttemptTransitionSafe)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
                 return false;
             }
 
             // Provide escape route in case the trigger became irrelevant while the handler for it was waiting.
             if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransition)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
+                Logger.Debug($"{Name}.{nameof(AttemptTransitionSafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
                 return false;
             }
 
@@ -322,7 +357,7 @@ namespace CleanMachine
             if (!args.TriggerArgs.Trigger.IsActive)
             {
                 //TODO: this may not be a valid case anymore since I removed all async internal operations
-                Logger.Debug($"{Name}.{nameof(AttemptTransition)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
+                Logger.Debug($"{Name}.{nameof(AttemptTransitionSafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
                 return false;
             }
 
@@ -355,10 +390,8 @@ namespace CleanMachine
 
             var transition = sender as Transition;
             var transitionArgs = transition.ToTransitionArgs(args);
-            
-            // This regulates all transition triggers so that only one can lead to success.  The first
-            // successful transition will dispose of all other trigger handlers that were competing for action.
-            _transitionScheduler.Schedule(transitionArgs, (_, a) => { return AttemptTransition(a); });
+
+            AttemptTransition(transitionArgs);
         }
     }
 }

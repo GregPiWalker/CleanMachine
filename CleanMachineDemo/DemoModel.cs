@@ -98,7 +98,7 @@ namespace CleanMachineDemo
         {
             try
             {
-                StateMachine = new StateMachine<DemoState>("Demo StateMachine", _logger);
+                StateMachine = StateMachine<DemoState>.CreatePartialAsync("Demo StateMachine", _logger);
                 foreach (var state in StateMachine.States)
                 {
                     state.ExitCompleted += HandleStateExited;

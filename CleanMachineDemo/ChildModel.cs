@@ -12,22 +12,22 @@ namespace CleanMachineDemo
         private readonly Random _randomGenerator = new Random();
         private readonly string _name;
 
-        public ChildModel(string name, object stateSyncContext, ILog logger)
+        public ChildModel(string name, object globalSyncContext, ILog logger)
         {
             _name = name;
             _logger = logger;
-            CreateStateMachine(stateSyncContext);
+            CreateStateMachine(globalSyncContext);
         }
 
         public StateMachine<ChildState> StateMachine { get; private set; }
 
         public Timer RandomTimer { get; } = new Timer() { AutoReset = false };
 
-        private void CreateStateMachine(object stateSyncContext)
+        private void CreateStateMachine(object globalSyncContext)
         {
             try
             {
-                StateMachine = new StateMachine<ChildState>($"Child{_name} StateMachine", _logger, stateSyncContext, false);
+                StateMachine = StateMachine<ChildState>.CreatePartialAsync($"Child{_name} StateMachine", _logger, globalSyncContext);
 
                 using (var builder = ChildMachineBuilder.BuildStateMachine(this, StateMachine))
                 {

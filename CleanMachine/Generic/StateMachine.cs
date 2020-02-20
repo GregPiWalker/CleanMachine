@@ -5,9 +5,47 @@ namespace CleanMachine.Generic
 {
     public sealed class StateMachine<TState> : StateMachine where TState : struct
     {
-        public StateMachine(string name, ILog logger)
-            : this(name, logger, null, false)
+        /// <summary>
+        /// Create a fully asynchronous StateMachine.  A scheduler with a dedicated background thread is instantiated for
+        /// internal transitions.  Another scheduler with a dedicated background thread is instantiated for running
+        /// the following behaviors: ENTRY, DO, EXIT, EFFECT.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="logger"></param>
+        /// <returns></returns>
+        public static StateMachine<TState> CreateAsync(string name, ILog logger)
         {
+            return new StateMachine<TState>(name, logger, null, true, true);
+        }
+
+        /// <summary>
+        /// Create a partially asynchronous StateMachine.  A scheduler with a dedicated background thread is instantiated for
+        /// internal transitions.  UML behaviors (ENTRY, DO, EXIT, EFFECT) are executed synchronously.  This configuration
+        /// gives you an option of supplying a global synchronization context that can be used to synchronize state changes
+        /// across multiple state machines.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="logger"></param>
+        /// <param name="globalSyncContext">If global transition synchronization across multiple <see cref="StateMachine"/>s is desired,
+        /// supply a synchronization context here. Otherwise, supply a null value.</param>
+        /// <returns></returns>
+        public static StateMachine<TState> CreatePartialAsync(string name, ILog logger, object globalSyncContext = null)
+        {
+            return new StateMachine<TState>(name, logger, globalSyncContext, true, false);
+        }
+
+        /// <summary>
+        /// Create a StateMachine that transitions synchronously.  An option is given whether to make the UML behaviors
+        /// (ENTRY, DO, EXIT, EFFECT) synchronous or not.  If asynchronous behaviors is chosen, a scheduler with a 
+        /// dedicated background thread is instantiated for running them.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="logger"></param>
+        /// <param name="asynchronousBehaviors"></param>
+        /// <returns></returns>
+        public static StateMachine<TState> Create(string name, ILog logger, bool asynchronousBehaviors)
+        {
+            return new StateMachine<TState>(name, logger, null, false, asynchronousBehaviors);
         }
 
         /// <summary>
@@ -15,11 +53,12 @@ namespace CleanMachine.Generic
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="synchronizationContext"></param>
+        /// <param name="globalSyncContext"></param>
+        /// <param name="asynchronousTransitions">Indicates whether </param>
         /// <param name="asynchronousBehaviors">Indicates whether behaviors (ENTRY, EXIT, DO, EFFECT) are executed on
         /// a different thread from the state machine transitions and events.</param>
-        public StateMachine(string name, ILog logger, object synchronizationContext, bool asynchronousBehaviors)
-            : base(name, logger, synchronizationContext, asynchronousBehaviors)
+        internal StateMachine(string name, ILog logger, object globalSyncContext, bool asynchronousTransitions, bool asynchronousBehaviors)
+            : base(name, logger, globalSyncContext, asynchronousTransitions, asynchronousBehaviors)
         {
             CreateStates();
         }
