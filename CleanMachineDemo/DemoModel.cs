@@ -4,12 +4,13 @@ using CleanMachine.Generic;
 using CleanMachine.Interfaces;
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 
 namespace CleanMachineDemo
 {
     public class DemoModel : BindableBase
     {
-        private readonly ObservableCollection<object> _observables;
+        private readonly object _synchronizationContext = new object();
         private readonly ILog _logger;
         private bool _onOff;
         private int _number;
@@ -20,9 +21,13 @@ namespace CleanMachineDemo
         public DemoModel(ILog logger)
         {
             _logger = logger;
-            _observables = new ObservableCollection<object>();
             LoopCount = 3;
             BoolFunc = () => false;
+            for (int i = 0; i < 5; i++)
+            {
+                Children.Add(new ChildModel((i+1).ToString(), _synchronizationContext, logger));
+            }
+
             CreateStateMachine();
         }
 
@@ -33,7 +38,20 @@ namespace CleanMachineDemo
         public bool OnOff
         {
             get { return _onOff; }
-            set { SetProperty(ref _onOff, value, nameof(OnOff)); }
+            set
+            {
+                if (SetProperty(ref _onOff, value, nameof(OnOff)))
+                {
+                    if (value)
+                    {
+                        StartChildren();
+                    }
+                    else
+                    {
+                        StopChildren();
+                    }
+                }
+            }
         }
 
         public int Number
@@ -66,8 +84,10 @@ namespace CleanMachineDemo
             set { SetProperty(ref _boolFunc, value, nameof(BoolFunc)); }
         }
 
-        public ObservableCollection<object> Observables => _observables;
-        
+        public ObservableCollection<object> Observables { get; } = new ObservableCollection<object>();
+
+        public List<ChildModel> Children { get; } = new List<ChildModel>();
+
         public void TriggerAll()
         {
             _logger.Debug($"{nameof(DemoModel)}: raising '{nameof(TriggerEvent)}' event.");
@@ -76,17 +96,25 @@ namespace CleanMachineDemo
 
         private void CreateStateMachine()
         {
-            StateMachine = new StateMachine<DemoState>("DemoStateMachine", _logger);
-            foreach (var state in StateMachine.States)
+            try
             {
-                state.ExitCompleted += HandleStateExited;
-                //state.EntryInitiated += HandleStateEntered;
-            }
+                StateMachine = new StateMachine<DemoState>("Demo StateMachine", _logger);
+                foreach (var state in StateMachine.States)
+                {
+                    state.ExitCompleted += HandleStateExited;
+                    //state.EntryInitiated += HandleStateEntered;
+                }
             
-            using (var builder = DemoBuilder.BuildStateMachine(this, StateMachine))
+                using (var builder = DemoMachineBuilder.BuildStateMachine(this, StateMachine))
+                {
+                    // If we loop around the state machine, reset the loop count variable;
+                    StateMachine[DemoState.One].AddDoBehavior(s => { Reset(); });
+                }
+            }
+            catch (Exception ex)
             {
-                // If we loop around the state machine, reset the loop count variable;
-                StateMachine[DemoState.One].AddDoBehavior(s => { Reset(); });
+                _logger.Error($"{ex.GetType().Name} while creating demo StateMachine.", ex);
+                throw;
             }
         }
 
@@ -95,23 +123,35 @@ namespace CleanMachineDemo
             LoopCount = 3;
             BoolFunc = null;
             CollectionCount = 0;
+            OnOff = false;
+            Number = 0;
+        }
+
+        private void StartChildren()
+        {
+            Children.ForEach(c => c.RunTimer());
+        }
+
+        private void StopChildren()
+        {
+            Children.ForEach(c => c.StopTimer());
         }
 
         private void UpdateCollection()
         {
-            if (_observables.Count == _collectionCount)
+            if (Observables.Count == _collectionCount)
             {
                 return;
             }
 
-            while (_observables.Count < _collectionCount)
+            while (Observables.Count < _collectionCount)
             {
-                _observables.Add(new object());
+                Observables.Add(new object());
             }
 
-            while (_observables.Count > _collectionCount)
+            while (Observables.Count > _collectionCount)
             {
-                _observables.RemoveAt(0);
+                Observables.RemoveAt(0);
             }
         }
 

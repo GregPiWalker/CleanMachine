@@ -65,7 +65,7 @@ namespace CleanMachine
 
         /// <summary>
         /// Conditionally trip the trigger.  If tripped, the <see cref="Triggered"/> event is raised.
-        /// If the Guard is not satisfied, then the trigger is not tripped.
+        /// If the Guard condition is false, then the trigger is not tripped.
         /// </summary>
         /// <param name="cause">The optional object that caused the trigger to trip.</param>
         /// <param name="causeEventArgs">The optional EventArgs related to the source event.</param>

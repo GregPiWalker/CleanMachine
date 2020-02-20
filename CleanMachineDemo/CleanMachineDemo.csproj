@@ -108,13 +108,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ChildMachineBuilder.cs" />
+    <Compile Include="ChildModel.cs" />
     <Compile Include="Views\ControlPanel.xaml.cs">
       <DependentUpon>ControlPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="DemoEventArgs.cs" />
-    <Compile Include="DemoState.cs" />
+    <Compile Include="StateDefinitions.cs" />
     <Compile Include="DemoModel.cs" />
-    <Compile Include="DemoBuilder.cs" />
+    <Compile Include="DemoMachineBuilder.cs" />
     <Compile Include="Converters\IntToStringConverter.cs" />
     <Compile Include="ViewModels\ControlPanelViewModel.cs" />
     <Compile Include="ViewModels\DemoViewModel.cs" />

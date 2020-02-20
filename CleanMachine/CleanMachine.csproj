@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="CollectionChangedTrigger.cs" />
     <Compile Include="Generic\StateExitedTrigger.cs" />
+    <Compile Include="Generic\DelegateTrigger.cs" />
     <Compile Include="GroupPropertyChangedTrigger.cs" />
     <Compile Include="MachineEditor.cs" />
     <Compile Include="PropertyBinding.cs" />

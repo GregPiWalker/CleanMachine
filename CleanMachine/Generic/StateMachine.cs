@@ -6,7 +6,20 @@ namespace CleanMachine.Generic
     public sealed class StateMachine<TState> : StateMachine where TState : struct
     {
         public StateMachine(string name, ILog logger)
-            : base(name, logger)
+            : this(name, logger, null, false)
+        {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="logger"></param>
+        /// <param name="synchronizationContext"></param>
+        /// <param name="asynchronousBehaviors">Indicates whether behaviors (ENTRY, EXIT, DO, EFFECT) are executed on
+        /// a different thread from the state machine transitions and events.</param>
+        public StateMachine(string name, ILog logger, object synchronizationContext, bool asynchronousBehaviors)
+            : base(name, logger, synchronizationContext, asynchronousBehaviors)
         {
             CreateStates();
         }
@@ -52,6 +65,11 @@ namespace CleanMachine.Generic
             return FindState(state.ToString());
         }
 
+        /// <summary>
+        /// Raise the <see cref="StateChanged"/> event synchronously.
+        /// </summary>
+        /// <param name="transition"></param>
+        /// <param name="args"></param>
         protected override void OnStateChanged(Transition transition, TriggerEventArgs args)
         {
             if (StateChanged == null || transition == null)
@@ -62,7 +80,7 @@ namespace CleanMachine.Generic
             var changeArgs = transition.ToIStateChangedArgs<TState>(args);
             try
             {
-                Logger.Debug($"StateMachine {Name}:  raising '{nameof(StateChanged)}' event.");
+                Logger.Debug($"{Name}:  raising '{nameof(StateChanged)}' event.");
                 StateChanged?.Invoke(this, changeArgs);
             }
             catch (Exception ex)
@@ -71,12 +89,12 @@ namespace CleanMachine.Generic
             }
         }
 
-        ///// <summary>
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        protected override void HandleStateEntered(object sender, Interfaces.StateEnteredEventArgs args)
+        protected override void OnStateEntered(object sender, Interfaces.StateEnteredEventArgs args)
         {
             if (StateEntered == null)
             {
@@ -85,7 +103,7 @@ namespace CleanMachine.Generic
 
             try
             {
-                Logger.Debug($"StateMachine {Name}:  raising '{nameof(StateEntered)}' event.");
+                Logger.Debug($"{Name}:  raising '{nameof(StateEntered)}' event.");
                 StateEntered?.Invoke(this, args.ToStateEnteredArgs<TState>());
             }
             catch (Exception ex)
@@ -94,7 +112,7 @@ namespace CleanMachine.Generic
             }
         }
 
-        protected override void HandleStateExited(object sender, Interfaces.StateExitedEventArgs args)
+        protected override void OnStateExited(object sender, Interfaces.StateExitedEventArgs args)
         {
             if (StateExited == null)
             {
@@ -103,7 +121,7 @@ namespace CleanMachine.Generic
 
             try
             {
-                Logger.Debug($"StateMachine {Name}:  raising '{nameof(StateExited)}' event.");
+                Logger.Debug($"{Name}:  raising '{nameof(StateExited)}' event.");
                 StateExited?.Invoke(this, args.ToStateExitedArgs<TState>());
             }
             catch (Exception ex)
@@ -111,78 +129,5 @@ namespace CleanMachine.Generic
                 Logger.Error($"{ex.GetType().Name} during '{nameof(StateExited)}' event from {Name} state machine.", ex);
             }
         }
-
-        //protected override void OnTransitionFailed(Transition transition, TriggerEventArgs args)
-        //{
-        //    if (TransitionFailed == null)
-        //    {
-        //        return;
-        //    }
-
-        //    // Scheduling the events keeps them synchronized with the scheduled behaviors.
-        //    var transitionArgs = args.ToITransitionArgs(transition);
-        //    //_eventScheduler.Schedule(transitionArgs, (_, a) =>
-        //    //{
-        //        try
-        //        {
-        //            Logger.Debug($"StateMachine {Name}:  raising '{nameof(TransitionFailed)}' event.");
-        //            TransitionFailed?.Invoke(this, transitionArgs);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Logger.Error($"{ex.GetType().Name} during '{nameof(TransitionFailed)}' event from {Name} state machine.", ex);
-        //        }
-
-        //    //    return Disposable.Empty;
-        //    //});
-        //}
-
-        //protected override void HandleStateEntryInitiated(object sender, StateEnteredEventArgs args)
-        //{
-        //    if (EnteringState == null)
-        //    {
-        //        return;
-        //    }
-
-        //    // Scheduling the events keeps them synchronized with the scheduled behaviors.
-        //    //_eventScheduler.Schedule(args, (_, a) =>
-        //    //{
-        //        try
-        //        {
-        //            Logger.Debug($"StateMachine {Name}:  raising '{nameof(EnteringState)}' event.");
-        //            EnteringState?.Invoke(this, args.ToIStateEnteredArgs<TState>());
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Logger.Error($"{ex.GetType().Name} during '{nameof(EnteringState)}' event from {Name} state machine.", ex);
-        //        }
-
-        //    //    return Disposable.Empty;
-        //    //});
-        //}
-
-        //protected override void HandleStateExitInitiated(object sender, StateExitedEventArgs args)
-        //{
-        //    if (ExitingState == null)
-        //    {
-        //        return;
-        //    }
-
-        //    // Scheduling the events keeps them synchronized with the scheduled behaviors.
-        //    //_eventScheduler.Schedule(args, (_, a) =>
-        //    //{
-        //        try
-        //        {
-        //            Logger.Debug($"StateMachine {Name}:  raising '{nameof(ExitingState)}' event.");
-        //            ExitingState?.Invoke(this, args.ToIStateExitedArgs<TState>());
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Logger.Error($"{ex.GetType().Name} during '{nameof(ExitingState)}' event from {Name} state machine.", ex);
-        //        }
-
-        //    //    return Disposable.Empty;
-        //    //});
-        //}
     }
 }

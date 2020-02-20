@@ -30,6 +30,9 @@ namespace CleanMachine.Generic
         {
         }
 
+        /// <summary>
+        /// Gets the type cast base source.
+        /// </summary>
         public StateMachine<TState> StateMachine
         {
             get { return base.Source as StateMachine<TState>; }

@@ -7,4 +7,10 @@
         Three,
         Four
     }
+
+    public enum ChildState
+    {
+        Ready,
+        Busy
+    }
 }

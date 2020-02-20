@@ -18,33 +18,49 @@ namespace CleanMachine
         protected readonly IScheduler _transitionScheduler;
         protected State _currentState;
         protected State _initialState;
-        //private readonly object _transitionLock = new object();
-
+        private readonly object _synchronizationContext = new object();
+        
         /// <summary>
         /// 
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="behaveAsync">Indicates whether behaviors are executed on a different thread from the
-        /// state machine transitions and events.  Defaults to false.</param>
-        public StateMachine(string name, ILog logger, bool behaveAsync = false)
+        /// <param name="synchronizationContext"></param>
+        /// <param name="asynchronousBehaviors">Indicates whether behaviors (ENTRY, EXIT, DO, EFFECT) are executed on
+        /// a different thread from the state machine transitions and events.</param>
+        public StateMachine(string name, ILog logger, object synchronizationContext, bool asynchronousBehaviors)
         {
+            _synchronizationContext = synchronizationContext;
             Name = name;
             Logger = logger;
 
             _transitionScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Transition Scheduler", IsBackground = true }; });
-            if (behaveAsync)
+
+            // If user requested asyncronous UML behaviors, assign a specific thread to a scheduler for the behaviors.
+            if (asynchronousBehaviors)
             {
                 _behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Behavior Scheduler", IsBackground = true }; });
+
+                if (synchronizationContext != null)
+                {
+                    Logger.Warn($"{Name}:  inter-machine sychronization and asynchronous behaviors were both requested.  This is not recommended.  Using asynchronous behaviors could bypass aspects of machine sychronization.");
+                }
             }
         }
 
-        //public event EventHandler<Interfaces.TriggerEventArgs> TriggerOccurred;
-
+        /// <summary>
+        /// 
+        /// </summary>
         public string Name { get; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ILog Logger { get; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ReadOnlyCollection<IState> States
         {
             get { return _states.Cast<IState>().ToList().AsReadOnly(); }
@@ -52,8 +68,14 @@ namespace CleanMachine
 
         //public State FinalState { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         internal bool Editable { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         internal bool IsAssembled { get; private set; }
 
         /// <summary>
@@ -65,13 +87,13 @@ namespace CleanMachine
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"StateMachine {Name} must be editable in order to set initial state.");
+                throw new InvalidOperationException($"{Name} must be editable in order to set initial state.");
             }
 
             var state = FindState(initialState);
             if (state == null)
             {
-                throw new ArgumentException($"StateMachine {Name} does not contain a state named {initialState}.");
+                throw new ArgumentException($"{Name} does not contain a state named {initialState}.");
             }
 
             _initialState = state;
@@ -96,7 +118,7 @@ namespace CleanMachine
                 state.CompleteEdit();
             }
 
-            Logger.Debug($"StateMachine {Name}:  editing disabled.");
+            Logger.Debug($"{Name}:  editing disabled.");
             EnterInitialState();
         }
 
@@ -116,37 +138,47 @@ namespace CleanMachine
             }
 
             Editable = true;
-            Logger.Debug($"StateMachine {Name}:  editing enabled.");
+            Logger.Debug($"{Name}:  editing enabled.");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stateNames"></param>
         protected void CreateStates(IEnumerable<string> stateNames)
         {
             foreach (var stateName in stateNames)
             {
                 var state = new State(stateName, Logger, _behaviorScheduler);
                 _states.Add(state);
-                state.EntryCompleted += HandleStateEntered;
-                state.ExitCompleted += HandleStateExited;
+                state.EntryCompleted += OnStateEntered;
+                state.ExitCompleted += OnStateExited;
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="supplierState"></param>
+        /// <param name="consumerState"></param>
+        /// <returns></returns>
         protected Transition CreateTransition(string supplierState, string consumerState)
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"StateMachine {Name} must be in editable in order to create a new transition.");
+                throw new InvalidOperationException($"{Name} must be in editable in order to create a new transition.");
             }
 
             var supplier = FindState(supplierState);
             if (supplier == null)
             {
-                throw new InvalidOperationException($"StateMachine {Name} does not contain state {supplierState}");
+                throw new InvalidOperationException($"{Name} does not contain state {supplierState}");
             }
 
             var consumer = FindState(consumerState);
             if (consumer == null)
             {
-                throw new InvalidOperationException($"StateMachine {Name} does not contain state {consumerState}");
+                throw new InvalidOperationException($"{Name} does not contain state {consumerState}");
             }
 
             var transition = supplier.CreateTransitionTo(Name, consumer);
@@ -154,21 +186,52 @@ namespace CleanMachine
             return transition;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stateName"></param>
+        /// <returns></returns>
         protected State FindState(string stateName)
         {
             return _states.FirstOrDefault(s => s.Name == stateName);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stateName"></param>
+        /// <returns></returns>
         protected bool ContainsState(string stateName)
         {
             return _states.Any(s => s.Name == stateName);
         }
 
+        /// <summary>
+        /// Perform state-changed work.
+        /// Implementations of this method should be synchronous.  That is, they should avoid
+        /// calling methods or raising events asynchronously.
+        /// </summary>
+        /// <param name="transition"></param>
+        /// <param name="args"></param>
         protected abstract void OnStateChanged(Transition transition, TriggerEventArgs args);
 
-        protected abstract void HandleStateEntered(object sender, StateEnteredEventArgs args);
+        /// <summary>
+        /// Perform state-entered work.
+        /// Implementations of this method should be synchronous.  That is, they should avoid
+        /// calling methods or raising events asynchronously.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        protected abstract void OnStateEntered(object sender, StateEnteredEventArgs args);
 
-        protected abstract void HandleStateExited(object sender, StateExitedEventArgs args);
+        /// <summary>
+        /// Perform state-exited work.
+        /// Implementations of this method should be synchronous.  That is, they should avoid
+        /// calling methods or raising events asynchronously.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        protected abstract void OnStateExited(object sender, StateExitedEventArgs args);
 
         /// <summary>
         /// Enter the Initial state and mark it as the current state.  Also, try
@@ -178,66 +241,103 @@ namespace CleanMachine
         {
             if (_initialState == null)
             {
-                throw new InvalidOperationException($"StateMachine {Name}:  initial state was not configured.");
+                throw new InvalidOperationException($"{Name}:  initial state was not configured.");
+            }
+            
+            if (_synchronizationContext == null)
+            {
+                _transitionScheduler.Schedule(() =>
+                {
+                    EnterInitialStateUnsafe();
+                });
+            }
+            else
+            {
+                _transitionScheduler.Schedule(() =>
+                {
+                    lock (_synchronizationContext)
+                    {
+                        EnterInitialStateUnsafe();
+                    }
+                });
+            }
+        }
+
+        private void EnterInitialStateUnsafe()
+        {
+            if (!_initialState.CanEnter(null))
+            {
+                throw new InvalidOperationException($"{Name}:  initial state {_initialState.Name} could not be entered.");
             }
 
-            _transitionScheduler.Schedule(() =>
-            {
-                //lock (_transitionLock)
-                //{
-                if (!_initialState.CanEnter(null))
-                {
-                    throw new InvalidOperationException($"StateMachine {Name}:  initial state {_initialState.Name} could not be entered.");
-                }
+            Logger.Debug($"{Name}:  entering initial state {_initialState.Name}.");
+            _initialState.Enter(null);
+            _currentState = _initialState;
 
-                Logger.Debug($"StateMachine {Name}:  entering initial state {_initialState.Name}.");
-                _initialState.Enter(null);
-                _currentState = _initialState;
-
-                OnStateChanged(null, new TriggerEventArgs() { Cause = this });
-                
-                //}
-            });
+            OnStateChanged(null, new TriggerEventArgs() { Cause = this });
         }
 
         private IDisposable AttemptTransition(TransitionEventArgs args)
         {
-            if (args.TriggerArgs.TriggerContext.IsDisposed)
+            if (_synchronizationContext == null)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransition)}: invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
-                return Disposable.Empty;
+                if (!TryTransitionUnsafe(args))
+                {
+                    return Disposable.Empty;
+                }
+            }
+            else
+            {
+                // This regulates all transition triggers associated to the given synchronization context.
+                // Within a single StateMachine, this means only one of many transitions can successfully exit the current state.
+                // In the context of several synchronized StateMachines, it means that 
+                lock (_synchronizationContext)
+                {
+                    if (!TryTransitionUnsafe(args))
+                    {
+                        return Disposable.Empty;
+                    }
+                }
             }
 
-            // This regulates all transition triggers so that only one can lead to success.
-            //lock (_transitionLock)
-            //{
-                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
-                if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
-                {
-                    Logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
-                    return Disposable.Empty;
-                }
-
-                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
-                if (!args.TriggerArgs.Trigger.IsActive)
-                {
-                    //TODO: this may not be a valid case anymore since I removed all async internal operations
-                    Logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
-                    return Disposable.Empty;
-                }
-                
-                if (args.Transition.AttemptTransition(args.TriggerArgs))
-                {
-                    _currentState = args.Transition.To;
-                    OnStateChanged(args.Transition, args.TriggerArgs);
-                }
-                else
-                {
-                    //OnTransitionFailed(transition, args);
-                }
-            //}
-
             return args.TriggerArgs.TriggerContext;
+        }
+
+        private bool TryTransitionUnsafe(TransitionEventArgs args)
+        {
+            if (args.TriggerArgs.TriggerContext.IsDisposed)
+            {
+                Logger.Debug($"{Name}.{nameof(AttemptTransition)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
+                return false;
+            }
+
+            // Provide escape route in case the trigger became irrelevant while the handler for it was waiting.
+            if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
+            {
+                Logger.Debug($"{Name}.{nameof(AttemptTransition)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
+                return false;
+            }
+
+            // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
+            if (!args.TriggerArgs.Trigger.IsActive)
+            {
+                //TODO: this may not be a valid case anymore since I removed all async internal operations
+                Logger.Debug($"{Name}.{nameof(AttemptTransition)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
+                return false;
+            }
+
+            if (args.Transition.AttemptTransition(args.TriggerArgs))
+            {
+                _currentState = args.Transition.To;
+                OnStateChanged(args.Transition, args.TriggerArgs);
+            }
+            else
+            {
+                //OnTransitionFailed(transition, args);
+            }
+
+            // A transition attempt was made.
+            return true;
         }
 
         private void HandleTransitionRequest(object sender, TriggerEventArgs args)

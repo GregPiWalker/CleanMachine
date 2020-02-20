@@ -9,12 +9,12 @@ namespace CleanMachine
         private readonly string _filterProperty;
         private readonly object _handlerSync = new object();
 
-        public GroupPropertyChangedTrigger(IEnumerable<TSource> sourceGroup, ILog logger)
+        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, ILog logger)
             : this(sourceGroup, string.Empty, logger)
         {
         }
         
-        public GroupPropertyChangedTrigger(IEnumerable<TSource> sourceGroup, string propertyFilter, ILog logger)
+        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, string propertyFilter, ILog logger)
             : base($"{sourceGroup.GetType().Name}.(Group)PropertyChanged", sourceGroup, logger)
         {
             _filterProperty = propertyFilter;
@@ -25,9 +25,12 @@ namespace CleanMachine
             return string.IsNullOrEmpty(_filterProperty) ? Name : $"{Name}[Name=={_filterProperty}]";
         }
 
-        private List<INotifyPropertyChanged> SourceCollection { get; set; }
+        private List<INotifyPropertyChanged> SourceCollection
+        {
+            get { return Source as List<INotifyPropertyChanged>; }
+        }
 
-        private string PropertyName { get; set; }
+        private string FilterProperty { get; set; }
 
         protected override void Enable()
         {
@@ -41,14 +44,9 @@ namespace CleanMachine
 
         private void HandlePropertyChanged(object sender, PropertyChangedEventArgs args)
         {
-            if (string.IsNullOrEmpty(PropertyName) || args.PropertyName.Equals(PropertyName))
+            if (string.IsNullOrEmpty(FilterProperty) || args.PropertyName.Equals(FilterProperty))
             {
-                lock (_handlerSync)
-                {
-                    //TODO: get the source into the eventargs somehow
-                    Source = sender as INotifyPropertyChanged;
-                    Trip(sender, args);
-                }
+                Trip(sender, args);
             }
         }
     }

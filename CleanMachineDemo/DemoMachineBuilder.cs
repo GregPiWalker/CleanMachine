@@ -1,9 +1,10 @@
 ﻿using CleanMachine;
 using CleanMachine.Generic;
+using System.Linq;
 
 namespace CleanMachineDemo
 {
-    public static class DemoBuilder
+    public static class DemoMachineBuilder
     {
         public static MachineEditor<DemoState> BuildStateMachine(this DemoModel model, StateMachine<DemoState> machine)
         {
@@ -51,6 +52,8 @@ namespace CleanMachineDemo
 
             // Transition from THREE to ONE
             var threeToOne = three.TransitionTo(DemoState.One)
+                .GuardWith(() => model.Children.All(c => c.StateMachine.CurrentState == ChildState.Ready), "All Children Ready")
+                .TriggerWithStateChange(model.Children.Select(c => c.StateMachine).ToList(), ChildState.Ready)
                 .TriggerWithEvent<DemoModel, DemoEventArgs>(model, nameof(model.TriggerEvent));
         }
 

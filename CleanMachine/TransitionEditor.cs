@@ -4,6 +4,7 @@ using CleanMachine.Generic;
 using System.Linq.Expressions;
 using System.Collections.Specialized;
 using log4net;
+using System.Collections.Generic;
 
 namespace CleanMachine
 {
@@ -32,28 +33,42 @@ namespace CleanMachine
 
         public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs
         {
-            Trigger<TSource, TFilterArgs> trigger = new Trigger<TSource, TFilterArgs>(source, eventName, _logger);
+            var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, _logger);
+            _transition.AddTrigger(trigger);
+            return this;
+        }
+
+        public TransitionEditor TriggerWithEvent<TSource, TDelegate, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs
+        {
+            var trigger = new DelegateTrigger<TSource, TDelegate, TFilterArgs>(source, eventName, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
         public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName, Constraint<TFilterArgs> filter) where TFilterArgs : EventArgs
         {
-            Trigger<TSource, TFilterArgs> trigger = new Trigger<TSource, TFilterArgs>(source, eventName, filter, _logger);
+            var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, filter, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
-        public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, Expression<Func<TSource, EventHandler<TFilterArgs>>> eventExpression, Constraint<TFilterArgs> filter) where TFilterArgs : EventArgs
-        {
-            Trigger<TSource, TFilterArgs> trigger = new Trigger<TSource, TFilterArgs>(source, ((MemberExpression)eventExpression.Body).Member.Name, filter, _logger);
-            _transition.AddTrigger(trigger);
-            return this;
-        }
+        //public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, Expression<Func<TSource, EventHandler<TFilterArgs>>> eventExpression, Constraint<TFilterArgs> filter) where TFilterArgs : EventArgs
+        //{
+        //    var trigger = new Trigger<TSource, TFilterArgs>(source, ((MemberExpression)eventExpression.Body).Member.Name, filter, _logger);
+        //    _transition.AddTrigger(trigger);
+        //    return this;
+        //}
 
-        public TransitionEditor TriggerWithTransition<TState>(StateMachine<TState> machine, TState toState) where TState : struct
+        public TransitionEditor TriggerWithStateChange<TState>(StateMachine<TState> machine, TState toState) where TState : struct
         {
             var trigger = new StateChangedTrigger<TState>(machine, toState, _logger);
+            _transition.AddTrigger(trigger);
+            return this;
+        }
+
+        public TransitionEditor TriggerWithStateChange<TState>(List<StateMachine<TState>> machines, TState toState) where TState : struct
+        {
+            var trigger = new StateChangedTrigger<TState>(machines, toState, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
@@ -74,7 +89,7 @@ namespace CleanMachine
 
         //public TransitionBuilder TriggerWithProperties<TSender>(IEnumerable<TSender> sender, string propertyName = "") where TSender : INotifyPropertyChanged
         //{
-        //    var trigger = new MultiPropertyChangedTrigger(sender, propertyName, logger);
+        //    var trigger = new GroupPropertyChangedTrigger(sender, propertyName, logger);
         //    _transition.AddTrigger(trigger);
         //    return this;
         //}
