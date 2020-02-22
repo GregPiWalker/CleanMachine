@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Interfaces", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine", "CleanMachine\CleanMachine.csproj", "{E31E0C32-63BD-4E0F-94E0-32997096A600}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Tests", "CleanMachine.Tests\CleanMachine.Tests.csproj", "{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{E31E0C32-63BD-4E0F-94E0-32997096A600}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E31E0C32-63BD-4E0F-94E0-32997096A600}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E31E0C32-63BD-4E0F-94E0-32997096A600}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
