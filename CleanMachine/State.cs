@@ -84,6 +84,11 @@ namespace CleanMachine
 
         internal void Edit()
         {
+            if (Editable)
+            {
+                return;
+            }
+
             Editable = true;
 
             foreach (var transition in _outboundTransitions)
@@ -96,6 +101,11 @@ namespace CleanMachine
 
         internal void CompleteEdit()
         {
+            if (!Editable)
+            {
+                return;
+            }
+
             Editable = false;
 
             foreach (var transition in _outboundTransitions)

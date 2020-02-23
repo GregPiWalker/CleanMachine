@@ -89,6 +89,8 @@ namespace CleanMachine
         /// </summary>
         internal bool IsAssembled { get; private set; }
 
+        internal State CurrentState => _currentState;
+
         /// <summary>
         /// Set the machine's desired initial state.  This is enforced
         /// as a step in machine assembly so that initial state is defined in the same
@@ -116,7 +118,7 @@ namespace CleanMachine
         /// </summary>
         public void CompleteEdit()
         {
-            if (IsAssembled)
+            if (!Editable || IsAssembled)
             {
                 return;
             }
@@ -138,7 +140,7 @@ namespace CleanMachine
         /// </summary>
         internal void Edit()
         {
-            if (IsAssembled)
+            if (Editable || IsAssembled)
             {
                 return;
             }
@@ -156,7 +158,7 @@ namespace CleanMachine
         /// 
         /// </summary>
         /// <param name="stateNames"></param>
-        protected void CreateStates(IEnumerable<string> stateNames)
+        internal void CreateStates(IEnumerable<string> stateNames)
         {
             foreach (var stateName in stateNames)
             {
@@ -173,7 +175,7 @@ namespace CleanMachine
         /// <param name="supplierState"></param>
         /// <param name="consumerState"></param>
         /// <returns></returns>
-        protected Transition CreateTransition(string supplierState, string consumerState)
+        internal Transition CreateTransition(string supplierState, string consumerState)
         {
             if (!Editable)
             {
@@ -255,43 +257,30 @@ namespace CleanMachine
                 throw new InvalidOperationException($"{Name}:  initial state was not configured.");
             }
 
+            if (!IsAssembled || Editable)
+            {
+                throw new InvalidOperationException($"{Name} must be fully assembled before it can enter the inital state.");
+            }
+
+            Logger.Info($"{Name}:  entering initial state {_initialState.Name}.");
+            JumpToState(_initialState);
+        }
+
+        internal void JumpToState(State jumpTo)
+        {
+            if (jumpTo == null)
+            {
+                throw new ArgumentNullException("jumpTo");
+            }
+
             if (_transitionScheduler == null)
             {
-                EnterInitialStateSafe();
+                JumpToStateSafe(jumpTo);
             }
             else
             {
-                _transitionScheduler.Schedule(() => EnterInitialStateSafe());
+                _transitionScheduler.Schedule(() => JumpToStateSafe(jumpTo));
             }
-        }
-
-        private void EnterInitialStateSafe()
-        {
-            if (_synchronizationContext == null)
-            {
-                EnterInitialStateUnsafe();
-            }
-            else
-            {
-                lock (_synchronizationContext)
-                {
-                    EnterInitialStateUnsafe();
-                }
-            }
-        }
-
-        private void EnterInitialStateUnsafe()
-        {
-            if (!_initialState.CanEnter(null))
-            {
-                throw new InvalidOperationException($"{Name}:  initial state {_initialState.Name} could not be entered.");
-            }
-
-            Logger.Debug($"{Name}:  entering initial state {_initialState.Name}.");
-            _initialState.Enter(null);
-            _currentState = _initialState;
-
-            OnStateChanged(null, new TriggerEventArgs() { Cause = this });
         }
 
         internal void AttemptTransition(TransitionEventArgs args)
@@ -304,6 +293,35 @@ namespace CleanMachine
             { 
                 _transitionScheduler.Schedule(args, (_, a) => { return AttemptTransitionSafe(a); });
             }
+        }
+
+        private void JumpToStateSafe(State jumpTo)
+        {
+            if (_synchronizationContext == null)
+            {
+                JumpToStateUnsafe(jumpTo);
+            }
+            else
+            {
+                lock (_synchronizationContext)
+                {
+                    JumpToStateUnsafe(jumpTo);
+                }
+            }
+        }
+
+        private void JumpToStateUnsafe(State jumpTo)
+        {
+            if (!jumpTo.CanEnter(null))
+            {
+                throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
+            }
+
+            Logger.Debug($"{Name}:  jumping to state {jumpTo.Name}.");
+            jumpTo.Enter(null);
+            _currentState = jumpTo;
+
+            OnStateChanged(null, new TriggerEventArgs() { Cause = this });
         }
 
         private IDisposable AttemptTransitionSafe(TransitionEventArgs args)
@@ -356,7 +374,6 @@ namespace CleanMachine
             // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
             if (!args.TriggerArgs.Trigger.IsActive)
             {
-                //TODO: this may not be a valid case anymore since I removed all async internal operations
                 Logger.Debug($"{Name}.{nameof(AttemptTransitionSafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
                 return false;
             }

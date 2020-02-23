@@ -8,7 +8,8 @@ namespace CleanMachine.Generic
         /// <summary>
         /// Create a fully asynchronous StateMachine.  A scheduler with a dedicated background thread is instantiated for
         /// internal transitions.  Another scheduler with a dedicated background thread is instantiated for running
-        /// the following behaviors: ENTRY, DO, EXIT, EFFECT.
+        /// the following behaviors: ENTRY, DO, EXIT, EFFECT.  Both schedulers serialize their workflow, but will
+        /// operate asynchronously with respect to each other, as well as with respect to incoming trigger invocations.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
@@ -20,9 +21,10 @@ namespace CleanMachine.Generic
 
         /// <summary>
         /// Create a partially asynchronous StateMachine.  A scheduler with a dedicated background thread is instantiated for
-        /// internal transitions.  UML behaviors (ENTRY, DO, EXIT, EFFECT) are executed synchronously.  This configuration
-        /// gives you an option of supplying a global synchronization context that can be used to synchronize state changes
-        /// across multiple state machines.
+        /// internal transitions.  UML behaviors (ENTRY, DO, EXIT, EFFECT) are executed synchronously on the same transition thread.
+        /// The scheduler serializes its workflow, but will operate asynchronously with respect to incoming trigger invocations.
+        /// This configuration gives you an option of supplying a global synchronization context that can be used to synchronize
+        /// transitions (state changes) across multiple state machines.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
@@ -37,7 +39,10 @@ namespace CleanMachine.Generic
         /// <summary>
         /// Create a StateMachine that transitions synchronously.  An option is given whether to make the UML behaviors
         /// (ENTRY, DO, EXIT, EFFECT) synchronous or not.  If asynchronous behaviors is chosen, a scheduler with a 
-        /// dedicated background thread is instantiated for running them.
+        /// dedicated background thread is instantiated for running them.  This optional scheduler serializes its workflow,
+        /// but will operate asynchronously with respect to transitions and incoming trigger invocations.
+        /// If synchronous behaviors is chosen, then transitions, behaviors and trigger invocations will all occur
+        /// on the current thread.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
@@ -70,7 +75,7 @@ namespace CleanMachine.Generic
         public event EventHandler<StateEnteredEventArgs<TState>> StateEntered;
         public event EventHandler<StateExitedEventArgs<TState>> StateExited;
 
-        public TState CurrentState => _currentState.ToEnum<TState>();
+        public new TState CurrentState => _currentState.ToEnum<TState>();
 
         public Interfaces.IState this[TState value]
         {

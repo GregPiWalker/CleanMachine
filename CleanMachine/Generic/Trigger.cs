@@ -1,5 +1,6 @@
 ﻿using log4net;
 using System;
+using System.Globalization;
 using System.Reflection;
 
 namespace CleanMachine.Generic
@@ -11,6 +12,7 @@ namespace CleanMachine.Generic
     /// <typeparam name="TEventArgs"></typeparam>
     public class Trigger<TSource, TEventArgs> : TriggerBase where TEventArgs : EventArgs
     {
+        private const BindingFlags FullAccessFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
         private delegate void EventHandlerDelegate(object sender, TEventArgs args);
         private readonly EventHandlerDelegate _handler;
         private readonly EventInfo _eventInfo;
@@ -26,7 +28,7 @@ namespace CleanMachine.Generic
             : base(string.Empty, source, logger)
         {
             _handler = HandleEventRaised;
-            _eventInfo = typeof(TSource).GetEvent(eventName);
+            _eventInfo = typeof(TSource).GetEvent(eventName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             if (_eventInfo == null)
             {
                 throw new ArgumentException($"No event named {eventName} was found on the {typeof(TSource)} type.");
@@ -69,12 +71,20 @@ namespace CleanMachine.Generic
 
         protected override void Enable()
         {
-            _eventInfo.AddEventHandler(Source, Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method));
+            var target = Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method);
+
+            // Cannot use _eventInfo.AddEventHandler(Source, target) to access private members.
+            MethodInfo addMethodInfo = _eventInfo.GetAddMethod(true);
+            addMethodInfo.Invoke(Source, FullAccessFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
         }
 
         protected override void Disable()
         {
-            _eventInfo.RemoveEventHandler(Source, Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method));
+            var target = Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method);
+
+            // Cannot use _eventInfo.RemoveEventHandler(Source, target) to access private members.
+            MethodInfo removeMethodInfo = _eventInfo.GetRemoveMethod(true);
+            removeMethodInfo.Invoke(Source, FullAccessFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
         }
 
         private void HandleEventRaised(object sender, TEventArgs args)
