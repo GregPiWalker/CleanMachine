@@ -6,23 +6,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace CleanMachine.Tests
 {
-    public class StateMachineHarness
+    public class StateMachineTestHarness
     {
-        private const int StartTimeoutMs = 1000;
-        private const int FinishTimeoutMs = 60000;
         private readonly ManualResetEvent _transitionDone = new ManualResetEvent(false);
         private readonly ManualResetEvent _transitionPreparedForDo = new ManualResetEvent(false);
-        private readonly ManualResetEvent _behaviorThreadEvent = new ManualResetEvent(false);
-        private readonly ManualResetEvent _testPreparedForTransition = new ManualResetEvent(false);
+        private readonly ManualResetEvent _doBehaviorDone = new ManualResetEvent(false);
+        private readonly ManualResetEvent _testIsPrepared = new ManualResetEvent(false);
         private readonly Stopwatch _executionTimer = new Stopwatch();
 
-        public StateMachineHarness(StateMachine machine, string initialState)
+        public StateMachineTestHarness(StateMachine machine, string initialState)
         {
             Machine = machine;
             Machine.Edit();
@@ -55,7 +51,7 @@ namespace CleanMachine.Tests
             {
                 if (i + 1 < states.Count)
                 {
-                    var trigger = new Trigger<StateMachineHarness, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
+                    var trigger = new Trigger<StateMachineTestHarness, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
                     var transition = Machine.CreateTransition(states[i].Name, states[i + 1].Name);
                     transition.Edit();
                     transition.AddTrigger(trigger);
@@ -73,7 +69,7 @@ namespace CleanMachine.Tests
             // Transition from the last state back to the first.
             var states = Machine.States.Cast<State>().ToList();
             int last = states.Count - 1;
-            var trigger = new Trigger<StateMachineHarness, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
+            var trigger = new Trigger<StateMachineTestHarness, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
             var transition = Machine.CreateTransition(states[last].Name, states[0].Name);
             transition.Edit();
             transition.AddTrigger(trigger);
@@ -89,6 +85,7 @@ namespace CleanMachine.Tests
                 state.AddDoBehavior(action);
             }
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -111,7 +108,7 @@ namespace CleanMachine.Tests
                     transition.Succeeded += (a, b) =>
                     {
                         // Block until the outer test thread is ready.
-                        if (!_testPreparedForTransition.WaitOne(TimeSpan.FromMilliseconds(500)))
+                        if (!_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(500)))
                         {
                             return;
                         }
@@ -147,12 +144,29 @@ namespace CleanMachine.Tests
                 Assert.Fail("Configured waitTime value must be 500ms or greater.");
             }
 
+            if (Machine.HasTransitionScheduler)
+            {
+                return WaitUntilFullyAsyncDoBehavior(waitTime);
+            }
+            else
+            {
+                return WaitUntilPartialAsyncDoBehavior(waitTime);
+            }
+        }
+
+        /// <summary>
+        /// This makes the test thread wait on the transition thread which then waits on the behavior thread.
+        /// </summary>
+        /// <param name="waitTime"></param>
+        /// <returns></returns>
+        private bool WaitUntilFullyAsyncDoBehavior(TimeSpan waitTime)
+        {
             AddDoBehavior((a) =>
             {
                 // Wait until the waithandle is in the reset state before signaling done.
                 if (_transitionPreparedForDo.WaitOne(TimeSpan.FromMilliseconds(500)))
                 {
-                    _behaviorThreadEvent.Set();
+                    _doBehaviorDone.Set();
                 }
             });
 
@@ -162,10 +176,10 @@ namespace CleanMachine.Tests
             Machine.CompleteEdit();
 
             // Now wait to make sure the initial DO behavior set its signal so that we can reset it for the real test.
-            _behaviorThreadEvent.WaitOne(waitTime);
+            _doBehaviorDone.WaitOne(waitTime);
 
             // Got initial state change out of the way, so reset everything for the test.
-            _behaviorThreadEvent.Reset();
+            _doBehaviorDone.Reset();
             _transitionPreparedForDo.Reset();
 
             // Hookup transitions after initial state already entered to avoid measuring the wrong transaction.
@@ -176,7 +190,7 @@ namespace CleanMachine.Tests
                     transition.Succeeded += (a, b) =>
                     {
                         // Block until the outer test thread is ready.
-                        if (!_testPreparedForTransition.WaitOne(TimeSpan.FromMilliseconds(500)))
+                        if (!_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(500)))
                         {
                             return;
                         }
@@ -206,13 +220,60 @@ namespace CleanMachine.Tests
             return _transitionDone.WaitOne(waitTime);
         }
 
+        /// <summary>
+        /// This makes the test thread wait directly on the behavior thread.
+        /// </summary>
+        /// <param name="waitTime"></param>
+        /// <returns></returns>
+        private bool WaitUntilPartialAsyncDoBehavior(TimeSpan waitTime)
+        {
+            if (waitTime < TimeSpan.FromMilliseconds(500))
+            {
+                Assert.Fail("Configured waitTime value must be 500ms or greater.");
+            }
+
+            AddDoBehavior((a) =>
+            {
+                // Wait until the waithandle is in the reset state before signaling done.
+                if (_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(500)))
+                {
+                    _doBehaviorDone.Set();
+                }
+            });
+
+            // Completing state machine editing will cause the DO behavior of the initial state.
+            // Signal that the state is free to act by faking a prepared transition.
+            _testIsPrepared.Set();
+            Machine.CompleteEdit();
+
+            // Now wait to make sure the initial DO behavior set its signal so that we can reset it for the real test.
+            _doBehaviorDone.WaitOne(waitTime);
+
+            // Got initial state change out of the way, so reset everything for the test.
+            _doBehaviorDone.Reset();
+            _testIsPrepared.Reset();
+            
+            // In case machine is async, crudely wait for it to enter initial state .
+            while (Machine.CurrentState == null)
+            {
+                Thread.Sleep(50);
+            }
+
+            TripTriggerInSyncWithTransition();
+
+            // Now wait until the transition EventHandler sets the waithandle.
+            // Transition is either asynchronous or synchronous with respect to the current thread,
+            // so we set up a wait point here.
+            return _doBehaviorDone.WaitOne(waitTime);
+        }
+
         private bool BlockUntilDoBehaviorCompletes(TimeSpan waitTime)
         {
             // First set the waithandle to unblock the DO action.
             _transitionPreparedForDo.Set();
 
             // Then wait until the DO action finishes its work.
-            return _behaviorThreadEvent.WaitOne(TimeSpan.FromMilliseconds(500));
+            return _doBehaviorDone.WaitOne(TimeSpan.FromMilliseconds(500));
         }
 
         /// <summary>
@@ -224,7 +285,7 @@ namespace CleanMachine.Tests
             TestTrigger(this, new EventArgs());
 
             // Now this will unblock the transition EventHandler so that it can set the waithandle.
-            _testPreparedForTransition.Set();
+            _testIsPrepared.Set();
         }
 
         private void Transition_Failed(object sender, TransitionEventArgs e)

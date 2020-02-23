@@ -19,11 +19,11 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenFullyAsync_DoBehaviorIsAsync()
         {
             var uut = StateMachine<DummyState>.CreateAsync("Demo StateMachine", _logger);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
             // The DO behavior should be able to complete its work independent of the current waiting thread.
-            Assert.IsTrue(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(100)), "Waited too long for DO behavior execution.");
+            Assert.IsTrue(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(1)), "Waited too long for DO behavior execution.");
         }
 
         [TestMethod]
@@ -31,7 +31,7 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenFullyAsync_TransitionIsAsync()
         {
             var uut = StateMachine<DummyState>.CreateAsync("Demo StateMachine", _logger);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
             // The transition should be able to complete its work and signal success independent of the current waiting thread.
@@ -43,7 +43,7 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenPartialAsync_DoBehaviorIsNotAsync()
         {
             var uut = StateMachine<DummyState>.CreatePartialAsync("Demo StateMachine", _logger);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
             // The DO behavior should be blocked from completing its work because the current thread is on the transition,
@@ -56,7 +56,7 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenPartialAsync_TransitionIsAsync()
         {
             var uut = StateMachine<DummyState>.CreatePartialAsync("Demo StateMachine", _logger);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
             Assert.IsTrue(harness.WaitUntilAsyncTransitionSuccess(TimeSpan.FromSeconds(1)), "Waited too long for a state transition.");
@@ -67,7 +67,7 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsNotAsync_DoBehaviorIsNotAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, false);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
             Assert.IsFalse(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(1)), "DO behavior executed asynchronously.");
@@ -78,10 +78,11 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsAsync_DoBehaviorIsAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, true);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
-            Assert.Fail();
+            // The DO behavior should be able to complete its work independent of the current waiting thread.
+            Assert.IsTrue(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(1)), "Waited too long for DO behavior execution.");
         }
 
         [TestMethod]
@@ -89,10 +90,11 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsNotAsync_TransitionIsNotAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, false);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
-            Assert.Fail();
+            // The transition should be blocked from completing its work because the transition happens on the current thread.
+            Assert.IsFalse(harness.WaitUntilAsyncTransitionSuccess(TimeSpan.FromSeconds(1)), "Transition executed asynchronously.");
         }
 
         [TestMethod]
@@ -100,10 +102,11 @@ namespace CleanMachine.Tests
         public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsAsync_TransitionIsNotAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, true);
-            var harness = new StateMachineHarness(uut, DummyState.One.ToString());
+            var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
-
-            Assert.Fail();
+            
+            // The transition should be blocked from completing its work because the transition happens on the current thread.
+            Assert.IsFalse(harness.WaitUntilAsyncTransitionSuccess(TimeSpan.FromSeconds(1)), "Transition executed asynchronously.");
         }
     }
 }

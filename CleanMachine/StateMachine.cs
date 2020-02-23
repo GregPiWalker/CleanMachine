@@ -91,6 +91,10 @@ namespace CleanMachine
 
         internal State CurrentState => _currentState;
 
+        internal bool HasTransitionScheduler => _transitionScheduler != null;
+
+        internal bool HasBehaviorScheduler => _behaviorScheduler != null;
+
         /// <summary>
         /// Set the machine's desired initial state.  This is enforced
         /// as a step in machine assembly so that initial state is defined in the same
