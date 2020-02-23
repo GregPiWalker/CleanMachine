@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Interfaces", "CleanMachine.Interfaces\CleanMachine.Interfaces.csproj", "{B50895DE-D25C-4C79-A540-E0BDD7060E5E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine", "CleanMachine\CleanMachine.csproj", "{E31E0C32-63BD-4E0F-94E0-32997096A600}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachineDemo", "CleanMachineDemo\CleanMachineDemo.csproj", "{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Tests", "CleanMachine.Tests\CleanMachine.Tests.csproj", "{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,8 +29,15 @@ Global
 		{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {596335B9-66EB-4017-A9B2-EE2CAD8228DE}
 	EndGlobalSection
 EndGlobal
