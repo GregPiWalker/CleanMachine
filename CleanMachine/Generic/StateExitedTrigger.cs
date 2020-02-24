@@ -14,6 +14,7 @@ namespace CleanMachine.Generic
         private readonly TState? _filterState;
         private readonly IState _state;
 
+        //TODO: Change this to accept a collection like StateChangedTrigger
         public StateExitedTrigger(StateMachine<TState> source, TState? tripOnState, ILog logger)
             : base($"{typeof(StateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateExitedEventArgs<TState>).Name}>", source, logger)
         {

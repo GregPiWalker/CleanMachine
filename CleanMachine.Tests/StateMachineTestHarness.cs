@@ -227,11 +227,6 @@ namespace CleanMachine.Tests
         /// <returns></returns>
         private bool WaitUntilPartialAsyncDoBehavior(TimeSpan waitTime)
         {
-            if (waitTime < TimeSpan.FromMilliseconds(500))
-            {
-                Assert.Fail("Configured waitTime value must be 500ms or greater.");
-            }
-
             AddDoBehavior((a) =>
             {
                 // Wait until the waithandle is in the reset state before signaling done.

@@ -12,7 +12,6 @@ namespace CleanMachine.Generic
     /// <typeparam name="TEventArgs"></typeparam>
     public class Trigger<TSource, TEventArgs> : TriggerBase where TEventArgs : EventArgs
     {
-        private const BindingFlags FullAccessFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
         private delegate void EventHandlerDelegate(object sender, TEventArgs args);
         private readonly EventHandlerDelegate _handler;
         private readonly EventInfo _eventInfo;
@@ -28,18 +27,18 @@ namespace CleanMachine.Generic
             : base(string.Empty, source, logger)
         {
             _handler = HandleEventRaised;
-            _eventInfo = typeof(TSource).GetEvent(eventName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            _eventInfo = typeof(TSource).GetEvent(eventName, FullAccessBindingFlags);
             if (_eventInfo == null)
             {
                 throw new ArgumentException($"No event named {eventName} was found on the {typeof(TSource)} type.");
             }
 
-            if (_eventInfo.EventHandlerType != typeof(EventHandler<TEventArgs>))
+            if (_eventInfo.EventHandlerType != GetExpectedType())
             {
-                throw new ArgumentException($"{eventName} has the wrong delegate type {_eventInfo.EventHandlerType.Name}.  Expected {typeof(EventHandler<TEventArgs>).Name}.");
+                throw new ArgumentException($"{eventName} has the wrong delegate type {_eventInfo.EventHandlerType.Name}.  Expected {GetExpectedType().Name}.");
             }
 
-            Name = $"{typeof(TSource).Name}.{eventName}<{typeof(TEventArgs).Name}>";
+            Name = $"{typeof(TSource).Name}.{eventName}<{GetExpectedType().Name}>";
             Filter = filter;
             _filterName = filter == null ? string.Empty : filter.Name;
         }
@@ -75,7 +74,7 @@ namespace CleanMachine.Generic
 
             // Cannot use _eventInfo.AddEventHandler(Source, target) to access private members.
             MethodInfo addMethodInfo = _eventInfo.GetAddMethod(true);
-            addMethodInfo.Invoke(Source, FullAccessFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
+            addMethodInfo.Invoke(Source, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
         }
 
         protected override void Disable()
@@ -84,7 +83,12 @@ namespace CleanMachine.Generic
 
             // Cannot use _eventInfo.RemoveEventHandler(Source, target) to access private members.
             MethodInfo removeMethodInfo = _eventInfo.GetRemoveMethod(true);
-            removeMethodInfo.Invoke(Source, FullAccessFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
+            removeMethodInfo.Invoke(Source, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
+        }
+
+        protected virtual Type GetExpectedType()
+        {
+            return typeof(EventHandler<TEventArgs>);
         }
 
         private void HandleEventRaised(object sender, TEventArgs args)

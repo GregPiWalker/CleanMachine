@@ -17,6 +17,7 @@ namespace CleanMachine
         /// Create an unfiltered trigger that trips for all PropertyChanged events from the source.
         /// </summary>
         /// <param name="source"></param>
+        /// <param name="logger"></param>
         public PropertyChangedTrigger(INotifyPropertyChanged source, ILog logger)
             : this(source, null, logger)
         {
@@ -37,7 +38,7 @@ namespace CleanMachine
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))
             {
                 // Build the entire chain of PropertyBinding objects for the given nested properties.
-                _propertyBinding = new PropertyBinding(propertyNameChain);
+                _propertyBinding = new PropertyBinding(propertyNameChain, logger);
                 // Now set the entire chain of references using the source object as the top-level parent.
                 //NestedObserver's property is set now, ok to use that name.
                 _propertyBinding.PropertyOwner = source;

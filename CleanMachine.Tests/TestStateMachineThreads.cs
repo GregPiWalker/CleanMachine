@@ -8,7 +8,7 @@ namespace CleanMachine.Tests
     [TestClass]
     public class TestStateMachineThreads
     {
-        private static readonly ILog _logger = LogManager.GetLogger("Test Logger");
+        private static readonly ILog _logger = LogManager.GetLogger("Threading Test Logger");
 
         [TestInitialize]
         public void Init()
@@ -16,7 +16,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenFullyAsync_DoBehaviorIsAsync()
+        public void ChangeState_GivenFullyAsync_DoBehaviorIsAsync()
         {
             var uut = StateMachine<DummyState>.CreateAsync("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
@@ -28,7 +28,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenFullyAsync_TransitionIsAsync()
+        public void ChangeState_GivenFullyAsync_TransitionIsAsync()
         {
             var uut = StateMachine<DummyState>.CreateAsync("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
@@ -40,7 +40,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenPartialAsync_DoBehaviorIsNotAsync()
+        public void ChangeState_GivenPartialAsync_DoBehaviorIsNotAsync()
         {
             var uut = StateMachine<DummyState>.CreatePartialAsync("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
@@ -53,7 +53,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenPartialAsync_TransitionIsAsync()
+        public void ChangeState_GivenPartialAsync_TransitionIsAsync()
         {
             var uut = StateMachine<DummyState>.CreatePartialAsync("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
@@ -64,7 +64,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsNotAsync_DoBehaviorIsNotAsync()
+        public void ChangeState_GivenPartialSync_WhereBehaviorIsNotAsync_DoBehaviorIsNotAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, false);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
@@ -75,7 +75,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsAsync_DoBehaviorIsAsync()
+        public void ChangeState_GivenPartialSync_WhereBehaviorIsAsync_DoBehaviorIsAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, true);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
@@ -87,7 +87,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsNotAsync_TransitionIsNotAsync()
+        public void ChangeState_GivenPartialSync_WhereBehaviorIsNotAsync_TransitionIsNotAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, false);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());
@@ -99,7 +99,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void StateMachineThreads_GivenPartialSync_WhereBehaviorIsAsync_TransitionIsNotAsync()
+        public void ChangeState_GivenPartialSync_WhereBehaviorIsAsync_TransitionIsNotAsync()
         {
             var uut = StateMachine<DummyState>.Create("Demo StateMachine", _logger, true);
             var harness = new StateMachineTestHarness(uut, DummyState.One.ToString());

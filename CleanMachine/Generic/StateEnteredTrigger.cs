@@ -14,6 +14,7 @@ namespace CleanMachine.Generic
         private readonly TState? _filterState;
         private readonly IState _state;
 
+        //TODO: Change this to accept a collection like StateChangedTrigger
         public StateEnteredTrigger(StateMachine<TState> source, TState? tripOnState, ILog logger)
             : base($"{typeof(StateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateEnteredEventArgs<TState>).Name}>", source, logger)
         {
@@ -49,7 +50,7 @@ namespace CleanMachine.Generic
                 _state.EntryCompleted += HandleStateEntered;
             }
         }
-        
+
         protected override void Disable()
         {
             if (_state == null)

@@ -1,6 +1,5 @@
 ﻿using log4net;
 using System;
-using System.Reflection;
 
 namespace CleanMachine.Generic
 {
@@ -9,13 +8,8 @@ namespace CleanMachine.Generic
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>
-    public class DelegateTrigger<TSource, TDelegate, TEventArgs> : TriggerBase where TEventArgs : EventArgs
+    public class DelegateTrigger<TSource, TDelegate, TEventArgs> : Trigger<TSource, TEventArgs> where TEventArgs : EventArgs
     {
-        private delegate void EventHandlerDelegate(object sender, TEventArgs args);
-        private readonly EventHandlerDelegate _handler;
-        private readonly EventInfo _eventInfo;
-        private readonly string _filterName;
-
         /// <summary>
         /// 
         /// </summary>
@@ -23,23 +17,8 @@ namespace CleanMachine.Generic
         /// <param name="eventName"></param>
         /// <param name="filter"></param>
         public DelegateTrigger(TSource source, string eventName, Constraint<TEventArgs> filter, ILog logger)
-            : base(string.Empty, source, logger)
+            : base(source, eventName, filter, logger)
         {
-            _handler = HandleEventRaised;
-            _eventInfo = typeof(TSource).GetEvent(eventName);
-            if (_eventInfo == null)
-            {
-                throw new ArgumentException($"No event named {eventName} was found on the {typeof(TSource)} type.");
-            }
-
-            if (_eventInfo.EventHandlerType != typeof(TDelegate))
-            {
-                throw new ArgumentException($"{eventName} has the wrong delegate type {_eventInfo.EventHandlerType.Name}.  Expected {typeof(TDelegate).Name}.");
-            }
-
-            Name = $"{typeof(TSource).Name}.{eventName}<{typeof(TDelegate).Name}>";
-            Filter = filter;
-            _filterName = filter == null ? string.Empty : filter.Name;
         }
 
         public DelegateTrigger(TSource source, string eventName, ILog logger)
@@ -47,39 +26,9 @@ namespace CleanMachine.Generic
         {
         }
 
-        /// <summary>
-        /// Gets the shadow implementation of the base Filter in order to provide a conditional parameter.
-        /// </summary>
-        public Constraint<TEventArgs> Filter { get; protected set; }
-
-        public override string ToString()
+        protected override Type GetExpectedType()
         {
-            return string.IsNullOrEmpty(_filterName) ? Name : $"{Name}[{_filterName}]";
-        }
-
-        public override bool CanTrigger(EventArgs causeEventArgs)
-        {
-            return CanTrigger(causeEventArgs as TEventArgs);
-        }
-
-        public bool CanTrigger(TEventArgs causeEventArgs)
-        {
-            return Filter == null || Filter.IsTrue(causeEventArgs);
-        }
-
-        protected override void Enable()
-        {
-            _eventInfo.AddEventHandler(Source, Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method));
-        }
-
-        protected override void Disable()
-        {
-            _eventInfo.RemoveEventHandler(Source, Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method));
-        }
-
-        private void HandleEventRaised(object sender, TEventArgs args)
-        {
-            Trip(sender, args);
+            return typeof(TDelegate);
         }
     }
 }

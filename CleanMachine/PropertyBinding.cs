@@ -1,4 +1,5 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.ComponentModel;
 
 namespace CleanMachine
@@ -12,6 +13,8 @@ namespace CleanMachine
     /// </summary>
     public class PropertyBinding : IDisposable
     {
+        private readonly ILog _logger;
+
         /// <summary>
         /// The <see cref="PropertyBinding"/> corresponding to the next descendant property in the chain.
         /// </summary>
@@ -28,8 +31,11 @@ namespace CleanMachine
         /// chain is passed on to a child <see cref="PropertyBinding"/>.
         /// </summary>
         /// <param name="propertyNameChain"></param>
-        public PropertyBinding(string propertyNameChain)
+        /// <param name="logger"></param>
+        public PropertyBinding(string propertyNameChain, ILog logger)
         {
+            _logger = logger;
+
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))
             {
                 // Get the most precedent property name from the first component of the property name chain.
@@ -37,7 +43,7 @@ namespace CleanMachine
                 PropertyName = propertyNameChain.Substring(0, splitIndex);
                 // Strip PropertyName off the chain and give the remainder to a new child object.
                 var remainder = propertyNameChain.Substring(splitIndex + 1, propertyNameChain.Length - splitIndex - 1);
-                _child = new PropertyBinding(remainder);
+                _child = new PropertyBinding(remainder, logger);
             }
             else
             {
@@ -107,8 +113,15 @@ namespace CleanMachine
             }
             else
             {
-                // Each parent binding sets their child's property owner until there are no more children.
-                SetChildsPropertyOwner();
+                try
+                {
+                    // Each parent binding sets their child's property owner until there are no more children.
+                    SetChildsPropertyOwner();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error($"{ex.GetType().Name} - {ex.Message}", ex);
+                }
             }
         }
 
@@ -124,7 +137,7 @@ namespace CleanMachine
                 var value = info.GetValue(_propertyOwner) as INotifyPropertyChanged;
                 if (value == null)
                 {
-                    throw new ArgumentException($"Binding Exception: {info.Name} is not an INotifyPropertyChanged instance.");
+                    throw new ArgumentException($"Binding Error: {info.Name} is not an INotifyPropertyChanged instance.");
                 }
 
                 _child.PropertyOwner = value;
