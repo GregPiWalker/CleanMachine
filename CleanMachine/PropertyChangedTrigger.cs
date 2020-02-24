@@ -87,7 +87,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private void HandleNestedPropertyChanged(object sender, PropertyChangedEventArgs args)
+        private void HandleNestedPropertyChanged(object sender, BoundPropertyChangedEventArgs args)
         {
             Trip(sender, args);
         }
@@ -101,7 +101,7 @@ namespace CleanMachine
         {
             if (string.IsNullOrEmpty(_filterProperty) || args.PropertyName.Equals(_filterProperty))
             {
-                Trip(sender, args);
+                Trip(sender, new BoundPropertyChangedEventArgs(args.PropertyName, sender));
             }
         }
     }

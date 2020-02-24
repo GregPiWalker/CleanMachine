@@ -10,43 +10,53 @@ namespace CleanMachine.Tests
         private static readonly ILog _logger = LogManager.GetLogger("PropertyChanged Test Logger");
 
         [TestMethod]
-        public void SetProperty_GivenSimplePropertyNameAndObjectValue_RaisesTriggeredEvent()
+        public void SetProperty_GivenSimplePropertyFilter_WhenFirstOrdeSet_RaisesTriggeredEvent()
         {
             var firstOrder = new NotifyPropertyChangedImpl(0);
 
             var p = new PropertyChangedTrigger(firstOrder, "Child", _logger);
             bool triggered = false;
+            int triggeredBy = -1;
 
-            p.Triggered += (sender, args) => { triggered = true; };
+            p.Triggered += (sender, args) => {
+                triggeredBy = ((args.CauseArgs as BoundPropertyChangedEventArgs).PropertyOwner as NotifyPropertyChangedImpl).NestLevel;
+                triggered = true;
+            };
             p.Activate();
             firstOrder.Child = new NotifyPropertyChangedImpl(1);
 
             Assert.IsTrue(triggered);
+            Assert.AreEqual(0, triggeredBy);
         }
 
         [TestMethod]
-        public void SetProperty_GivenSimplePropertyNameAndNullValue_RaisesTriggeredEvent()
+        public void SetProperty_GivenSimplePropertyFilter_WhenFirstOrderUnset_RaisesTriggeredEvent()
         {
             var firstOrder = GetFirstOrderObject();
 
             var p = new PropertyChangedTrigger(firstOrder, "Child", _logger);
             bool triggered = false;
+            int triggeredBy = -1;
 
-            p.Triggered += (sender, args) => { triggered = true; };
+            p.Triggered += (sender, args) => {
+                triggeredBy = ((args.CauseArgs as BoundPropertyChangedEventArgs).PropertyOwner as NotifyPropertyChangedImpl).NestLevel;
+                triggered = true;
+            };
             p.Activate();
             firstOrder.Child = null;
 
             Assert.IsTrue(triggered);
+            Assert.AreEqual(0, triggeredBy);
         }
 
         [TestMethod]
-        public void SetChildProperty_GivenSimplePropertyNameAndObjectValue_IgnoresNestedPropertyChange()
+        public void SetProperty_GivenSimplePropertyFilter_WhenSecondOrderSet_IgnoresNestedPropertyChange()
         {
             var secondOrder = GetFirstOrderObject();
 
             var p = new PropertyChangedTrigger(secondOrder, "Child", _logger);
             bool triggered = false;
-            
+
             p.Activate();
             // hook up th event after the first depth is set so that the trigger must come from next depth.
             p.Triggered += (sender, args) => { triggered = true; };
@@ -57,13 +67,13 @@ namespace CleanMachine.Tests
         }
 
         [TestMethod]
-        public void SetChildProperty_GivenSimplePropertyNameAndNullValue_IgnoresNestedPropertyChange()
+        public void SetProperty_GivenSimplePropertyFilter_WhenSecondOrderUnset_IgnoresNestedPropertyChange()
         {
             var secondOrder = GetSecondOrderObject();
 
             var p = new PropertyChangedTrigger(secondOrder, "Child", _logger);
             bool triggered = false;
-            
+
             p.Activate();
             // hook up the event after the first depth is set so that the trigger must come from next depth.
             p.Triggered += (sender, args) => { triggered = true; };
@@ -74,7 +84,7 @@ namespace CleanMachine.Tests
         }
 
         [TestMethod]
-        public void SetChildProperty_GivenPropertyNestingThreeValuesDeep_WhenSecondObjectSet_RaisesTriggeredEvent()
+        public void SetProperty_GivenThirdOrderNesting_WhenFirstOrderSet_RaisesTriggeredEvent()
         {
             var secondOrder = new NotifyPropertyChangedImpl(1);
             secondOrder.Child = new NotifyPropertyChangedImpl(2);
@@ -83,72 +93,98 @@ namespace CleanMachine.Tests
 
             var p = new PropertyChangedTrigger(thirdOrder, "Child.Child.Child", _logger);
             bool triggered = false;
+            int triggeredBy = -1;
 
-            p.Triggered += (sender, args) => { triggered = true; };
+            p.Triggered += (sender, args) => {
+                triggeredBy = ((args.CauseArgs as BoundPropertyChangedEventArgs).PropertyOwner as NotifyPropertyChangedImpl).NestLevel;
+                triggered = true;
+            };
             p.Activate();
             thirdOrder.Child = secondOrder;
 
             Assert.IsTrue(triggered);
+            Assert.AreEqual(0, triggeredBy);
         }
 
         [TestMethod]
-        public void SetChildProperty_GivenPropertyNestingThreeValuesDeep_WhenThirdObjectSet_RaisesTriggeredEvent()
+        public void SetProperty_GivenSecondOrderNesting_WhenThirdOrderSet_RaisesTriggeredEvent()
         {
             var thirdOrder = GetSecondOrderObject();
 
             var p = new PropertyChangedTrigger(thirdOrder, "Child.Child.Child", _logger);
             bool triggered = false;
+            int triggeredBy = -1;
 
-            p.Triggered += (sender, args) => { triggered = true; };
+            p.Triggered += (sender, args) => {
+                triggeredBy = ((args.CauseArgs as BoundPropertyChangedEventArgs).PropertyOwner as NotifyPropertyChangedImpl).NestLevel;
+                triggered = true;
+            };
             p.Activate();
             thirdOrder.Child.Child = new NotifyPropertyChangedImpl(3);
 
             Assert.IsTrue(triggered);
+            Assert.AreEqual(1, triggeredBy);
         }
 
         [TestMethod]
-        public void SetChildProperty_GivenPropertyNestingThreeValuesDeep_WhenSecondObjectUnset_RaisesTriggeredEvent()
+        public void SetProperty_GivenThirdOrderNesting_WhenSecondOrderUnset_RaisesTriggeredEvent()
         {
             var thirdOrder = GetThirdOrderObject();
 
             var p = new PropertyChangedTrigger(thirdOrder, "Child.Child.Child", _logger);
             bool triggered = false;
+            int triggeredBy = -1;
 
-            p.Triggered += (sender, args) => { triggered = true; };
+            p.Triggered += (sender, args) => {
+                triggeredBy = ((args.CauseArgs as BoundPropertyChangedEventArgs).PropertyOwner as NotifyPropertyChangedImpl).NestLevel;
+                triggered = true;
+            };
             p.Activate();
             thirdOrder.Child = null;
 
             Assert.IsTrue(triggered);
+            Assert.AreEqual(0, triggeredBy);
         }
 
         [TestMethod]
-        public void SetChildProperty_GivenPropertyNestingThreeValuesDeep_WhenThirdObjectUnset_RaisesTriggeredEvent()
+        public void SetProperty_GivenThirdOrderNesting_WhenThirdOrderUnset_RaisesTriggeredEvent()
         {
             var thirdOrder = GetThirdOrderObject();
 
             var p = new PropertyChangedTrigger(thirdOrder, "Child.Child.Child", _logger);
             bool triggered = false;
 
-            p.Triggered += (sender, args) => { triggered = true; };
+            int triggeredBy = -1;
+
+            p.Triggered += (sender, args) => {
+                triggeredBy = ((args.CauseArgs as BoundPropertyChangedEventArgs).PropertyOwner as NotifyPropertyChangedImpl).NestLevel;
+                triggered = true;
+            };
             p.Activate();
             thirdOrder.Child.Child = null;
 
             Assert.IsTrue(triggered);
+            Assert.AreEqual(1, triggeredBy);
         }
 
         [TestMethod]
-        public void SetChildProperty_GivenPropertyNestingThreeValuesDeep_WhenPropertyOfThirdObjectSet_RaisesTriggeredEvent()
+        public void SetProperty_GivenThirdOrderNesting_WhenThirdOrderSet_RaisesTriggeredEvent()
         {
             var thirdOrder = GetThirdOrderObject();
 
             var p = new PropertyChangedTrigger(thirdOrder, "Child.Child.Child", _logger);
             bool triggered = false;
+            int triggeredBy = -1;
 
-            p.Triggered += (sender, args) => { triggered = true; };
+            p.Triggered += (sender, args) => {
+                triggeredBy = ((args.CauseArgs as BoundPropertyChangedEventArgs).PropertyOwner as NotifyPropertyChangedImpl).NestLevel;
+                triggered = true;
+            };
             p.Activate();
             thirdOrder.Child.Child.Child = null;
             
             Assert.IsTrue(triggered);
+            Assert.AreEqual(2, triggeredBy);
         }
 
         private NotifyPropertyChangedImpl GetFirstOrderObject()

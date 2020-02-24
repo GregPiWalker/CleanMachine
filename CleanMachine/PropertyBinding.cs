@@ -56,7 +56,7 @@ namespace CleanMachine
         /// Raised by the terminal child property in the property chain when any one
         /// of the descendent's linked property changes.
         /// </summary>
-        public event EventHandler<PropertyChangedEventArgs> BoundPropertyChanged;
+        public event EventHandler<BoundPropertyChangedEventArgs> BoundPropertyChanged;
 
         public string PropertyName { get; }
 
@@ -109,7 +109,7 @@ namespace CleanMachine
             {
                 // This is the last binding in the chain and an ancestor's initial owner association was set,
                 // so signal out that the owner's property's value has changed.
-                OnBoundPropertyChanged();
+                OnBoundPropertyChanged(PropertyOwner);
             }
             else
             {
@@ -183,15 +183,26 @@ namespace CleanMachine
             // If this classes user needs the local property change notification, it must listen directly to that notifier rather than this binding.
 
             // The last binding in the chain always needs to echo a property change from any other ancestor in the chain.
-            Last.OnBoundPropertyChanged();
+            Last.OnBoundPropertyChanged(PropertyOwner);
         }
 
         /// <summary>
         /// Notify that this Binding's property value changed somehow.
         /// </summary>
-        private void OnBoundPropertyChanged()
+        private void OnBoundPropertyChanged(object sourceOwner)
         {
-            BoundPropertyChanged?.Invoke(this, new PropertyChangedEventArgs(PropertyName));
+            BoundPropertyChanged?.Invoke(this, new BoundPropertyChangedEventArgs(PropertyName, sourceOwner));
         }
+    }
+
+    public class BoundPropertyChangedEventArgs : PropertyChangedEventArgs
+    {
+        public BoundPropertyChangedEventArgs(string propertyName, object propertyOwner)
+            : base(propertyName)
+        {
+            PropertyOwner = propertyOwner;
+        }
+
+        public object PropertyOwner { get; set; }
     }
 }
