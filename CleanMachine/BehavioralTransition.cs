@@ -8,8 +8,8 @@ namespace CleanMachine
 {
     public class BehavioralTransition : Transition, ITransitionBehavior
     {
-        private Action _effect;
         private readonly IScheduler _scheduler;
+        private Action _effect;
 
         public BehavioralTransition(string context, BehavioralState fromState, BehavioralState toState, ILog logger, IScheduler scheduler = null)
             : base(context, fromState, toState, logger)
@@ -24,7 +24,7 @@ namespace CleanMachine
             {
                 if (!Editable)
                 {
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException($"Transition {Name} must be editable in order to set the effect.");
                 }
 
                 _effect = value;
