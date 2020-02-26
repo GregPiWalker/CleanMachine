@@ -6,7 +6,7 @@ namespace CleanMachineDemo
 {
     public static class ChildMachineBuilder
     {
-        public static MachineEditor<ChildState> BuildStateMachine(this ChildModel model, StateMachine<ChildState> machine)
+        public static MachineEditor<ChildState> BuildStateMachine(this ChildModel model, BehavioralStateMachine<ChildState> machine)
         {
             var builder = MachineEditor<ChildState>.Edit(machine);
             machine.SetInitialState(ChildState.Ready);

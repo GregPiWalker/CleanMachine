@@ -5,10 +5,8 @@ namespace CleanMachine.Interfaces
 {
     public interface IState
     {
-        event EventHandler<StateEnteredEventArgs> EntryInitiated;
-        event EventHandler<StateEnteredEventArgs> EntryCompleted;
-        event EventHandler<StateExitedEventArgs> ExitInitiated;
-        event EventHandler<StateExitedEventArgs> ExitCompleted;
+        event EventHandler<StateEnteredEventArgs> Entered;
+        event EventHandler<StateExitedEventArgs> Exited;
         event EventHandler<TransitionEventArgs> TransitionSucceeded;
         event EventHandler<TransitionEventArgs> TransitionFailed;
 
@@ -17,8 +15,6 @@ namespace CleanMachine.Interfaces
         bool IsCurrentState { get; }
 
         ReadOnlyCollection<ITransition> Transitions { get; }
-
-        void AddDoBehavior(Action<IState> behavior);
 
         void LogDiagnostics();
     }

@@ -37,7 +37,7 @@ namespace CleanMachine
         public Interfaces.TransitionEventArgs TransitionArgs { get; set; }
     }
 
-    internal class TransitionEventArgs : EventArgs
+    public class TransitionEventArgs : EventArgs
     {
         public TriggerEventArgs TriggerArgs { get; set; }
 

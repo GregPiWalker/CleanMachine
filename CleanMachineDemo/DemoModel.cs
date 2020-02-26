@@ -38,7 +38,7 @@ namespace CleanMachineDemo
 
         public event EventHandler<DemoEventArgs> TriggerEvent;
 
-        public StateMachine<DemoState> StateMachine { get; private set; }
+        public BehavioralStateMachine<DemoState> StateMachine { get; private set; }
 
         public bool OnOff
         {
@@ -109,17 +109,17 @@ namespace CleanMachineDemo
         {
             try
             {
-                StateMachine = StateMachine<DemoState>.CreatePartialAsync("Demo StateMachine", _logger);
+                StateMachine = StateMachineFactory.CreatePartialAsync<DemoState>("Demo StateMachine", _logger);
                 foreach (var state in StateMachine.States)
                 {
-                    state.ExitCompleted += HandleStateExited;
-                    //state.EntryInitiated += HandleStateEntered;
+                    state.Exited += HandleStateExited;
+                    //state.Entered += HandleStateEntered;
                 }
-            
+
                 using (var builder = DemoMachineBuilder.BuildStateMachine(this, StateMachine))
                 {
                     // If we loop around the state machine, reset the loop count variable;
-                    StateMachine[DemoState.One].AddDoBehavior(s => { Reset(); });
+                    (StateMachine[DemoState.One] as IStateBehavior).AddDoBehavior(s => { Reset(); });
                 }
             }
             catch (Exception ex)

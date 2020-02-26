@@ -2,34 +2,31 @@
 using System.Collections.Generic;
 using CleanMachine.Interfaces;
 using System.Text;
-using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using log4net;
 
 namespace CleanMachine
 {
-    public sealed class Transition : ITransition
+    public class Transition : ITransition
     {
-        private readonly List<TriggerBase> _triggers = new List<TriggerBase>();
-        private readonly string _context;
-        private Constraint _guard;
-        private Action _effect;
-        private bool _enabled;
-        private BooleanDisposable _activationContext;
-        private readonly IScheduler _scheduler;
-        private readonly ILog _logger;
+        protected readonly string _context;
+        protected readonly List<TriggerBase> _triggers = new List<TriggerBase>();
+        protected readonly ILog _logger;
+        protected Constraint _guard;
+        protected bool _enabled;
+        protected BooleanDisposable _activationContext;
 
-        public Transition(string context, State fromState, State toState, ILog logger, IScheduler scheduler = null)
+        public Transition(string context, State fromState, State toState, ILog logger)
         {
-            _context = context;
-            _scheduler = scheduler;
-            _logger = logger;
-            From = fromState;
-            To = toState;
-            if (From == null || To == null)
+            if (fromState == null || toState == null)
             {
                 throw new ArgumentException($"{context} transition cannot have a null consumer or supplier state.");
             }
+
+            _context = context;
+            _logger = logger;
+            From = fromState;
+            To = toState;
 
             //TODO: this isn't unique enough
             Name = $"{From.Name}-->{To.Name}";
@@ -64,20 +61,6 @@ namespace CleanMachine
             }
         }
 
-        internal Action Effect
-        {
-            get { return _effect; }
-            set
-            {
-                if (!Editable)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                _effect = value;
-            }
-        }
-
         internal bool Editable { get; private set; }
 
         public override string ToString()
@@ -91,18 +74,10 @@ namespace CleanMachine
                     sb.Append(", ");
                 }
             }
-            foreach (var trigger in _triggers)
-            {
-            }
 
             if (Guard != null)
             {
                 sb.Append(Guard.ToString());
-            }
-            
-            if (Effect != null)
-            {
-                sb.Append(" / ").Append(Effect.ToString());
             }
 
             return sb.Append("\"").ToString();
@@ -146,25 +121,10 @@ namespace CleanMachine
         /// <param name="source"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal bool AttemptTransition(TriggerEventArgs args)
+        internal virtual bool AttemptTransition(TriggerEventArgs args)
         {
-            bool result = true;
-            if (!CanTransition(args))
+            if (!ValidateAttempt(args))
             {
-                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition inhibited by guard {Guard.ToString()}.");
-                result = false;
-            }
-
-            if (result && (!To.CanEnter(this) || !From.CanExit(this)))
-            {
-                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition could not enter state {To.ToString()} or exit state {From.ToString()}.");
-                result = false;
-            }
-
-            if (!result)
-            {
-                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition failed.");
-                OnFailed(args);
                 return false;
             }
 
@@ -172,19 +132,6 @@ namespace CleanMachine
             From.Exit(this);
             To.Enter(this);
             _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition complete.");
-            
-            if (Effect != null)
-            {
-                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: running EFFECT.");
-                if (_scheduler == null)
-                {
-                    Effect?.Invoke();
-                }
-                else
-                {
-                    _scheduler.Schedule(Effect);
-                }
-            }
 
             OnSucceeded(args);
 
@@ -212,15 +159,55 @@ namespace CleanMachine
             _triggers.ForEach(t => t.Deactivate());
         }
 
-        private void HandleTrigger(object sender, TriggerEventArgs args)
+        protected bool ValidateAttempt(TriggerEventArgs args)
         {
-            if (!_enabled)
+            bool result = true;
+            if (!CanTransition(args))
             {
-                return;
+                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition inhibited by guard {Guard.ToString()}.");
+                result = false;
             }
 
-            // Just forward it on as a request to transition.
-            OnRequested(args);
+            if (result && (!To.CanEnter(this) || !From.CanExit(this)))
+            {
+                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition could not enter state {To.ToString()} or exit state {From.ToString()}.");
+                result = false;
+            }
+
+            if (!result)
+            {
+                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition failed.");
+                OnFailed(args);
+                return false;
+            }
+
+            return true;
+        }
+
+        protected void OnSucceeded(TriggerEventArgs args)
+        {
+            try
+            {
+                var transitionArgs = args.ToITransitionArgs(this);
+                Succeeded?.Invoke(this, transitionArgs);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Succeeded)}' event from {Name} transition.", ex);
+            }
+        }
+
+        protected void OnFailed(TriggerEventArgs args)
+        {
+            try
+            {
+                var transitionArgs = args.ToITransitionArgs(this);
+                Failed?.Invoke(this, transitionArgs);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Failed)}' event from {Name} transition.", ex);
+            }
         }
 
         /// <summary>
@@ -239,30 +226,15 @@ namespace CleanMachine
             Requested?.Invoke(this, args);
         }
 
-        private void OnSucceeded(TriggerEventArgs args)
+        private void HandleTrigger(object sender, TriggerEventArgs args)
         {
-            try
+            if (!_enabled)
             {
-                var transitionArgs = args.ToITransitionArgs(this);
-                Succeeded?.Invoke(this, transitionArgs);
+                return;
             }
-            catch (Exception ex)
-            {
-                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Succeeded)}' event from {Name} transition.", ex);
-            }
-        }
 
-        private void OnFailed(TriggerEventArgs args)
-        {
-            try
-            {
-                var transitionArgs = args.ToITransitionArgs(this);
-                Failed?.Invoke(this, transitionArgs);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Failed)}' event from {Name} transition.", ex);
-            }
+            // Just forward it on as a request to transition.
+            OnRequested(args);
         }
     }
 }

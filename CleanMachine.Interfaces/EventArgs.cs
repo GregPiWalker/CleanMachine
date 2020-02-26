@@ -9,31 +9,6 @@ namespace CleanMachine.Interfaces
         public ITransition Transition { get; set; }
     }
 
-    //public class StateChangedEventArgs<TState> : EventArgs
-    //{
-    //    public TState PreviousState { get; set; }
-
-    //    public TState CurrentState { get; set; }
-
-    //    public TransitionEventArgs TransitionArgs { get; set; }
-    //}
-
-    //public class StateEnteredEventArgs<TState> : EventArgs
-    //{
-    //    public TState State { get; set; }
-
-    //    public TransitionEventArgs TransitionArgs { get; set; }
-    //}
-
-    //public class StateExitedEventArgs<TState> : EventArgs
-    //{
-    //    public TState State { get; set; }
-
-    //    public TransitionEventArgs TransitionArgs { get; set; }
-
-    //    //public ITransition ExitedOn { get; set; }
-    //}
-
     public class StateEnteredEventArgs : EventArgs
     {
         public IState State { get; set; }

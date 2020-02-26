@@ -4,59 +4,25 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reactive.Concurrency;
-using System.Threading;
-using System.Reactive.Disposables;
 
 namespace CleanMachine
 {
-    public abstract class StateMachine : IStateMachine
+    public abstract class StateMachineBase : IStateMachine
     {
         protected readonly List<Transition> _transitions = new List<Transition>();
         protected readonly List<State> _states = new List<State>();
-        protected readonly IScheduler _behaviorScheduler;
-        protected readonly IScheduler _transitionScheduler;
         protected State _currentState;
         protected State _initialState;
-        private readonly object _synchronizationContext = new object();
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="globalSyncContext"></param>
-        /// <param name="asynchronousTransitions">Indicates whether </param>
-        /// <param name="asynchronousBehaviors">Indicates whether behaviors (ENTRY, EXIT, DO, EFFECT) are executed on
-        /// a different thread from the state machine transitions and events.</param>
-        protected StateMachine(string name, ILog logger, object globalSyncContext, bool asynchronousTransitions, bool asynchronousBehaviors)
+        protected StateMachineBase(string name, ILog logger)
         {
-            _synchronizationContext = globalSyncContext;
             Name = name;
             Logger = logger;
-
-            if (asynchronousTransitions)
-            {
-                // When configured with async transitions, this machine can operate with or without a synchronization context.
-                _transitionScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Transition Scheduler", IsBackground = true }; });
-            }
-            else if (globalSyncContext == null)
-            {
-                // When configured with synchronous transitions, this machine must have a local synchronization context.
-                Logger.Debug($"{Name}:  was initialized without transition synchronization.  This is not supported; a default synchronization context will be used.");
-                _synchronizationContext = new object();
-            }
-
-            // If user requested asyncronous state & transition behaviors, assign a specific thread to a scheduler for the behaviors.
-            if (asynchronousBehaviors)
-            {
-                _behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{Name} Behavior Scheduler", IsBackground = true }; });
-
-                if (globalSyncContext != null)
-                {
-                    Logger.Warn($"{Name}:  inter-machine synchronization and asynchronous behaviors were both requested.  This is not recommended.  Using asynchronous behaviors could bypass aspects of machine sychronization.");
-                }
-            }
         }
 
         /// <summary>
@@ -90,10 +56,6 @@ namespace CleanMachine
         internal bool IsAssembled { get; private set; }
 
         internal State CurrentState => _currentState;
-
-        internal bool HasTransitionScheduler => _transitionScheduler != null;
-
-        internal bool HasBehaviorScheduler => _behaviorScheduler != null;
 
         /// <summary>
         /// Set the machine's desired initial state.  This is enforced
@@ -162,16 +124,7 @@ namespace CleanMachine
         /// 
         /// </summary>
         /// <param name="stateNames"></param>
-        internal void CreateStates(IEnumerable<string> stateNames)
-        {
-            foreach (var stateName in stateNames)
-            {
-                var state = new State(stateName, Logger, _behaviorScheduler);
-                _states.Add(state);
-                state.EntryCompleted += OnStateEntered;
-                state.ExitCompleted += OnStateExited;
-            }
-        }
+        protected abstract void CreateStates(IEnumerable<string> stateNames);
 
         /// <summary>
         /// 
@@ -269,89 +222,20 @@ namespace CleanMachine
             Logger.Info($"{Name}:  entering initial state {_initialState.Name}.");
             JumpToState(_initialState);
         }
+        
+        internal virtual void AttemptTransition(TransitionEventArgs args)
+        {
+            AttemptTransitionUnsafe(args);
+        }
 
-        internal void JumpToState(State jumpTo)
+        internal virtual void JumpToState(State jumpTo)
         {
             if (jumpTo == null)
             {
                 throw new ArgumentNullException("jumpTo");
             }
 
-            if (_transitionScheduler == null)
-            {
-                JumpToStateSafe(jumpTo);
-            }
-            else
-            {
-                _transitionScheduler.Schedule(() => JumpToStateSafe(jumpTo));
-            }
-        }
-
-        internal void AttemptTransition(TransitionEventArgs args)
-        {
-            if (_transitionScheduler == null)
-            {
-                AttemptTransitionSafe(args);
-            }
-            else
-            { 
-                _transitionScheduler.Schedule(args, (_, a) => { return AttemptTransitionSafe(a); });
-            }
-        }
-
-        private void JumpToStateSafe(State jumpTo)
-        {
-            if (_synchronizationContext == null)
-            {
-                JumpToStateUnsafe(jumpTo);
-            }
-            else
-            {
-                lock (_synchronizationContext)
-                {
-                    JumpToStateUnsafe(jumpTo);
-                }
-            }
-        }
-
-        private void JumpToStateUnsafe(State jumpTo)
-        {
-            if (!jumpTo.CanEnter(null))
-            {
-                throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
-            }
-
-            Logger.Debug($"{Name}:  jumping to state {jumpTo.Name}.");
-            jumpTo.Enter(null);
-            _currentState = jumpTo;
-
-            OnStateChanged(null, new TriggerEventArgs() { Cause = this });
-        }
-
-        private IDisposable AttemptTransitionSafe(TransitionEventArgs args)
-        {
-            if (_synchronizationContext == null)
-            {
-                if (!AttemptTransitionUnsafe(args))
-                {
-                    return Disposable.Empty;
-                }
-            }
-            else
-            {
-                // This lock regulates all transition triggers associated to the given synchronization context.
-                // This means that only one of any number of transitions can successfully exit the current state,
-                // whether those transitions all exist in one state machine or are distributed across a set of machines.
-                lock (_synchronizationContext)
-                {
-                    if (!AttemptTransitionUnsafe(args))
-                    {
-                        return Disposable.Empty;
-                    }
-                }
-            }
-
-            return args.TriggerArgs.TriggerContext;
+            JumpToStateUnsafe(jumpTo);
         }
 
         /// <summary>
@@ -360,25 +244,25 @@ namespace CleanMachine
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        private bool AttemptTransitionUnsafe(TransitionEventArgs args)
+        protected bool AttemptTransitionUnsafe(TransitionEventArgs args)
         {
             if (args.TriggerArgs.TriggerContext.IsDisposed)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransitionSafe)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
+                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
                 return false;
             }
 
             // Provide escape route in case the trigger became irrelevant while the handler for it was waiting.
             if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransitionSafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
+                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
                 return false;
             }
 
             // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
             if (!args.TriggerArgs.Trigger.IsActive)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransitionSafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
+                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
                 return false;
             }
 
@@ -396,6 +280,20 @@ namespace CleanMachine
             return true;
         }
 
+        protected void JumpToStateUnsafe(State jumpTo)
+        {
+            if (!jumpTo.CanEnter(null))
+            {
+                throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
+            }
+
+            Logger.Debug($"{Name}:  jumping to state {jumpTo.Name}.");
+            jumpTo.Enter(null);
+            _currentState = jumpTo;
+
+            OnStateChanged(null, new TriggerEventArgs() { Cause = this });
+        }
+
         private void HandleTransitionRequest(object sender, TriggerEventArgs args)
         {
             if (args.TriggerContext.IsDisposed)
@@ -409,7 +307,7 @@ namespace CleanMachine
                 return;
             }
 
-            var transition = sender as Transition;
+            var transition = sender as BehavioralTransition;
             var transitionArgs = transition.ToTransitionArgs(args);
 
             AttemptTransition(transitionArgs);

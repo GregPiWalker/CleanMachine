@@ -15,8 +15,8 @@ namespace CleanMachine.Generic
         private readonly IState _state;
 
         //TODO: Change this to accept a collection like StateChangedTrigger
-        public StateEnteredTrigger(StateMachine<TState> source, TState? tripOnState, ILog logger)
-            : base($"{typeof(StateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateEnteredEventArgs<TState>).Name}>", source, logger)
+        public StateEnteredTrigger(BehavioralStateMachine<TState> source, TState? tripOnState, ILog logger)
+            : base($"{typeof(BehavioralStateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateEnteredEventArgs<TState>).Name}>", source, logger)
         {
             if (tripOnState.HasValue)
             {
@@ -26,7 +26,7 @@ namespace CleanMachine.Generic
             _filterState = tripOnState;
         }
 
-        public StateEnteredTrigger(string sourceName, StateMachine<TState> source, ILog logger)
+        public StateEnteredTrigger(string sourceName, BehavioralStateMachine<TState> source, ILog logger)
             : this(source, null, logger)
         {
         }
@@ -34,9 +34,9 @@ namespace CleanMachine.Generic
         /// <summary>
         /// Gets the type cast base source.
         /// </summary>
-        public StateMachine<TState> StateMachine
+        public BehavioralStateMachine<TState> StateMachine
         {
-            get { return base.Source as StateMachine<TState>; }
+            get { return base.Source as BehavioralStateMachine<TState>; }
         }
 
         protected override void Enable()
@@ -47,7 +47,7 @@ namespace CleanMachine.Generic
             }
             else
             {
-                _state.EntryCompleted += HandleStateEntered;
+                _state.Entered += HandleStateEntered;
             }
         }
 
@@ -59,7 +59,7 @@ namespace CleanMachine.Generic
             }
             else
             {
-                _state.EntryCompleted -= HandleStateEntered;
+                _state.Entered -= HandleStateEntered;
             }
         }
 

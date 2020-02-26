@@ -1,92 +1,49 @@
-﻿using System;
-using log4net;
+﻿using log4net;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CleanMachine.Generic
 {
-    public sealed class StateMachine<TState> : StateMachine where TState : struct
+    public class StateMachine<TState> : StateMachineBase where TState : struct
     {
-        /// <summary>
-        /// Create a fully asynchronous StateMachine.  A scheduler with a dedicated background thread is instantiated for
-        /// internal transitions.  Another scheduler with a dedicated background thread is instantiated for running
-        /// the following behaviors: ENTRY, DO, EXIT, EFFECT.  Both schedulers serialize their workflow, but will
-        /// operate asynchronously with respect to each other, as well as with respect to incoming trigger invocations.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="logger"></param>
-        /// <returns></returns>
-        public static StateMachine<TState> CreateAsync(string name, ILog logger)
-        {
-            return new StateMachine<TState>(name, logger, null, true, true);
-        }
-
-        /// <summary>
-        /// Create a partially asynchronous StateMachine.  A scheduler with a dedicated background thread is instantiated for
-        /// internal transitions.  UML behaviors (ENTRY, DO, EXIT, EFFECT) are executed synchronously on the same transition thread.
-        /// The scheduler serializes its workflow, but will operate asynchronously with respect to incoming trigger invocations.
-        /// This configuration gives you an option of supplying a global synchronization context that can be used to synchronize
-        /// transitions (state changes) across multiple state machines.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="logger"></param>
-        /// <param name="globalSyncContext">If global transition synchronization across multiple <see cref="StateMachine"/>s is desired,
-        /// supply a synchronization context here. Otherwise, supply a null value.</param>
-        /// <returns></returns>
-        public static StateMachine<TState> CreatePartialAsync(string name, ILog logger, object globalSyncContext = null)
-        {
-            return new StateMachine<TState>(name, logger, globalSyncContext, true, false);
-        }
-
-        /// <summary>
-        /// Create a StateMachine that transitions synchronously.  An option is given whether to make the UML behaviors
-        /// (ENTRY, DO, EXIT, EFFECT) synchronous or not.  If asynchronous behaviors is chosen, a scheduler with a 
-        /// dedicated background thread is instantiated for running them.  This optional scheduler serializes its workflow,
-        /// but will operate asynchronously with respect to transitions and incoming trigger invocations.
-        /// If synchronous behaviors is chosen, then transitions, behaviors and trigger invocations will all occur
-        /// on the current thread.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="logger"></param>
-        /// <param name="asynchronousBehaviors"></param>
-        /// <returns></returns>
-        public static StateMachine<TState> Create(string name, ILog logger, bool asynchronousBehaviors)
-        {
-            return new StateMachine<TState>(name, logger, null, false, asynchronousBehaviors);
-        }
+        protected const string RequiredCommonStateValue = "Unknown";
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="globalSyncContext"></param>
-        /// <param name="asynchronousTransitions">Indicates whether </param>
-        /// <param name="asynchronousBehaviors">Indicates whether behaviors (ENTRY, EXIT, DO, EFFECT) are executed on
-        /// a different thread from the state machine transitions and events.</param>
-        internal StateMachine(string name, ILog logger, object globalSyncContext, bool asynchronousTransitions, bool asynchronousBehaviors)
-            : base(name, logger, globalSyncContext, asynchronousTransitions, asynchronousBehaviors)
+        public StateMachine(string name, ILog logger)
+            : this(name, logger, true)
         {
-            CreateStates();
         }
 
         /// <summary>
-        /// Raised after 
+        /// Create a <see cref="StateMachine{TState}"/> instance. This ctor
+        /// gives a derived class the chance to delay state creation.
         /// </summary>
+        /// <param name="name"></param>
+        /// <param name="logger"></param>
+        /// <param name="createStates">Indicate whether this ctor should create state objects or not.</param>
+        protected StateMachine(string name, ILog logger, bool createStates)
+            : base(name, logger)
+        {
+            if (createStates)
+            {
+                CreateStates(typeof(TState).GetEnumNames());
+            }
+        }
+
         public event EventHandler<StateChangedEventArgs<TState>> StateChanged;
         public event EventHandler<StateEnteredEventArgs<TState>> StateEntered;
         public event EventHandler<StateExitedEventArgs<TState>> StateExited;
 
-        public new TState CurrentState => _currentState.ToEnum<TState>();
+        public new TState CurrentState => _currentState == null ? RequiredCommonStateValue.ToEnum<TState>() : _currentState.ToEnum<TState>();
 
         public Interfaces.IState this[TState value]
         {
             get { return FindState(value); }
-        }
-
-        private void CreateStates()
-        {
-            var stateNames = typeof(TState).GetEnumNames();
-
-            CreateStates(stateNames);
         }
 
         /// <summary>
@@ -99,14 +56,34 @@ namespace CleanMachine.Generic
             SetInitialState(initialState.ToString());
         }
 
-        internal Transition CreateTransition(TState supplierState, TState consumerState)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stateNames"></param>
+        protected override void CreateStates(IEnumerable<string> stateNames)
         {
-            return CreateTransition(supplierState.ToString(), consumerState.ToString());
+            if (!stateNames.Any(name => name.Equals(RequiredCommonStateValue)))
+            {
+                throw new InvalidOperationException($"StateMachine requires a state enum that contains the value {RequiredCommonStateValue}.");
+            }
+
+            foreach (var stateName in stateNames)
+            {
+                var state = new State(stateName, Logger);
+                _states.Add(state);
+                state.Entered += OnStateEntered;
+                state.Exited += OnStateExited;
+            }
         }
 
         internal State FindState(TState state)
         {
             return FindState(state.ToString());
+        }
+
+        internal Transition CreateTransition(TState supplierState, TState consumerState)
+        {
+            return CreateTransition(supplierState.ToString(), consumerState.ToString());
         }
 
         /// <summary>
@@ -120,7 +97,7 @@ namespace CleanMachine.Generic
             {
                 return;
             }
-            
+
             var changeArgs = transition.ToIStateChangedArgs<TState>(args);
             try
             {

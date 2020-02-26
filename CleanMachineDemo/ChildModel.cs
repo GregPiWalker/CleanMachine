@@ -3,6 +3,7 @@ using Prism.Mvvm;
 using CleanMachine.Generic;
 using System;
 using System.Timers;
+using CleanMachine;
 
 namespace CleanMachineDemo
 {
@@ -19,7 +20,7 @@ namespace CleanMachineDemo
             CreateStateMachine(globalSyncContext);
         }
 
-        public StateMachine<ChildState> StateMachine { get; private set; }
+        public BehavioralStateMachine<ChildState> StateMachine { get; private set; }
 
         public Timer RandomTimer { get; } = new Timer() { AutoReset = false };
 
@@ -27,7 +28,7 @@ namespace CleanMachineDemo
         {
             try
             {
-                StateMachine = StateMachine<ChildState>.CreatePartialAsync($"Child{_name} StateMachine", _logger, globalSyncContext);
+                StateMachine = StateMachineFactory.CreatePartialAsync<ChildState>($"Child{_name} StateMachine", _logger, globalSyncContext);
 
                 using (var builder = ChildMachineBuilder.BuildStateMachine(this, StateMachine))
                 {

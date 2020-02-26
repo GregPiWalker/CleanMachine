@@ -6,7 +6,7 @@ namespace CleanMachineDemo
 {
     public static class DemoMachineBuilder
     {
-        public static MachineEditor<DemoState> BuildStateMachine(this DemoModel model, StateMachine<DemoState> machine)
+        public static MachineEditor<DemoState> BuildStateMachine(this DemoModel model, BehavioralStateMachine<DemoState> machine)
         {
             var builder = MachineEditor<DemoState>.Edit(machine);
             machine.SetInitialState(DemoState.One);

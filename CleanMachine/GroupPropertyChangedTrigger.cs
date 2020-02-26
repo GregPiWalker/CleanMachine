@@ -46,7 +46,11 @@ namespace CleanMachine
         {
             if (string.IsNullOrEmpty(FilterProperty) || args.PropertyName.Equals(FilterProperty))
             {
-                Trip(sender, args);
+                // Don't assume that the event is raised on the application dispatcher or a single thread.
+                lock (_handlerSync)
+                {
+                    Trip(sender, args);
+                }
             }
         }
     }

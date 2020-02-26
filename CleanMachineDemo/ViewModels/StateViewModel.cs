@@ -9,12 +9,12 @@ namespace CleanMachineDemo
     {
         private DemoState _myState;
 
-        public StateViewModel(string stateName, StateMachine<DemoState> machine, ILog logger)
+        public StateViewModel(string stateName, BehavioralStateMachine<DemoState> machine, ILog logger)
             : base(logger)
         {
             _myState = (DemoState)Enum.Parse(typeof(DemoState), stateName);
             Model = machine[_myState];
-            Model.EntryInitiated += HandleEnteringState;
+            (Model as IStateBehavior).EntryInitiated += HandleEnteringState;
 
             // Check for initial state.
             if (Model.IsCurrentState)

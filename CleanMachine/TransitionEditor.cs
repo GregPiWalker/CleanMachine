@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using CleanMachine.Generic;
-using System.Linq.Expressions;
 using System.Collections.Specialized;
 using log4net;
 using System.Collections.Generic;
@@ -27,7 +26,13 @@ namespace CleanMachine
 
         public TransitionEditor HaveEffect(Action effect)
         {
-            _transition.Effect = effect;
+            var transition = _transition as BehavioralTransition;
+            if (transition == null)
+            {
+                throw new InvalidOperationException($"");
+            }
+
+            transition.Effect = effect;
             return this;
         }
 
@@ -59,14 +64,14 @@ namespace CleanMachine
         //    return this;
         //}
 
-        public TransitionEditor TriggerWithStateChange<TState>(StateMachine<TState> machine, TState toState) where TState : struct
+        public TransitionEditor TriggerWithStateChange<TState>(BehavioralStateMachine<TState> machine, TState toState) where TState : struct
         {
             var trigger = new StateChangedTrigger<TState>(machine, toState, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
-        public TransitionEditor TriggerWithStateChange<TState>(List<StateMachine<TState>> machines, TState toState) where TState : struct
+        public TransitionEditor TriggerWithStateChange<TState>(List<BehavioralStateMachine<TState>> machines, TState toState) where TState : struct
         {
             var trigger = new StateChangedTrigger<TState>(machines, toState, _logger);
             _transition.AddTrigger(trigger);

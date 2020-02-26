@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace CleanMachine.Tests
 {
-    public class StateMachineTestHarness
+    public class StateMachineTestHarness<TState> where TState : struct
     {
         private readonly ManualResetEvent _transitionDone = new ManualResetEvent(false);
         private readonly ManualResetEvent _transitionPreparedForDo = new ManualResetEvent(false);
@@ -18,13 +18,13 @@ namespace CleanMachine.Tests
         private readonly ManualResetEvent _testIsPrepared = new ManualResetEvent(false);
         private readonly Stopwatch _executionTimer = new Stopwatch();
 
-        public StateMachineTestHarness(StateMachine machine, string initialState)
+        public StateMachineTestHarness(StateMachine<TState> machine, string initialState)
         {
             Machine = machine;
             Machine.Edit();
             Machine.SetInitialState(initialState);
             
-            foreach (State state in Machine.States)
+            foreach (BehavioralState state in Machine.States)
             {
                 //state.EntryInitiated += State_EntryInitiated;
                 //state.EntryCompleted += State_EntryCompleted;
@@ -42,16 +42,16 @@ namespace CleanMachine.Tests
         public Action SuccessAction { get; set; }
         public Action FailureAction { get; set; }
 
-        private StateMachine Machine { get; set; }
+        private StateMachine<TState> Machine { get; set; }
 
         public void BuildOneWayMachine()
         {
-            var states = Machine.States.Cast<State>().ToList();
+            var states = Machine.States.Cast<BehavioralState>().ToList();
             for (int i = 0; i < states.Count; i++)
             {
                 if (i + 1 < states.Count)
                 {
-                    var trigger = new Trigger<StateMachineTestHarness, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
+                    var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
                     var transition = Machine.CreateTransition(states[i].Name, states[i + 1].Name);
                     transition.Edit();
                     transition.AddTrigger(trigger);
@@ -67,9 +67,9 @@ namespace CleanMachine.Tests
             BuildOneWayMachine();
 
             // Transition from the last state back to the first.
-            var states = Machine.States.Cast<State>().ToList();
+            var states = Machine.States.Cast<BehavioralState>().ToList();
             int last = states.Count - 1;
-            var trigger = new Trigger<StateMachineTestHarness, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
+            var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
             var transition = Machine.CreateTransition(states[last].Name, states[0].Name);
             transition.Edit();
             transition.AddTrigger(trigger);
@@ -80,7 +80,7 @@ namespace CleanMachine.Tests
 
         public void AddDoBehavior(Action<IState> action)
         {
-            foreach (State state in Machine.States)
+            foreach (BehavioralState state in Machine.States)
             {
                 state.AddDoBehavior(action);
             }
@@ -101,9 +101,9 @@ namespace CleanMachine.Tests
             Machine.CompleteEdit();
 
             // Hookup transitions after initial state already entered to avoid measuring the wrong transaction.
-            foreach (State state in Machine.States)
+            foreach (BehavioralState state in Machine.States)
             {
-                foreach (Transition transition in state.Transitions)
+                foreach (BehavioralTransition transition in state.Transitions)
                 {
                     transition.Succeeded += (a, b) =>
                     {
@@ -119,7 +119,7 @@ namespace CleanMachine.Tests
             }
 
             // In case machine is async, crudely wait for it to enter initial state .
-            while (Machine.CurrentState == null)
+            while (((StateMachineBase)Machine).CurrentState == null)
             {
                 Thread.Sleep(50);
             }
@@ -139,12 +139,15 @@ namespace CleanMachine.Tests
         /// <returns></returns>
         public bool WaitUntilAsyncDoBehavior(TimeSpan waitTime)
         {
+            var behavioralMachine = Machine as BehavioralStateMachine<TState>;
+            Assert.IsNotNull(behavioralMachine, "Use a BehavioralStateMachine to test asynchronous behaviors");
+
             if (waitTime < TimeSpan.FromMilliseconds(500))
             {
                 Assert.Fail("Configured waitTime value must be 500ms or greater.");
             }
 
-            if (Machine.HasTransitionScheduler)
+            if (behavioralMachine.HasTransitionScheduler)
             {
                 return WaitUntilFullyAsyncDoBehavior(waitTime);
             }
@@ -183,9 +186,9 @@ namespace CleanMachine.Tests
             _transitionPreparedForDo.Reset();
 
             // Hookup transitions after initial state already entered to avoid measuring the wrong transaction.
-            foreach (State state in Machine.States)
+            foreach (BehavioralState state in Machine.States)
             {
-                foreach (Transition transition in state.Transitions)
+                foreach (BehavioralTransition transition in state.Transitions)
                 {
                     transition.Succeeded += (a, b) =>
                     {
@@ -196,7 +199,7 @@ namespace CleanMachine.Tests
                         }
 
 
-                        if (!BlockUntilDoBehaviorCompletes(waitTime))
+                        if (!BlockUntilDoBehaviorCompletes(TimeSpan.FromMilliseconds(500)))
                         {
                             return;
                         }
@@ -207,7 +210,7 @@ namespace CleanMachine.Tests
             }
 
             // In case machine is async, crudely wait for it to enter initial state .
-            while (Machine.CurrentState == null)
+            while (((StateMachineBase)Machine).CurrentState == null)
             {
                 Thread.Sleep(50);
             }
@@ -249,7 +252,7 @@ namespace CleanMachine.Tests
             _testIsPrepared.Reset();
             
             // In case machine is async, crudely wait for it to enter initial state .
-            while (Machine.CurrentState == null)
+            while (((StateMachineBase)Machine).CurrentState == null)
             {
                 Thread.Sleep(50);
             }

@@ -48,8 +48,10 @@
     <Compile Include="Generic\IConstraint.cs" />
     <Compile Include="IConstraint.cs" />
     <Compile Include="IState.cs" />
+    <Compile Include="IStateBehavior.cs" />
     <Compile Include="IStateMachine.cs" />
     <Compile Include="ITransition.cs" />
+    <Compile Include="ITransitionBehavior.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ITrigger.cs" />
   </ItemGroup>

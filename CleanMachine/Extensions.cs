@@ -107,7 +107,12 @@ namespace CleanMachine
 
         public static TState ToEnum<TState>(this Interfaces.IState state)
         {
-            return (TState)Enum.Parse(typeof(TState), state.Name);
+            return state.Name.ToEnum<TState>();
+        }
+
+        public static TState ToEnum<TState>(this string state)
+        {
+            return (TState)Enum.Parse(typeof(TState), state);
         }
     }
 }

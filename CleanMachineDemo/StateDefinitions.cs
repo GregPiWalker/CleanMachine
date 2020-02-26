@@ -5,12 +5,14 @@
         One,
         Two,
         Three,
-        Four
+        Four,
+        Unknown
     }
 
     public enum ChildState
     {
         Ready,
-        Busy
+        Busy,
+        Unknown
     }
 }

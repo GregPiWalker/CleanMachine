@@ -7,25 +7,25 @@ namespace CleanMachine.Generic
 {
     /// <summary>
     /// This class is a convenience for creating a trigger that listens for the StateChanged event from 
-    /// one or more <see cref="StateMachine{TState}"/>s.
+    /// one or more <see cref="BehavioralStateMachine{TState}"/>s.
     /// </summary>
     /// <typeparam name="TState"></typeparam>
     public class StateChangedTrigger<TState> : TriggerBase where TState : struct
     {
         private readonly TState? _filterState;
 
-        public StateChangedTrigger(List<StateMachine<TState>> source, TState? tripOnState, ILog logger)
-            : base($"{typeof(StateMachine<TState>).Name}.StateChanged<{typeof(StateChangedEventArgs<TState>).Name}>", source, logger)
+        public StateChangedTrigger(List<BehavioralStateMachine<TState>> source, TState? tripOnState, ILog logger)
+            : base($"{typeof(BehavioralStateMachine<TState>).Name}.StateChanged<{typeof(StateChangedEventArgs<TState>).Name}>", source, logger)
         {
             _filterState = tripOnState;
         }
 
-        public StateChangedTrigger(StateMachine<TState> source, TState? tripOnState, ILog logger)
-            : this(new List<StateMachine<TState>>() { source }, tripOnState, logger)
+        public StateChangedTrigger(BehavioralStateMachine<TState> source, TState? tripOnState, ILog logger)
+            : this(new List<BehavioralStateMachine<TState>>() { source }, tripOnState, logger)
         {
         }
 
-        public StateChangedTrigger(StateMachine<TState> source, ILog logger)
+        public StateChangedTrigger(BehavioralStateMachine<TState> source, ILog logger)
             : this(source, null, logger)
         {
         }
@@ -33,9 +33,9 @@ namespace CleanMachine.Generic
         /// <summary>
         /// Gets the type cast base source.
         /// </summary>
-        private List<StateMachine<TState>> SourceMachines
+        private List<BehavioralStateMachine<TState>> SourceMachines
         {
-            get { return Source as List<StateMachine<TState>>; }
+            get { return Source as List<BehavioralStateMachine<TState>>; }
         }
 
         public override string ToString()

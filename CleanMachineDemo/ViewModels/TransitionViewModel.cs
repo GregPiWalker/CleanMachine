@@ -8,7 +8,7 @@ namespace CleanMachineDemo
     {
         private string _transitionName;
 
-        public TransitionViewModel(string transitionName, StateMachine<DemoState> machine, string stateName, ILog logger)
+        public TransitionViewModel(string transitionName, BehavioralStateMachine<DemoState> machine, string stateName, ILog logger)
             : base(logger)
         {
             _transitionName = transitionName;
