@@ -142,29 +142,11 @@ namespace CleanMachineDemo
 
         public void Select()
         {
-            //if (_viewModel == null)
-            //{
-            //    _viewModel = DataContext as TransitionViewModel;
-            //    if (_viewModel == null)
-            //    {
-            //        return;
-            //    }
-            //}
-
             _viewModel.Select();
         }
 
         public void Deselect()
         {
-            //if (_viewModel == null)
-            //{
-            //    _viewModel = DataContext as TransitionViewModel;
-            //    if (_viewModel == null)
-            //    {
-            //        return;
-            //    }
-            //}
-
             _viewModel.Deselect();
         }
 
