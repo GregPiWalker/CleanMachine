@@ -159,6 +159,8 @@ Error message and password prompt
 
 <li>$:/state/sidebar</li>
 
+<li>$:/state/tab/sidebar--595412856</li>
+
 <li>$:/StoryList</li>
 
 <li>$:/temp/info-plugin</li>
@@ -170,6 +172,8 @@ Error message and password prompt
 <li>Child State Machine Diagram</li>
 
 <li>ChildStateMachine</li>
+
+<li>CleanMachine Framework Dependencies</li>
 
 <li>CleanMachineDemo</li>
 
@@ -9391,8 +9395,9 @@ Error message and password prompt
     }
 }</pre>
 </div>
-<div created="20200216155024238" modified="20200216155039925" title="$:/DefaultTiddlers">
-<pre>[[Compiling the Demo Project]]</pre>
+<div created="20200216155024238" modified="20200315173739588" title="$:/DefaultTiddlers">
+<pre>[[CleanMachine Framework Dependencies]]
+[[Compiling the Demo Project]]</pre>
 </div>
 <div status="complete" title="$:/Import">
 <pre>The following tiddlers were imported:
@@ -9411,7 +9416,10 @@ Error message and password prompt
 <div created="20200217214734441" modified="20200217214740002" title="$:/state/sidebar">
 <pre>yes</pre>
 </div>
-<div created="20200224181622811" list="$:/ControlPanel [[Compiling the Demo Project]] CleanMachineDemo ChildStateMachine" modified="20200224182133780" title="$:/StoryList">
+<div created="20200315173108449" modified="20200315173112720" title="$:/state/tab/sidebar--595412856">
+<pre>$:/core/ui/SideBar/Recent</pre>
+</div>
+<div created="20200315173137010" list="[[CleanMachine Framework Dependencies]] [[Compiling the Demo Project]]" modified="20200315173617944" title="$:/StoryList">
 <pre></pre>
 </div>
 <div plugin-type="info" title="$:/temp/info-plugin" type="application/json">
@@ -9427,7 +9435,7 @@ Error message and password prompt
         },
         &quot;$:/info/url/full&quot;: {
             &quot;title&quot;: &quot;$:/info/url/full&quot;,
-            &quot;text&quot;: &quot;file:///C:/Users/ferreter/Downloads/TiddlyWikis/README.html&quot;
+            &quot;text&quot;: &quot;file:///C:/Users/ferreter/Downloads/TiddlyWikis/About.html&quot;
         },
         &quot;$:/info/url/host&quot;: {
             &quot;title&quot;: &quot;$:/info/url/host&quot;,
@@ -9447,7 +9455,7 @@ Error message and password prompt
         },
         &quot;$:/info/url/pathname&quot;: {
             &quot;title&quot;: &quot;$:/info/url/pathname&quot;,
-            &quot;text&quot;: &quot;/C:/Users/ferreter/Downloads/TiddlyWikis/README.html&quot;
+            &quot;text&quot;: &quot;/C:/Users/ferreter/Downloads/TiddlyWikis/About.html&quot;
         },
         &quot;$:/info/url/search&quot;: {
             &quot;title&quot;: &quot;$:/info/url/search&quot;,
@@ -9586,6 +9594,12 @@ Error message and password prompt
 </div>
 <div created="20200222020351604" modified="20200224182044361" title="ChildStateMachine">
 <pre>This [[Child State Machine Diagram]] illustrates the very simple state machine used by each of the five child models.  Both transitions in the state machine are triggered by a count-down timer.  When traversed, the transitions have the effect of re-starting the count-down timer.  Entropy is introduced by giving the timers a random count-down interval with each start.</pre>
+</div>
+<div created="20200315173006434" modified="20200315173554176" tags="" title="CleanMachine Framework Dependencies">
+<pre>When you first pull down the ~CleanMachine project, it should not contain references to ~WindowsBase, System.Windows, or System.Windows.Forms.  However, if you update packages with ~NuGet, those dependencies will be added back to the project.  You may safely delete them.  It seems that the ~NuGet package for ~ReactiveEx still establishes those dependencies, even though they were supposed to have been removed a decade ago.
+
+For reference, see:
+https://social.msdn.microsoft.com/forums/en-US/de1a62fa-abe8-4ea3-a653-1ff47b4d8d82/reactive-extensions-assemblies-installers-and-nuget-the-full-story</pre>
 </div>
 <div created="20200216200214861" modified="20200222015531714" title="CleanMachineDemo">
 <pre>This is a very basic (for now) WPF project that exercises some CleanStateMachine basics, and illustrates some behaviors via a simple DemoStateMachine.  In addition, the demo has 5 children that also have a ChildStateMachine.  The demo state machine has behavior that depends on the composite state of the children.</pre>

@@ -35,9 +35,9 @@ namespace CleanMachine.Generic
             }
         }
 
-        public event EventHandler<StateChangedEventArgs<TState>> StateChanged;
-        public event EventHandler<StateEnteredEventArgs<TState>> StateEntered;
-        public event EventHandler<StateExitedEventArgs<TState>> StateExited;
+        public virtual event EventHandler<StateChangedEventArgs<TState>> StateChanged;
+        public virtual event EventHandler<StateEnteredEventArgs<TState>> StateEntered;
+        public virtual event EventHandler<StateExitedEventArgs<TState>> StateExited;
 
         public new TState CurrentState => _currentState == null ? RequiredCommonStateValue.ToEnum<TState>() : _currentState.ToEnum<TState>();
 
