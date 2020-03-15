@@ -1,12 +1,12 @@
 ﻿using log4net;
 using Prism.Mvvm;
-using CleanMachine.Generic;
-using CleanMachine.Interfaces;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
-using CleanMachine;
 using System.Linq;
+using CleanMachine;
+using CleanMachine.Behavioral.Generic;
+using CleanMachine.Interfaces;
 
 namespace CleanMachineDemo
 {

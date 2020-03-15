@@ -38,9 +38,9 @@ namespace CleanMachine
 
         public string Name { get; private set; }
 
-        public IState Consumer { get { return To; } }
+        public IState Consumer => To;
 
-        public IState Supplier { get { return From; } }
+        public IState Supplier => From;
 
         internal State From { get; }
 
@@ -60,7 +60,7 @@ namespace CleanMachine
             }
         }
 
-        internal bool Editable { get; private set; }
+        protected bool Editable { get; private set; }
 
         public override string ToString()
         {
@@ -115,6 +115,27 @@ namespace CleanMachine
         }
 
         /// <summary>
+        /// Enable all <see cref="TriggerBase"/>s and set the current activation context.
+        /// </summary>
+        /// <param name="stateSelectionContext">The new state selection context to hold as an activation context.</param>
+        internal void Enable(IDisposable stateSelectionContext)
+        {
+            _activationContext = stateSelectionContext;
+            _enabled = true;
+            _triggers.ForEach(t => t.Activate());
+        }
+
+        /// <summary>
+        /// Disable all <see cref="TriggerBase"/>s and clear the current activation context.
+        /// </summary>
+        internal void Disable()
+        {
+            _activationContext = null;
+            _enabled = false;
+            _triggers.ForEach(t => t.Deactivate());
+        }
+
+        /// <summary>
         /// Scheduling the Effect and events keeps the flow of external behaviors synchronized.
         /// </summary>
         /// <param name="source"></param>
@@ -135,27 +156,6 @@ namespace CleanMachine
             OnSucceeded(args);
 
             return true;
-        }
-
-        /// <summary>
-        /// Enable all <see cref="TriggerBase"/>s and set the current activation context.
-        /// </summary>
-        /// <param name="stateSelectionContext">The new state selection context to hold as an activation context.</param>
-        internal void Enable(IDisposable stateSelectionContext)
-        {
-            _activationContext = stateSelectionContext;
-            _enabled = true;
-            _triggers.ForEach(t => t.Activate());
-        }
-
-        /// <summary>
-        /// Disable all <see cref="TriggerBase"/>s and clear the current activation context.
-        /// </summary>
-        internal void Disable()
-        {
-            _activationContext = null;
-            _enabled = false;
-            _triggers.ForEach(t => t.Deactivate());
         }
 
         protected bool ValidateAttempt(TriggerEventArgs args)

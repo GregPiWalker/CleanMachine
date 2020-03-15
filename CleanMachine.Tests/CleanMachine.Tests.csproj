@@ -81,6 +81,10 @@
     <Compile Include="TestStateMachine.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CleanMachine.Behavioral\CleanMachine.Behavioral.csproj">
+      <Project>{3c62f29a-edb9-4c1f-88af-09e43c6aed29}</Project>
+      <Name>CleanMachine.Behavioral</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CleanMachine.Interfaces\CleanMachine.Interfaces.csproj">
       <Project>{b50895de-d25c-4c79-a540-e0bdd7060e5e}</Project>
       <Name>CleanMachine.Interfaces</Name>

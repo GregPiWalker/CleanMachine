@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CleanMachine")]
+[assembly: AssemblyTitle("CleanMachine.Behavioral")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("CleanMachine")]
+[assembly: AssemblyProduct("CleanMachine.Behavioral")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("e31e0c32-63bd-4e0f-94e0-32997096a600")]
+[assembly: Guid("3c62f29a-edb9-4c1f-88af-09e43c6aed29")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -39,6 +39,3 @@ using System.Runtime.InteropServices;
 // used by Moq.
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("CleanMachine.Tests")]
-
-// Let the behavioral assembly be a friend
-[assembly: InternalsVisibleTo("CleanMachine.Behavioral")]

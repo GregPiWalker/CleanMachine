@@ -1,7 +1,8 @@
-﻿using CleanMachine.Generic;
-using CleanMachine.Interfaces;
-using log4net;
+﻿using log4net;
 using System;
+using CleanMachine.Behavioral.Generic;
+using CleanMachine.Interfaces;
+
 
 namespace CleanMachineDemo
 {

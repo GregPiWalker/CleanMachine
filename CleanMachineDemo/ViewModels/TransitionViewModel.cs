@@ -1,6 +1,7 @@
-﻿using CleanMachine.Generic;
-using log4net;
+﻿using log4net;
 using System;
+using CleanMachine.Behavioral.Generic;
+
 
 namespace CleanMachineDemo
 {

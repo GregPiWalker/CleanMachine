@@ -1,6 +1,5 @@
-﻿using CleanMachine;
-using CleanMachine.Generic;
-using System.Timers;
+﻿using System.Timers;
+using CleanMachine.Behavioral.Generic;
 
 namespace CleanMachineDemo
 {

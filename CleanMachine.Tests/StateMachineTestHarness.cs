@@ -1,4 +1,6 @@
 ﻿using CleanMachine;
+using CleanMachine.Behavioral;
+using CleanMachine.Behavioral.Generic;
 using CleanMachine.Generic;
 using CleanMachine.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

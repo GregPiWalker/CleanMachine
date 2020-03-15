@@ -305,7 +305,7 @@ namespace CleanMachine
                 return;
             }
 
-            var transition = sender as BehavioralTransition;
+            var transition = sender as Transition;
             var transitionArgs = transition.ToTransitionArgs(args);
 
             AttemptTransition(transitionArgs);

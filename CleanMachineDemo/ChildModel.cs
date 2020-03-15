@@ -1,9 +1,9 @@
 ﻿using log4net;
 using Prism.Mvvm;
-using CleanMachine.Generic;
 using System;
 using System.Timers;
 using CleanMachine;
+using CleanMachine.Behavioral.Generic;
 
 namespace CleanMachineDemo
 {
