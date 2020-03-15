@@ -145,15 +145,45 @@ namespace CleanMachine.Generic
             }
         }
 
-        ///// <summary>
-        ///// Use this to get around unfortunate timing with state creation in a base class.
-        ///// </summary>
-        //private void PopulateStateSchedulers()
-        //{
-        //    foreach (BehavioralState state in _states)
-        //    {
-        //        state.SetScheduler(_behaviorScheduler);
-        //    }
-        //}
+        protected override bool AttemptTransitionUnsafe(TransitionEventArgs args)
+        {
+            var triggerContext = args.TriggerArgs.TriggerContext as BooleanDisposable;
+            if (triggerContext == null || triggerContext.IsDisposed)
+            {
+                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
+                return false;
+            }
+
+            bool result = base.AttemptTransitionUnsafe(args);
+            if (result)
+            {
+                OnPropertyChanged(nameof(CurrentState));
+            }
+
+            return result;
+        }
+
+        protected override void HandleTransitionRequest(object sender, TriggerEventArgs args)
+        {
+            var triggerContext = args.TriggerContext as BooleanDisposable;
+            if (triggerContext == null || triggerContext.IsDisposed)
+            {
+                return;
+            }
+
+            base.HandleTransitionRequest(sender, args);
+        }
+
+        private void OnPropertyChanged(string propertyName)
+        {
+            try
+            {
+                //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"{ex.GetType().Name} during 'PropertyChanged({propertyName})' event from {Name} state machine.", ex);
+            }
+        }
     }
 }

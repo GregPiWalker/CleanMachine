@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using CleanMachine.Interfaces;
-using System.Reactive.Disposables;
 using System.Collections.ObjectModel;
 using log4net;
+using CleanMachine.Interfaces;
 
 namespace CleanMachine
 {
@@ -46,11 +45,12 @@ namespace CleanMachine
             }
         }
 
+        //TODO: figure out a way to make this internal and internal protected
+        public IDisposable SelectionContext { get; protected set; }
+
         internal bool IsEnabled { get; private set; }
 
         internal bool Editable { get; private set; }
-
-        internal BooleanDisposable SelectionContext { get; private set; }
 
         public override string ToString()
         {
@@ -189,11 +189,8 @@ namespace CleanMachine
             t.Failed += HandleTransitionFailed;
         }
 
-        internal void Enable()
+        internal virtual void Enable()
         {
-            // Start a new state selection context in order to associate all incoming trigger handlers
-            // with a single state selection.
-            SelectionContext = new BooleanDisposable();
             _logger.Info($"State {Name}: enabling all transitions.");
             _outboundTransitions.ForEach(t => t.Enable(SelectionContext));
             IsEnabled = true;

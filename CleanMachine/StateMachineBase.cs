@@ -1,13 +1,14 @@
 ﻿using log4net;
-using CleanMachine.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.ComponentModel;
+using CleanMachine.Interfaces;
 
 namespace CleanMachine
 {
-    public abstract class StateMachineBase : IStateMachine
+    public abstract class StateMachineBase : IStateMachine, INotifyPropertyChanged
     {
         protected readonly List<Transition> _transitions = new List<Transition>();
         protected readonly List<State> _states = new List<State>();
@@ -24,6 +25,8 @@ namespace CleanMachine
             Name = name;
             Logger = logger;
         }
+
+        public virtual event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// 
@@ -244,15 +247,10 @@ namespace CleanMachine
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        protected bool AttemptTransitionUnsafe(TransitionEventArgs args)
+        protected virtual bool AttemptTransitionUnsafe(TransitionEventArgs args)
         {
-            if (args.TriggerArgs.TriggerContext.IsDisposed)
-            {
-                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
-                return false;
-            }
-
             // Provide escape route in case the trigger became irrelevant while the handler for it was waiting.
+            //TODO: it's possible this condition can move into BehavioralStateMachine.
             if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
             {
                 Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
@@ -294,9 +292,9 @@ namespace CleanMachine
             OnStateChanged(null, new TriggerEventArgs() { Cause = this });
         }
 
-        private void HandleTransitionRequest(object sender, TriggerEventArgs args)
+        protected virtual void HandleTransitionRequest(object sender, TriggerEventArgs args)
         {
-            if (args.TriggerContext.IsDisposed)
+            if (args.TriggerContext == null)
             {
                 return;
             }

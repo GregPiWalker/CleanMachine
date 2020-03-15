@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Reactive.Disposables;
 
 namespace CleanMachine
 {    
     public class TriggerEventArgs : EventArgs
     {
-        internal BooleanDisposable TriggerContext { get; set; }
+        internal IDisposable TriggerContext { get; set; }
 
         public object Cause { get; set; }
 

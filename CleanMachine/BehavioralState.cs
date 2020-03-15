@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using CleanMachine.Interfaces;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using log4net;
+using CleanMachine.Interfaces;
 
 namespace CleanMachine
 {
@@ -57,6 +57,14 @@ namespace CleanMachine
             }
 
             _exitBehavior = behavior;
+        }
+
+        internal override void Enable()
+        {
+            // Start a new state selection context in order to associate all incoming trigger handlers
+            // with a single state selection.
+            SelectionContext = new BooleanDisposable();
+            base.Enable();
         }
 
         internal override Transition CreateTransitionTo(string context, State consumer)

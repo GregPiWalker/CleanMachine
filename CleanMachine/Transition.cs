@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using CleanMachine.Interfaces;
 using System.Text;
-using System.Reactive.Disposables;
 using log4net;
 
 namespace CleanMachine
@@ -14,7 +13,7 @@ namespace CleanMachine
         protected readonly ILog _logger;
         protected Constraint _guard;
         protected bool _enabled;
-        protected BooleanDisposable _activationContext;
+        protected IDisposable _activationContext;
 
         public Transition(string context, State fromState, State toState, ILog logger)
         {
@@ -142,7 +141,7 @@ namespace CleanMachine
         /// Enable all <see cref="TriggerBase"/>s and set the current activation context.
         /// </summary>
         /// <param name="stateSelectionContext">The new state selection context to hold as an activation context.</param>
-        internal void Enable(BooleanDisposable stateSelectionContext)
+        internal void Enable(IDisposable stateSelectionContext)
         {
             _activationContext = stateSelectionContext;
             _enabled = true;
