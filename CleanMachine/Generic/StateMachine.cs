@@ -71,8 +71,8 @@ namespace CleanMachine.Generic
             {
                 var state = new State(stateName, Logger);
                 _states.Add(state);
-                state.Entered += OnStateEntered;
-                state.Exited += OnStateExited;
+                state.Entered += HandleStateEntered;
+                state.Exited += HandleStateExited;
             }
         }
 
@@ -115,7 +115,7 @@ namespace CleanMachine.Generic
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        protected override void OnStateEntered(object sender, Interfaces.StateEnteredEventArgs args)
+        protected override void HandleStateEntered(object sender, Interfaces.StateEnteredEventArgs args)
         {
             if (StateEntered == null)
             {
@@ -133,7 +133,7 @@ namespace CleanMachine.Generic
             }
         }
 
-        protected override void OnStateExited(object sender, Interfaces.StateExitedEventArgs args)
+        protected override void HandleStateExited(object sender, Interfaces.StateExitedEventArgs args)
         {
             if (StateExited == null)
             {

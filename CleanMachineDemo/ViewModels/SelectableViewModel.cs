@@ -1,9 +1,10 @@
 ﻿using log4net;
 using Prism.Mvvm;
+using Diversions.Mvvm;
 
 namespace CleanMachineDemo
 {
-    public class SelectableViewModel : BindableBase
+    public class SelectableViewModel : DivertingBindableBase
     {
         protected readonly ILog _logger;
         private bool _isSelected;

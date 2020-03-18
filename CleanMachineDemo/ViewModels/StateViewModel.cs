@@ -2,10 +2,12 @@
 using System;
 using CleanMachine.Behavioral.Generic;
 using CleanMachine.Interfaces;
+using Diversions;
 
 
 namespace CleanMachineDemo
 {
+    [Diversion(MarshalOption.CurrentThread)]
     public class StateViewModel : SelectableViewModel
     {
         private DemoState _myState;

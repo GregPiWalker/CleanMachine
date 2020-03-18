@@ -4,9 +4,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Diversions;
 
 namespace CleanMachineDemo
 {
+    [Diversion(MarshalOption.Dispatcher)]
     [TemplatePart(Name = "PART_ArrowShaft", Type = typeof(Path))]
     public class TransitionSymbol : Control
     {
@@ -149,35 +151,19 @@ namespace CleanMachineDemo
         {
             _viewModel.Deselect();
         }
-
+        
         public void HandleTransitionFailure(object sender, EventArgs args)
         {
-            if (Application.Current.Dispatcher.CheckAccess())
-            {
-                RaiseEvent(new RoutedEventArgs(FailureEvent));
-            }
-            else
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    RaiseEvent(new RoutedEventArgs(FailureEvent));
-                });
-            }
+            // This method body is automatically marshalled onto the UI dispatcher
+            // since this classes diverter was set to the dispatcher delegate.
+            RaiseEvent(new RoutedEventArgs(FailureEvent));
         }
-
+        
         public void HandleTransitionSuccess(object sender, EventArgs args)
         {
-            if (Application.Current.Dispatcher.CheckAccess())
-            {
-                RaiseEvent(new RoutedEventArgs(SuccessEvent));
-            }
-            else
-            {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    RaiseEvent(new RoutedEventArgs(SuccessEvent));
-                });
-            }
+            // This method body is automatically marshalled onto the UI dispatcher
+            // since this classes diverter was set to the dispatcher delegate.
+            RaiseEvent(new RoutedEventArgs(SuccessEvent));
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)

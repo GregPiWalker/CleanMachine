@@ -1,13 +1,15 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Prism.Mvvm;
 using System;
 using System.ComponentModel;
 using System.Collections;
 using Prism.Commands;
+using Diversions;
+using Diversions.Mvvm;
 
 namespace CleanMachineDemo
 {
-    public class ControlPanelViewModel : BindableBase, INotifyDataErrorInfo
+    [Diversion(MarshalOption.CurrentThread)]
+    public class ControlPanelViewModel : DivertingBindableBase, INotifyDataErrorInfo
     {
         private const string LambdaOperator = "()=>";
         private string _expression;

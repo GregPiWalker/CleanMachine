@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CleanMachine.Behavioral</RootNamespace>
     <AssemblyName>CleanMachine.Behavioral</AssemblyName>
-    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -75,6 +76,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Diversions\Standard\Diversions\Diversions.csproj">
+      <Project>{0f7db95f-8794-4c8a-af27-209beb6f90a7}</Project>
+      <Name>Diversions</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CleanMachine.Interfaces\CleanMachine.Interfaces.csproj">
       <Project>{b50895de-d25c-4c79-a540-e0bdd7060e5e}</Project>
       <Name>CleanMachine.Interfaces</Name>

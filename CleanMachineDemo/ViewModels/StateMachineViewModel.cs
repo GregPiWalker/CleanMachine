@@ -1,10 +1,13 @@
 ﻿using log4net;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Diversions;
+using Diversions.Mvvm;
 
 namespace CleanMachineDemo
 {
-    public class StateMachineViewModel
+    [Diversion(MarshalOption.CurrentThread)]
+    public class StateMachineViewModel : DivertingBindableBase
     {
         private readonly ILog _logger;
         private readonly List<StateViewModel> _states = new List<StateViewModel>();

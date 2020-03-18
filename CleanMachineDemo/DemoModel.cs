@@ -1,16 +1,18 @@
 ﻿using log4net;
-using Prism.Mvvm;
 using System;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using System.Linq;
 using CleanMachine;
 using CleanMachine.Behavioral.Generic;
 using CleanMachine.Interfaces;
+using Diversions;
+using Diversions.Mvvm;
+using Diversions.ObjectModel;
 
 namespace CleanMachineDemo
 {
-    public class DemoModel : BindableBase
+    [Diversion(MarshalOption.CurrentThread)]
+    public class DemoModel : DivertingBindableBase
     {
         private readonly object _synchronizationContext = new object();
         private readonly ILog _logger;
@@ -95,7 +97,7 @@ namespace CleanMachineDemo
             set { SetProperty(ref _areChildrenReady, value, nameof(AreChildrenReady)); }
         }
 
-        public ObservableCollection<object> Observables { get; } = new ObservableCollection<object>();
+        public DivertingObservableCollection<object> Observables { get; } = new DivertingObservableCollection<object>();
 
         public List<ChildModel> Children { get; } = new List<ChildModel>();
 

@@ -1,13 +1,24 @@
 ﻿using System;
 using Prism.Mvvm;
 using log4net;
+using System.Windows;
+using System.Threading;
+using Diversions;
+using Diversions.Mvvm;
 
 namespace CleanMachineDemo
 {
-    public class DemoViewModel : BindableBase
+    [Diversion(MarshalOption.CurrentThread)]
+    public class DemoViewModel : DivertingBindableBase
     {
         private static readonly ILog _logger = LogManager.GetLogger("Demo Logger");
         private DemoModel _model;
+
+        static DemoViewModel()
+        {
+            // Add the option to use the UI Dispatcher.  The default diverter will still be current thread.
+            Diversion.AddDiverter(MarshalOption.Dispatcher, Application.Current.Dispatcher, "Invoke", new Type[] { typeof(Delegate), typeof(object[]) }, SynchronizationContext.Current);
+        }
 
         public DemoViewModel()
         {

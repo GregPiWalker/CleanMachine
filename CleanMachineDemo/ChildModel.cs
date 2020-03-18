@@ -1,13 +1,13 @@
 ﻿using log4net;
-using Prism.Mvvm;
 using System;
 using System.Timers;
 using CleanMachine;
 using CleanMachine.Behavioral.Generic;
+using Diversions.Mvvm;
 
 namespace CleanMachineDemo
 {
-    public class ChildModel : BindableBase
+    public class ChildModel : DivertingBindableBase
     {
         private readonly ILog _logger;
         private readonly Random _randomGenerator = new Random();

@@ -31,8 +31,8 @@ namespace CleanMachine
             Name = $"{From.Name}-->{To.Name}";
         }
 
-        public event EventHandler<Interfaces.TransitionEventArgs> Succeeded;
-        public event EventHandler<Interfaces.TransitionEventArgs> Failed;
+        public virtual event EventHandler<Interfaces.TransitionEventArgs> Succeeded;
+        public virtual event EventHandler<Interfaces.TransitionEventArgs> Failed;
         
         internal event EventHandler<TriggerEventArgs> Requested;
 

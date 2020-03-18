@@ -20,10 +20,10 @@ namespace CleanMachine
             _logger = logger;
         }
         
-        public event EventHandler<StateEnteredEventArgs> Entered;
-        public event EventHandler<StateExitedEventArgs> Exited;
-        public event EventHandler<Interfaces.TransitionEventArgs> TransitionSucceeded;
-        public event EventHandler<Interfaces.TransitionEventArgs> TransitionFailed;
+        public virtual event EventHandler<StateEnteredEventArgs> Entered;
+        public virtual event EventHandler<StateExitedEventArgs> Exited;
+        public virtual event EventHandler<Interfaces.TransitionEventArgs> TransitionSucceeded;
+        public virtual event EventHandler<Interfaces.TransitionEventArgs> TransitionFailed;
 
         internal event EventHandler<bool> IsCurrentValueChanged;
 
@@ -212,12 +212,17 @@ namespace CleanMachine
                 //TODO: trace logging
 
                 var enteredArgs = enteredOn == null ? new StateEnteredEventArgs() { State = this } : enteredOn.ToIStateEnteredArgs(null);
-                Entered?.Invoke(this, enteredArgs);
+                RaiseEntered(enteredArgs);
             }
             catch (Exception ex)
             {
                 _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(Entered)}' event in state {Name}.", ex);
             }
+        }
+
+        protected virtual void RaiseEntered(StateEnteredEventArgs args)
+        {
+            Entered?.Invoke(this, args);
         }
 
         protected void OnExited(Transition exitedOn)
@@ -226,7 +231,7 @@ namespace CleanMachine
             {
                 //TODO: trace logging
                 var exitArgs = exitedOn == null ? new StateExitedEventArgs() { State = this } : exitedOn.ToIStateExitedArgs(null);
-                Exited?.Invoke(this, exitArgs);
+                RaiseExited(exitArgs);
             }
             catch (Exception ex)
             {
@@ -234,11 +239,16 @@ namespace CleanMachine
             }
         }
 
+        protected virtual void RaiseExited(StateExitedEventArgs args)
+        {
+            Exited?.Invoke(this, args);
+        }
+
         protected void HandleTransitionSucceeded(object sender, Interfaces.TransitionEventArgs args)
         {
             try
             {
-                TransitionSucceeded?.Invoke(this, args);
+                RaiseTransitionSucceeded(args);
             }
             catch (Exception ex)
             {
@@ -250,12 +260,22 @@ namespace CleanMachine
         {
             try
             {
-                TransitionFailed?.Invoke(this, args);
+                RaiseTransitionFailed(args);
             }
             catch (Exception ex)
             {
                 _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(TransitionFailed)}' event in state {Name}.", ex);
             }
+        }
+
+        protected virtual void RaiseTransitionSucceeded(Interfaces.TransitionEventArgs args)
+        {
+            TransitionSucceeded?.Invoke(this, args);
+        }
+
+        protected virtual void RaiseTransitionFailed(Interfaces.TransitionEventArgs args)
+        {
+            TransitionFailed?.Invoke(this, args);
         }
     }
 }

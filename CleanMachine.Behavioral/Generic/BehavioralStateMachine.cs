@@ -1,9 +1,9 @@
 ﻿using System;
-using log4net;
 using System.Reactive.Concurrency;
 using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Threading;
+using log4net;
 using CleanMachine.Generic;
 
 namespace CleanMachine.Behavioral.Generic
@@ -58,7 +58,7 @@ namespace CleanMachine.Behavioral.Generic
         internal bool HasTransitionScheduler => _transitionScheduler != null;
 
         internal bool HasBehaviorScheduler => _behaviorScheduler != null;
-
+        
         internal override void AttemptTransition(TransitionEventArgs args)
         {
             if (_transitionScheduler == null)
@@ -141,8 +141,8 @@ namespace CleanMachine.Behavioral.Generic
             {
                 var state = new BehavioralState(stateName, Logger, _behaviorScheduler);
                 _states.Add(state);
-                state.Entered += OnStateEntered;
-                state.Exited += OnStateExited;
+                state.Entered += HandleStateEntered;
+                state.Exited += HandleStateExited;
             }
         }
 
@@ -164,7 +164,7 @@ namespace CleanMachine.Behavioral.Generic
             return result;
         }
 
-         protected override void HandleTransitionRequest(object sender, TriggerEventArgs args)
+        protected override void HandleTransitionRequest(object sender, TriggerEventArgs args)
         {
             var triggerContext = args.TriggerContext as BooleanDisposable;
             if (triggerContext == null || triggerContext.IsDisposed)

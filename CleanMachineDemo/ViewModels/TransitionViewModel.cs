@@ -1,12 +1,16 @@
 ﻿using log4net;
 using System;
 using CleanMachine.Behavioral.Generic;
+using Diversions;
 
 
 namespace CleanMachineDemo
 {
+    [Diversion(MarshalOption.CurrentThread)]
     public class TransitionViewModel : SelectableViewModel
     {
+        private readonly DiversionDelegate<EventArgs> _success = new DiversionDelegate<EventArgs>();
+        private readonly DiversionDelegate<EventArgs> _failure = new DiversionDelegate<EventArgs>();
         private string _transitionName;
 
         public TransitionViewModel(string transitionName, BehavioralStateMachine<DemoState> machine, string stateName, ILog logger)
@@ -18,8 +22,17 @@ namespace CleanMachineDemo
             machine[state].TransitionFailed += HandleTransitionFailed;
         }
 
-        public event EventHandler Failure;
-        public event EventHandler Success;
+        public event EventHandler Failure
+        {
+            add { _failure.Add(value); }
+            remove { _failure.Remove(value); }
+        }
+
+        public event EventHandler Success
+        {
+            add { _success.Add(value); }
+            remove { _success.Remove(value); }
+        }
 
         public override void LogDiagnostics()
         {
@@ -38,8 +51,7 @@ namespace CleanMachineDemo
 
             Select();
             
-            //TODO: invoke on dispatcher
-            Success?.Invoke(this, new EventArgs());
+            _success.Invoke(this, new EventArgs());
         }
 
         private void HandleTransitionFailed(object sender, CleanMachine.Interfaces.TransitionEventArgs args)
@@ -49,9 +61,8 @@ namespace CleanMachineDemo
             {
                 return;
             }
-
-            //TODO: invoke on dispatcher
-            Failure?.Invoke(this, new EventArgs());
+            
+            _failure.Invoke(this, new EventArgs());
         }
     }
 }

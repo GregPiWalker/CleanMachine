@@ -4,9 +4,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Diversions;
 
 namespace CleanMachineDemo
 {
+    [Diversion(MarshalOption.Dispatcher)]
     [TemplatePart(Name = "PART_RectangleFrame", Type = typeof(Path))]
     public class StateSymbol : Control
     {

@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Tests", "Clean
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Behavioral", "CleanMachine.Behavioral\CleanMachine.Behavioral.csproj", "{3C62F29A-EDB9-4C1F-88AF-09E43C6AED29}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diversions", "..\Diversions\Standard\Diversions\Diversions.csproj", "{0F7DB95F-8794-4C8A-AF27-209BEB6F90A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diversions.Mvvm", "..\Diversions\Standard\Diversions.Mvvm\Diversions.Mvvm.csproj", "{EE821AA4-1F52-45D9-B70C-B1B040B66F23}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{3C62F29A-EDB9-4C1F-88AF-09E43C6AED29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C62F29A-EDB9-4C1F-88AF-09E43C6AED29}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C62F29A-EDB9-4C1F-88AF-09E43C6AED29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F7DB95F-8794-4C8A-AF27-209BEB6F90A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F7DB95F-8794-4C8A-AF27-209BEB6F90A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F7DB95F-8794-4C8A-AF27-209BEB6F90A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F7DB95F-8794-4C8A-AF27-209BEB6F90A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

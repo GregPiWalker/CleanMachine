@@ -195,7 +195,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        protected abstract void OnStateEntered(object sender, StateEnteredEventArgs args);
+        protected abstract void HandleStateEntered(object sender, StateEnteredEventArgs args);
 
         /// <summary>
         /// Perform state-exited work.
@@ -204,7 +204,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        protected abstract void OnStateExited(object sender, StateExitedEventArgs args);
+        protected abstract void HandleStateExited(object sender, StateExitedEventArgs args);
 
         /// <summary>
         /// Enter the Initial state and mark it as the current state.  Also, try
