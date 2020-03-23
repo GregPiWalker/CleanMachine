@@ -43,7 +43,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CollectionChangedTrigger.cs" />
-    <Compile Include="Generic\StateExitedTrigger.cs" />
     <Compile Include="Generic\DelegateTrigger.cs" />
     <Compile Include="GroupPropertyChangedTrigger.cs" />
     <Compile Include="MachineEditor.cs" />
@@ -57,15 +56,10 @@
     <Compile Include="Generic\Constraint.cs" />
     <Compile Include="Generic\Trigger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="BehavioralState.cs" />
-    <Compile Include="Generic\StateChangedTrigger.cs" />
-    <Compile Include="Generic\StateEnteredTrigger.cs" />
-    <Compile Include="Generic\BehavioralStateMachine.cs" />
     <Compile Include="StateMachineBase.cs" />
     <Compile Include="Generic\StateMachine.cs" />
     <Compile Include="StateMachineFactory.cs" />
     <Compile Include="Transition.cs" />
-    <Compile Include="BehavioralTransition.cs" />
     <Compile Include="TransitionEditor.cs" />
     <Compile Include="TriggerBase.cs" />
   </ItemGroup>
