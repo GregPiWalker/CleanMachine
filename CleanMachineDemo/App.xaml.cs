@@ -16,7 +16,7 @@ namespace CleanMachineDemo
             // Refer to:
             // https://docs.microsoft.com/en-us/dotnet/api/system.windows.basecompatibilitypreferences.reusedispatchersynchronizationcontextinstance?redirectedfrom=MSDN&view=netframework-4.8
             // https://stackoverflow.com/questions/13500030/comparing-synchronizationcontext
-            BaseCompatibilityPreferences.ReuseDispatcherSynchronizationContextInstance = true;
+            //BaseCompatibilityPreferences.ReuseDispatcherSynchronizationContextInstance = true;
         }
     }
 }
