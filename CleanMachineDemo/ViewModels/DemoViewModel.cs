@@ -18,6 +18,7 @@ namespace CleanMachineDemo
         static DemoViewModel()
         {
             // Add the option to use the UI Dispatcher.  The default diverter will still be current thread.
+            // Instantiation of a DispatcherSynchronizationContext needs to happen on the main application thread in order for the correct Dispatcher value to be used.
             Diversion.AddDiverter(MarshalOption.Dispatcher, Application.Current.Dispatcher, "Invoke", new List<KeyValuePair<Type, object>>().AddKey(typeof(Delegate)).AddKey(typeof(object[])), new DispatcherSynchronizationContext());
         }
 

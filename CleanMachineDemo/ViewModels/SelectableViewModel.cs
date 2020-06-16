@@ -17,7 +17,7 @@ namespace CleanMachineDemo
         public bool IsSelected
         {
             get { return _isSelected; }
-            set { SetProperty(ref _isSelected, value, nameof(IsSelected)); }
+            set { SetProperty(ref _isSelected, value); }
         }
 
         public void Select()
