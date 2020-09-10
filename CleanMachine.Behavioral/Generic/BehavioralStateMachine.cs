@@ -58,18 +58,39 @@ namespace CleanMachine.Behavioral.Generic
         internal bool HasTransitionScheduler => _transitionScheduler != null;
 
         internal bool HasBehaviorScheduler => _behaviorScheduler != null;
-        
-        internal override void AttemptTransition(TransitionEventArgs args)
+
+        public override bool TransitionTo(TState toState)
+        {
+            //TODO:  MAKE THIS HANDLE A SCHEDULED TRANSITION
+
+            var transitionArgs = new TransitionEventArgs();
+            var transitions = _currentState.FindTransitions(toState.ToString());
+            foreach (var transition in transitions)
+            {
+                transitionArgs.Transition = transition;
+                var result = AttemptTransition(transitionArgs);
+                if (result.HasValue && result.Value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal override bool? AttemptTransition(TransitionEventArgs args)
         {
             if (_transitionScheduler == null)
             {
-                AttemptTransitionSafe(args);
+                //TODO:  need to test that this equality condition works as intended.
+                return AttemptTransitionSafe(args) != Disposable.Empty;
             }
-            else
-            {
-                // Using this Schedule signature in order to inject in custom IDisposable.
-                _transitionScheduler.Schedule(args, (_, a) => { return AttemptTransitionSafe(a); });
-            }
+
+            // Using this Schedule signature in order to inject in custom IDisposable.
+            _transitionScheduler.Schedule(args, (_, a) => { return AttemptTransitionSafe(a); });
+
+            //TODO: find a way to return boolean instead of nothing.
+            return null;
         }
 
         internal IDisposable AttemptTransitionSafe(TransitionEventArgs args)

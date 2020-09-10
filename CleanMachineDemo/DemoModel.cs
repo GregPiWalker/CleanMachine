@@ -8,6 +8,7 @@ using CleanMachine.Interfaces;
 using Diversions;
 using Diversions.Mvvm;
 using Diversions.ObjectModel;
+using CleanMachine.Behavioral;
 
 namespace CleanMachineDemo
 {
@@ -111,7 +112,7 @@ namespace CleanMachineDemo
         {
             try
             {
-                StateMachine = StateMachineFactory.CreatePartialAsync<DemoState>("Demo StateMachine", _logger);
+                StateMachine = CleanMachine.Behavioral.StateMachineFactory.CreatePartialAsync<DemoState>("Demo StateMachine", _logger);
                 foreach (var state in StateMachine.States)
                 {
                     state.Exited += HandleStateExited;

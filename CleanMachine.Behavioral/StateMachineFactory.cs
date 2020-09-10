@@ -2,7 +2,7 @@
 using CleanMachine.Behavioral.Generic;
 using CleanMachine.Generic;
 
-namespace CleanMachine
+namespace CleanMachine.Behavioral
 {
     public static class StateMachineFactory
     {
@@ -63,7 +63,7 @@ namespace CleanMachine
         /// <returns></returns>
         public static StateMachine<TState> Create<TState>(string name, ILog logger) where TState : struct
         {
-            return new StateMachine<TState>(name, logger);
+            return CleanMachine.StateMachineFactory.Create<TState>(name, logger);
         }
     }
 }

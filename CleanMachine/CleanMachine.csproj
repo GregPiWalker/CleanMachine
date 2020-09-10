@@ -43,12 +43,13 @@
   <ItemGroup>
     <Compile Include="CollectionChangedTrigger.cs" />
     <Compile Include="Generic\DelegateTrigger.cs" />
+    <Compile Include="Generic\MachineEditor.cs" />
+    <Compile Include="Generic\StateEditor.cs" />
     <Compile Include="GroupPropertyChangedTrigger.cs" />
     <Compile Include="MachineEditor.cs" />
     <Compile Include="PropertyBinding.cs" />
     <Compile Include="PropertyChangedTrigger.cs" />
     <Compile Include="State.cs" />
-    <Compile Include="StateEditor.cs" />
     <Compile Include="Constraint.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="Extensions.cs" />

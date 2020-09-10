@@ -1,4 +1,6 @@
 ﻿using System.Timers;
+using CleanMachine.Generic;
+using CleanMachine.Behavioral;
 using CleanMachine.Behavioral.Generic;
 
 namespace CleanMachineDemo

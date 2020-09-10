@@ -226,9 +226,9 @@ namespace CleanMachine
             JumpToState(_initialState);
         }
         
-        internal virtual void AttemptTransition(TransitionEventArgs args)
+        internal virtual bool? AttemptTransition(TransitionEventArgs args)
         {
-            AttemptTransitionUnsafe(args);
+            return AttemptTransitionUnsafe(args);
         }
 
         internal virtual void JumpToState(State jumpTo)

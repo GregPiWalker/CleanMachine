@@ -61,14 +61,12 @@
     <Compile Include="BehavioralState.cs" />
     <Compile Include="Generic\BehavioralStateMachine.cs" />
     <Compile Include="BehavioralTransition.cs" />
-    <Compile Include="Generic\MachineEditor.cs" />
     <Compile Include="Generic\StateChangedTrigger.cs" />
-    <Compile Include="Generic\StateEditor.cs" />
     <Compile Include="Generic\StateEnteredTrigger.cs" />
     <Compile Include="Generic\StateExitedTrigger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StateMachineFactory.cs" />
-    <Compile Include="TransitionEditor.cs" />
+    <Compile Include="EditorExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Diversions\Standard\Diversions\Diversions.csproj">

@@ -1,4 +1,5 @@
 ﻿using System;
+using CleanMachine.Behavioral;
 using CleanMachine.Generic;
 using log4net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,7 +19,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenFullyAsync_DoBehaviorIsAsync()
         {
-            var uut = StateMachineFactory.CreateAsync<DummyState>("Demo StateMachine", _logger);
+            var uut = Behavioral.StateMachineFactory.CreateAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -30,7 +31,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenFullyAsync_TransitionIsAsync()
         {
-            var uut = StateMachineFactory.CreateAsync<DummyState>("Demo StateMachine", _logger);
+            var uut = Behavioral.StateMachineFactory.CreateAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -42,7 +43,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialAsync_DoBehaviorIsNotAsync()
         {
-            var uut = StateMachineFactory.CreatePartialAsync<DummyState>("Demo StateMachine", _logger);
+            var uut = Behavioral.StateMachineFactory.CreatePartialAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -55,7 +56,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialAsync_TransitionIsAsync()
         {
-            var uut = StateMachineFactory.CreatePartialAsync<DummyState>("Demo StateMachine", _logger);
+            var uut = Behavioral.StateMachineFactory.CreatePartialAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -66,7 +67,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialSync_WhereBehaviorIsNotAsync_DoBehaviorIsNotAsync()
         {
-            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, false);
+            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, false);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -77,7 +78,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialSync_WhereBehaviorIsAsync_DoBehaviorIsAsync()
         {
-            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, true);
+            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, true);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -89,7 +90,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialSync_WhereBehaviorIsNotAsync_TransitionIsNotAsync()
         {
-            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, false);
+            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, false);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -101,7 +102,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialSync_WhereBehaviorIsAsync_TransitionIsNotAsync()
         {
-            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, true);
+            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, true);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
             

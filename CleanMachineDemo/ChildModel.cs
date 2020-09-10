@@ -1,9 +1,9 @@
 ﻿using log4net;
 using System;
 using System.Timers;
-using CleanMachine;
 using CleanMachine.Behavioral.Generic;
 using Diversions.Mvvm;
+using CleanMachine.Behavioral;
 
 namespace CleanMachineDemo
 {

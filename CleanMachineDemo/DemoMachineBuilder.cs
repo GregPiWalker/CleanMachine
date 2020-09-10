@@ -1,6 +1,7 @@
 ﻿using System.Linq;
+using CleanMachine.Behavioral;
 using CleanMachine.Behavioral.Generic;
-using CleanMachine;
+using CleanMachine.Generic;
 
 namespace CleanMachineDemo
 {

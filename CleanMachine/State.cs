@@ -62,6 +62,11 @@ namespace CleanMachine
             //TODO
         }
 
+        public IEnumerable<Transition> FindTransitions(string toState)
+        {
+            return _outboundTransitions.Where(t => t.Consumer.Name == toState);
+        }
+
         internal void Edit()
         {
             if (Editable)

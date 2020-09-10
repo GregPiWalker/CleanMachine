@@ -46,6 +46,23 @@ namespace CleanMachine.Generic
             get { return FindState(value); }
         }
 
+        public virtual bool TransitionTo(TState toState)
+        {
+            var transitionArgs = new TransitionEventArgs();
+            var transitions = _currentState.FindTransitions(toState.ToString());
+            foreach (var transition in transitions)
+            {
+                transitionArgs.Transition = transition;
+                var result = AttemptTransition(transitionArgs);
+                if (result.HasValue && result.Value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Set the machine's desired initial state.  This is enforced
         /// as a step in machine assembly so that initial state is defined in the same
