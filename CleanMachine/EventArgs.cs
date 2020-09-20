@@ -1,14 +1,17 @@
 ﻿using System;
 
 namespace CleanMachine
-{    
-    public class TriggerEventArgs : EventArgs
+{
+    public class SignalEventArgs : EventArgs
     {
-        internal IDisposable TriggerContext { get; set; }
-
         public object Cause { get; set; }
 
         public EventArgs CauseArgs { get; set; }
+    }
+
+    public class TriggerEventArgs : SignalEventArgs
+    {
+        internal IDisposable TriggerContext { get; set; }
 
         public TriggerBase Trigger { get; set; }
     }
@@ -38,8 +41,13 @@ namespace CleanMachine
 
     public class TransitionEventArgs : EventArgs
     {
-        public TriggerEventArgs TriggerArgs { get; set; }
+        public SignalEventArgs SignalArgs { get; set; }
 
         public Transition Transition { get; set; }
+    }
+
+    public class EventArgs<TArg> : EventArgs
+    {
+        public TArg Argument { get; set; }
     }
 }

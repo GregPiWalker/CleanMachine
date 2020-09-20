@@ -9,7 +9,7 @@ namespace CleanMachine.Generic
             Machine = machine;
         }
 
-        public StateMachine<TState> Machine { get; private set; }
+        public StateMachine<TState> Machine { get; }
 
         /// <summary>
         /// Get a <see cref="MachineEditor{TState}"/> instance for the supplied <see cref="StateMachine{TState}"/>.
@@ -25,6 +25,11 @@ namespace CleanMachine.Generic
         }
 
         public void Dispose()
+        {
+            StopEditing();
+        }
+
+        public void StopEditing()
         {
             Machine.CompleteEdit();
         }

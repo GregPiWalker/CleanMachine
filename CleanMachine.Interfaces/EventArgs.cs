@@ -4,7 +4,7 @@ namespace CleanMachine.Interfaces
 {
     public class TransitionEventArgs : EventArgs
     {
-        public TriggerEventArgs TriggerArgs { get; set; }
+        public SignalEventArgs TriggerArgs { get; set; }
 
         public ITransition Transition { get; set; }
     }
@@ -23,12 +23,15 @@ namespace CleanMachine.Interfaces
         public TransitionEventArgs TransitionArgs { get; set; }
     }
 
-    public class TriggerEventArgs : EventArgs
+    public class SignalEventArgs : EventArgs
     {
         public object Cause { get; set; }
 
         public EventArgs CauseArgs { get; set; }
+    }
 
+    public class TriggerEventArgs : SignalEventArgs
+    {
         public ITrigger Trigger { get; set; }
     }
 }

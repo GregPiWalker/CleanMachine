@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace CleanMachine.Generic
 {
@@ -46,21 +47,27 @@ namespace CleanMachine.Generic
             get { return FindState(value); }
         }
 
-        public virtual bool TransitionTo(TState toState)
+        public virtual TState TryTransition(object sender = null, [CallerMemberName] string callerName = null)
         {
-            var transitionArgs = new TransitionEventArgs();
-            var transitions = _currentState.FindTransitions(toState.ToString());
-            foreach (var transition in transitions)
+            var args = new SignalEventArgs()
             {
-                transitionArgs.Transition = transition;
-                var result = AttemptTransition(transitionArgs);
-                if (result.HasValue && result.Value)
-                {
-                    return true;
-                }
-            }
+                Cause = sender,
+                CauseArgs = new EventArgs<string> { Argument = callerName }
+            };
 
-            return false;
+            TryTransitionTo(null, args);
+            return CurrentState;
+        }
+
+        public virtual bool TryTransitionTo(TState toState, object sender = null, [CallerMemberName] string callerName = null)
+        {
+            var args = new SignalEventArgs()
+            {
+                Cause = sender,
+                CauseArgs = new EventArgs<string> { Argument = callerName }
+            };
+
+            return TryTransitionTo(toState.ToString(), args);
         }
 
         /// <summary>
@@ -108,7 +115,7 @@ namespace CleanMachine.Generic
         /// </summary>
         /// <param name="transition"></param>
         /// <param name="args"></param>
-        protected override void OnStateChanged(Transition transition, TriggerEventArgs args)
+        protected override void OnStateChanged(Transition transition, SignalEventArgs args)
         {
             if (StateChanged == null || transition == null)
             {

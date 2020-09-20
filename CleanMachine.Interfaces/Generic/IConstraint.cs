@@ -2,8 +2,10 @@
 
 namespace CleanMachine.Interfaces.Generic
 {
-    public interface IConstraint<TParam> : IConstraint
+    public interface IConstraint : Interfaces.IConstraint
     {
-        bool IsTrue(TParam argument);
+        bool IsTrue(object argument);
+
+        object EvaluationArgument { get; }
     }
 }

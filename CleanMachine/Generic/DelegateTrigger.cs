@@ -4,7 +4,7 @@ using System;
 namespace CleanMachine.Generic
 {
     /// <summary>
-    /// 
+    /// An event trigger that uses a Delegate type definition instead of an <see cref="EventHandler{TEventArgs}"/>.
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>

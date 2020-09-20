@@ -6,7 +6,7 @@ using System.Reflection;
 namespace CleanMachine.Generic
 {
     /// <summary>
-    /// 
+    /// A trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>

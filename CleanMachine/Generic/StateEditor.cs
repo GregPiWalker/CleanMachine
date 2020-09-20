@@ -3,24 +3,21 @@ namespace CleanMachine.Generic
 {
     public class StateEditor<TState> where TState : struct
     {
-        private readonly StateMachine<TState> _machine;
-        private readonly TState _state;
-
         internal StateEditor(StateMachine<TState> machine, TState state)
         {
-            _machine = machine;
-            _state = state;
+            Machine = machine;
+            State = state;
         }
 
-        internal protected StateMachine<TState> Machine => _machine;
+        internal protected StateMachine<TState> Machine { get; }
 
-        internal protected TState State => _state;
+        internal protected TState State { get; }
 
         public TransitionEditor TransitionTo(TState toState)
         {
-            var transition = _machine.CreateTransition(_state, toState);
+            var transition = Machine.CreateTransition(State, toState);
             transition.Edit();
-            return new TransitionEditor(transition, _machine.Logger);
+            return new TransitionEditor(transition, Machine.Logger);
         }
     }
 }

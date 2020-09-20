@@ -4,21 +4,30 @@ using System;
 
 namespace CleanMachine.Generic
 {
-    public class Constraint<TParam> : IConstraint<TParam>
+    public class Constraint<TParam> : IConstraint
     {
         private readonly ILog _logger;
 
         public Constraint(string name, Func<TParam, bool> condition, ILog logger)
+            : this(name, condition, null, logger)
         {
             _logger = logger;
             Name = name;
             Condition = condition;
         }
 
+        public Constraint(string name, Func<TParam, bool> condition, Func<object, TParam> transform, ILog logger)
+        {
+            _logger = logger;
+            Name = name;
+            Condition = condition;
+            Transform = transform;
+        }
+
         public Constraint(string name, Func<TParam, bool> condition, TParam preconfiguredArg, ILog logger)
             : this(name, condition, logger)
         {
-            PreconfiguredArgument = preconfiguredArg;
+            EvaluationArgument = preconfiguredArg;
         }
 
 
@@ -26,14 +35,16 @@ namespace CleanMachine.Generic
         /// A function that defines the condition to be evaluated for this Constraint.
         /// </summary>
         public Func<TParam, bool> Condition { get; protected set; }
-        
+
+        public Func<object, TParam> Transform { get; protected set; }
+
         public bool VerboseLogging { get; set; }
 
         public string Name { get; private set; }
 
         public bool LastResult { get; protected set; }
 
-        protected TParam PreconfiguredArgument { get; set; }
+        public object EvaluationArgument { get; internal set; }
 
         public override string ToString()
         {
@@ -42,10 +53,10 @@ namespace CleanMachine.Generic
 
         public bool IsTrue()
         {
-            return IsTrue(PreconfiguredArgument);
+            return IsTrue(EvaluationArgument);
         }
 
-        public bool IsTrue(TParam argument)
+        public bool IsTrue(object argument)
         {
             try
             {
@@ -63,14 +74,17 @@ namespace CleanMachine.Generic
         /// Evaluate the condition for this Constraint.
         /// </summary>
         /// <returns>bool</returns>
-        protected virtual bool Evaluate(TParam argument)
+        protected virtual bool Evaluate(object argument)
         {
-            if (Condition == null)
+            if (Condition == null || (Transform == null && !(argument is TParam)))
             {
                 return false;
             }
 
-            var result = Condition(argument);
+            // Favor the transform if there is one.
+            TParam convertedArg = Transform == null ? (TParam)argument : Transform(argument);
+
+            var result = Condition(convertedArg);
             if (VerboseLogging && result && !string.IsNullOrEmpty(Name))
             {
                 _logger.Debug($"Condition was satisfied for '{Name}' constraint.");

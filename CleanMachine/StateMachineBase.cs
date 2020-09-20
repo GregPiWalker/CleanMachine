@@ -159,6 +159,30 @@ namespace CleanMachine
             return transition;
         }
 
+        internal bool TryTransitionTo(string toState, SignalEventArgs args)
+        {
+            var transitionArgs = new TransitionEventArgs() { SignalArgs = args };
+            var transitions = _currentState.FindTransitions(toState);
+            var state = _currentState;
+            foreach (var transition in transitions)
+            {
+                transitionArgs.Transition = transition;
+                var attempted = AttemptTransition(transitionArgs);
+
+                // This only tells whether a transition attempt was made.
+                if (attempted.HasValue && attempted.Value)
+                {
+                    var result = state != _currentState;
+                    if (result)
+                    {
+                        return result;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -186,7 +210,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="transition"></param>
         /// <param name="args"></param>
-        protected abstract void OnStateChanged(Transition transition, TriggerEventArgs args);
+        protected abstract void OnStateChanged(Transition transition, SignalEventArgs args);
 
         /// <summary>
         /// Perform state-entered work.
@@ -225,7 +249,12 @@ namespace CleanMachine
             Logger.Info($"{Name}:  entering initial state {_initialState.Name}.");
             JumpToState(_initialState);
         }
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
         internal virtual bool? AttemptTransition(TransitionEventArgs args)
         {
             return AttemptTransitionUnsafe(args);
@@ -246,28 +275,32 @@ namespace CleanMachine
         /// by disposing of the state selection context associated to the triggers.
         /// </summary>
         /// <param name="args"></param>
-        /// <returns></returns>
+        /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
         protected virtual bool AttemptTransitionUnsafe(TransitionEventArgs args)
         {
-            // Provide escape route in case the trigger became irrelevant while the handler for it was waiting.
-            //TODO: it's possible this condition can move into BehavioralStateMachine.
-            if (args.TriggerArgs.TriggerContext != _currentState.SelectionContext)
+            var triggerArgs = args.SignalArgs as TriggerEventArgs;
+            if (triggerArgs != null)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
-                return false;
+                // Provide escape route in case the trigger became irrelevant while the handler for it was waiting.
+                //TODO: it's possible this condition can move into BehavioralStateMachine.
+                if (triggerArgs.TriggerContext != _currentState.EntryContext)
+                {
+                    Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{triggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
+                    return false;
+                }
+
+                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
+                if (!triggerArgs.Trigger.IsActive)
+                {
+                    Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{triggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
+                    return false;
+                }
             }
 
-            // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
-            if (!args.TriggerArgs.Trigger.IsActive)
-            {
-                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{args.TriggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
-                return false;
-            }
-
-            if (args.Transition.AttemptTransition(args.TriggerArgs))
+            if (args.Transition.AttemptTransition(args))
             {
                 _currentState = args.Transition.To;
-                OnStateChanged(args.Transition, args.TriggerArgs);
+                OnStateChanged(args.Transition, args.SignalArgs);
             }
             else
             {
@@ -286,15 +319,16 @@ namespace CleanMachine
             }
 
             Logger.Debug($"{Name}:  jumping to state {jumpTo.Name}.");
-            jumpTo.Enter(null);
+            jumpTo.Enter(new TransitionEventArgs());
             _currentState = jumpTo;
 
-            OnStateChanged(null, new TriggerEventArgs() { Cause = this });
+            OnStateChanged(null, new SignalEventArgs() { Cause = this });
         }
 
-        protected virtual void HandleTransitionRequest(object sender, TriggerEventArgs args)
+        protected virtual void HandleTransitionRequest(object sender, SignalEventArgs args)
         {
-            if (args.TriggerContext == null)
+            var triggerArgs = args as TriggerEventArgs;
+            if (triggerArgs != null && triggerArgs.TriggerContext == null)
             {
                 return;
             }

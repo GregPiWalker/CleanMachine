@@ -27,6 +27,12 @@ namespace CleanMachine
             return this;
         }
 
+        public TransitionEditor GuardWithTriggerCondition<TArg>(Func<EventArgs<TArg>, bool> condition, string name)
+        {
+            _transition.Guard = new Constraint<EventArgs<TArg>>(name, condition, (s) => ((SignalEventArgs)s).CauseArgs as EventArgs<TArg>, _logger);
+            return this;
+        }
+
         public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs
         {
             var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, _logger);

@@ -59,6 +59,7 @@
     <Compile Include="StateMachineBase.cs" />
     <Compile Include="Generic\StateMachine.cs" />
     <Compile Include="StateMachineFactory.cs" />
+    <Compile Include="SubstateOfAttribute.cs" />
     <Compile Include="Transition.cs" />
     <Compile Include="TransitionEditor.cs" />
     <Compile Include="TriggerBase.cs" />

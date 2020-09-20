@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using CleanMachine.Interfaces;
 using System.Text;
 using log4net;
+using CleanMachine.Interfaces.Generic;
+using CleanMachine.Interfaces;
 
 namespace CleanMachine
 {
@@ -11,7 +12,7 @@ namespace CleanMachine
         protected readonly string _context;
         protected readonly List<TriggerBase> _triggers = new List<TriggerBase>();
         protected readonly ILog _logger;
-        protected Constraint _guard;
+        protected Interfaces.IConstraint _guard;
         protected bool _enabled;
         protected IDisposable _activationContext;
 
@@ -33,8 +34,8 @@ namespace CleanMachine
 
         public virtual event EventHandler<Interfaces.TransitionEventArgs> Succeeded;
         public virtual event EventHandler<Interfaces.TransitionEventArgs> Failed;
-        
-        internal event EventHandler<TriggerEventArgs> Requested;
+
+        internal event EventHandler<SignalEventArgs> Requested;
 
         public string Name { get; private set; }
 
@@ -46,7 +47,7 @@ namespace CleanMachine
 
         internal State To { get; }
 
-        internal Constraint Guard
+        internal Interfaces.IConstraint Guard
         {
             get { return _guard; }
             set
@@ -89,7 +90,23 @@ namespace CleanMachine
 
         public bool CanTransition(EventArgs sourceArgs)
         {
-            return _enabled && (Guard == null || Guard.IsTrue());
+            if (!_enabled)
+            {
+                return false;
+            }
+
+            if (Guard == null)
+            {
+                return true;
+            }
+
+            var constraint = Guard as Interfaces.Generic.IConstraint;
+            if (constraint != null)
+            {
+                return constraint.IsTrue(sourceArgs);
+            }
+
+            return Guard.IsTrue();
         }
 
         public Transition AddTrigger(TriggerBase t)
@@ -140,25 +157,33 @@ namespace CleanMachine
         /// </summary>
         /// <param name="source"></param>
         /// <param name="args"></param>
-        /// <returns></returns>
-        internal virtual bool AttemptTransition(TriggerEventArgs args)
+        /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
+        internal virtual bool AttemptTransition(TransitionEventArgs args)
         {
-            if (!ValidateAttempt(args))
+            if (!ValidateAttempt(args.SignalArgs))
             {
                 return false;
             }
 
-            _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning on behalf of '{args.Trigger.ToString()}' trigger.");
+            if (args.SignalArgs is TriggerEventArgs)
+            {
+                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning on behalf of '{(args.SignalArgs as TriggerEventArgs).Trigger}' trigger.");
+            }
+            else
+            {
+                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning due to signal.");
+            }
+
             From.Exit(this);
-            To.Enter(this);
+            To.Enter(args);
             _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition complete.");
 
-            OnSucceeded(args);
+            OnSucceeded(args.SignalArgs);
 
             return true;
         }
 
-        protected bool ValidateAttempt(TriggerEventArgs args)
+        protected bool ValidateAttempt(SignalEventArgs args)
         {
             bool result = true;
             if (!CanTransition(args))
@@ -183,7 +208,7 @@ namespace CleanMachine
             return true;
         }
 
-        protected void OnSucceeded(TriggerEventArgs args)
+        protected void OnSucceeded(SignalEventArgs args)
         {
             try
             {
@@ -196,7 +221,7 @@ namespace CleanMachine
             }
         }
 
-        protected void OnFailed(TriggerEventArgs args)
+        protected void OnFailed(SignalEventArgs args)
         {
             try
             {

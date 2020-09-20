@@ -45,8 +45,20 @@ namespace CleanMachine
             }
         }
 
+        /// <summary>
+        /// Gets the state's latest entry context.  The entry context tracks a unique entry into this
+        /// state.  It can be used to distinguish different times the same state is entered.  For instance,
+        /// a transition from this state to this state will result in the same current state, but will
+        /// give two different entry contexts.
+        /// </summary>
         //TODO: figure out a way to make this internal and internal protected
-        public IDisposable SelectionContext { get; protected set; }
+        public IDisposable EntryContext { get; protected set; }
+
+
+        /// <summary>
+        /// Gets the <see cref="TransitionEventArgs"/> associated with the most recent entry into this state.
+        /// </summary>
+        public TransitionEventArgs History { get; protected set; }
 
         internal bool IsEnabled { get; private set; }
 
@@ -62,8 +74,13 @@ namespace CleanMachine
             //TODO
         }
 
-        public IEnumerable<Transition> FindTransitions(string toState)
+        public virtual IEnumerable<Transition> FindTransitions(string toState = null)
         {
+            if (string.IsNullOrEmpty(toState))
+            {
+                return _outboundTransitions;
+            }
+
             return _outboundTransitions.Where(t => t.Consumer.Name == toState);
         }
 
@@ -136,15 +153,17 @@ namespace CleanMachine
         /// recursive eventing.
         /// </summary>
         /// <param name="enterOn"></param>
-        internal virtual void Enter(Transition enterOn)
+        internal virtual void Enter(TransitionEventArgs enterOn)
         {            
             _logger.Debug($"Entering state {Name}.");
 
             IsCurrentState = true;
+            History = enterOn;
 
-            OnEntered(enterOn);
+            OnEntered(enterOn.Transition);
 
             // Now that all ENTRY work is complete, enable all transition triggers.
+            // This assigns the state's SelectionContext to all the outgoing transitions.
             Enable();
         }
 
@@ -196,15 +215,22 @@ namespace CleanMachine
 
         internal virtual void Enable()
         {
+            if (EntryContext == null)
+            {
+                // Start a new state selection context in order to associate all incoming trigger handlers
+                // with a single state selection.
+                EntryContext = new BlankDisposable();
+            }
+
             _logger.Info($"State {Name}: enabling all transitions.");
-            _outboundTransitions.ForEach(t => t.Enable(SelectionContext));
+            _outboundTransitions.ForEach(t => t.Enable(EntryContext));
             IsEnabled = true;
         }
 
         internal void Disable()
         {
             // Dispose of the selection context so that trigger handlers can be cancelled.
-            SelectionContext?.Dispose();
+            EntryContext?.Dispose();
             _logger.Info($"State {Name}: disabling all transitions.");
             _outboundTransitions.ForEach(t => t.Disable());
             IsEnabled = false;
@@ -281,6 +307,13 @@ namespace CleanMachine
         protected virtual void RaiseTransitionFailed(Interfaces.TransitionEventArgs args)
         {
             TransitionFailed?.Invoke(this, args);
+        }
+    }
+
+    internal sealed class BlankDisposable : IDisposable
+    {
+        public void Dispose()
+        {
         }
     }
 }
