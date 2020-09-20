@@ -64,7 +64,7 @@ namespace CleanMachine.Behavioral
         {
             // Start a new state selection context in order to associate all incoming trigger handlers
             // with a single state selection.
-            SelectionContext = new BooleanDisposable();
+            EntryContext = new BooleanDisposable();
             base.Enable();
         }
 
@@ -88,31 +88,32 @@ namespace CleanMachine.Behavioral
         /// recursive eventing.
         /// </summary>
         /// <param name="enterOn"></param>
-        internal override void Enter(Transition enterOn)
+        internal override void Enter(TransitionEventArgs enterOn)
         {            
             _logger.Debug($"Entering state {Name}.");
 
             IsCurrentState = true;
+            History = enterOn;
             //_entryCompletedSignal.Reset();
 
-            OnEntryInitiated(enterOn);
+            OnEntryInitiated(enterOn.Transition);
 
             if (_entryBehavior != null)
             {
                 if (_scheduler == null)
                 {
-                    OnEntryBehavior(enterOn);
+                    OnEntryBehavior(enterOn.Transition);
                 }
                 else
                 {
-                    _scheduler.Schedule(enterOn, (_, t) => { return OnEntryBehavior(t); });
+                    _scheduler.Schedule(enterOn.Transition, (_, t) => { return OnEntryBehavior(t); });
                 }
             }
 
             // Schedule a signal for the entry completion.
             //_scheduler.Schedule(() => _entryCompletedSignal.Set());
 
-            OnEntered(enterOn);
+            OnEntered(enterOn.Transition);
 
             // Now that all ENTRY work is complete, enable all transition triggers.
             Enable();

@@ -1,4 +1,6 @@
-﻿namespace CleanMachineDemo
+﻿using CleanMachine;
+
+namespace CleanMachineDemo
 {
     public enum DemoState
     {

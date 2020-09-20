@@ -59,24 +59,24 @@ namespace CleanMachine.Behavioral.Generic
 
         internal bool HasBehaviorScheduler => _behaviorScheduler != null;
 
-        public override bool TransitionTo(TState toState)
-        {
-            //TODO:  MAKE THIS HANDLE A SCHEDULED TRANSITION
+        //public override bool TryTransition(TState toState)
+        //{
+        //    //TODO:  MAKE THIS HANDLE A SCHEDULED TRANSITION
 
-            var transitionArgs = new TransitionEventArgs();
-            var transitions = _currentState.FindTransitions(toState.ToString());
-            foreach (var transition in transitions)
-            {
-                transitionArgs.Transition = transition;
-                var result = AttemptTransition(transitionArgs);
-                if (result.HasValue && result.Value)
-                {
-                    return true;
-                }
-            }
+        //    var transitionArgs = new TransitionEventArgs();
+        //    var transitions = _currentState.FindTransitions(toState.ToString());
+        //    foreach (var transition in transitions)
+        //    {
+        //        transitionArgs.Transition = transition;
+        //        var result = AttemptTransition(transitionArgs);
+        //        if (result.HasValue && result.Value)
+        //        {
+        //            return true;
+        //        }
+        //    }
 
-            return false;
-        }
+        //    return false;
+        //}
 
         internal override bool? AttemptTransition(TransitionEventArgs args)
         {
@@ -117,7 +117,14 @@ namespace CleanMachine.Behavioral.Generic
             }
 
             // This allows the machine to cancel the transition request down the line, if necessary.
-            return args.TriggerArgs.TriggerContext;
+            IDisposable context = null;
+            var triggerArgs = args.SignalArgs as TriggerEventArgs;
+            if (triggerArgs != null)
+            {
+                context = triggerArgs.TriggerContext;
+            }
+
+            return context;
         }
 
         internal override void JumpToState(State jumpTo)
@@ -169,11 +176,15 @@ namespace CleanMachine.Behavioral.Generic
 
         protected override bool AttemptTransitionUnsafe(TransitionEventArgs args)
         {
-            var triggerContext = args.TriggerArgs.TriggerContext as BooleanDisposable;
-            if (triggerContext == null || triggerContext.IsDisposed)
+            var triggerArgs = args.SignalArgs as TriggerEventArgs;
+            if (triggerArgs != null)
             {
-                Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  invalidating transition '{args.Transition.Name}' for trigger '{args.TriggerArgs.Trigger.ToString()}' due to a state change.");
-                return false;
+                var triggerContext = triggerArgs.TriggerContext as BooleanDisposable;
+                if (triggerContext == null || triggerContext.IsDisposed)
+                {
+                    Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  invalidating transition '{args.Transition.Name}' for trigger '{triggerArgs.Trigger}' due to a state change.");
+                    return false;
+                }
             }
 
             bool result = base.AttemptTransitionUnsafe(args);
@@ -185,12 +196,16 @@ namespace CleanMachine.Behavioral.Generic
             return result;
         }
 
-        protected override void HandleTransitionRequest(object sender, TriggerEventArgs args)
+        protected override void HandleTransitionRequest(object sender, SignalEventArgs args)
         {
-            var triggerContext = args.TriggerContext as BooleanDisposable;
-            if (triggerContext == null || triggerContext.IsDisposed)
+            var triggerArgs = args as TriggerEventArgs;
+            if (triggerArgs != null)
             {
-                return;
+                var triggerContext = triggerArgs.TriggerContext as BooleanDisposable;
+                if (triggerContext == null || triggerContext.IsDisposed)
+                {
+                    return;
+                }
             }
 
             base.HandleTransitionRequest(sender, args);

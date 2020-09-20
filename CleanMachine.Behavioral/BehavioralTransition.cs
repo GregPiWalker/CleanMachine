@@ -63,16 +63,24 @@ namespace CleanMachine.Behavioral
         /// <param name="source"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal override bool AttemptTransition(TriggerEventArgs args)
+        internal override bool AttemptTransition(TransitionEventArgs args)
         {
-            if (!ValidateAttempt(args))
+            if (!ValidateAttempt(args.SignalArgs))
             {
                 return false;
             }
 
-            _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning on behalf of '{args.Trigger.ToString()}' trigger.");
+            if (args.SignalArgs is TriggerEventArgs)
+            {
+                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning on behalf of '{(args.SignalArgs as TriggerEventArgs).Trigger}' trigger.");
+            }
+            else
+            {
+                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning due to signal.");
+            }
+
             From.Exit(this);
-            To.Enter(this);
+            To.Enter(args);
             _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition complete.");
             
             if (Effect != null)
@@ -88,7 +96,7 @@ namespace CleanMachine.Behavioral
                 }
             }
 
-            OnSucceeded(args);
+            OnSucceeded(args.SignalArgs);
 
             return true;
         }
