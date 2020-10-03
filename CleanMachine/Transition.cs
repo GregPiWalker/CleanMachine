@@ -32,7 +32,15 @@ namespace CleanMachine
             Name = $"{From.Name}-->{To.Name}";
         }
 
+        /// <summary>
+        /// Raised to indicate that this transition was successfully traversed.
+        /// This occurs after the Enter and Exit operations on the consumer and supplier states.
+        /// </summary>
         public virtual event EventHandler<Interfaces.TransitionEventArgs> Succeeded;
+
+        /// <summary>
+        /// Raised to indicate that an attempt to traverse this transition has failed.
+        /// </summary>
         public virtual event EventHandler<Interfaces.TransitionEventArgs> Failed;
 
         internal event EventHandler<SignalEventArgs> Requested;
@@ -153,7 +161,8 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Scheduling the Effect and events keeps the flow of external behaviors synchronized.
+        /// Attempt to traverse this transition.  If the attempt succeeds, the supplier state will be exited,
+        /// then the consumer state will be entered, then the <see cref="Succeeded"/> event will be raised.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="args"></param>
@@ -167,16 +176,16 @@ namespace CleanMachine
 
             if (args.SignalArgs is TriggerEventArgs)
             {
-                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning on behalf of '{(args.SignalArgs as TriggerEventArgs).Trigger}' trigger.");
+                _logger.Info($"({Name}).{nameof(AttemptTransition)}: transitioning on behalf of '{(args.SignalArgs as TriggerEventArgs).Trigger}' trigger.");
             }
             else
             {
-                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning due to signal.");
+                _logger.Info($"({Name}).{nameof(AttemptTransition)}: transitioning due to signal.");
             }
 
             From.Exit(this);
             To.Enter(args);
-            _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition complete.");
+            _logger.Info($"({Name}).{nameof(AttemptTransition)}: transition complete.");
 
             OnSucceeded(args.SignalArgs);
 
@@ -188,19 +197,19 @@ namespace CleanMachine
             bool result = true;
             if (!CanTransition(args))
             {
-                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition inhibited by guard {Guard.ToString()}.");
+                _logger.Debug($"({Name}).{nameof(AttemptTransition)}: transition inhibited by guard {Guard.ToString()}.");
                 result = false;
             }
 
             if (result && (!To.CanEnter(this) || !From.CanExit(this)))
             {
-                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: transition could not enter state {To.ToString()} or exit state {From.ToString()}.");
+                _logger.Debug($"({Name}).{nameof(AttemptTransition)}: transition could not enter state {To.ToString()} or exit state {From.ToString()}.");
                 result = false;
             }
 
             if (!result)
             {
-                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition failed.");
+                _logger.Info($"({Name}).{nameof(AttemptTransition)}: transition failed.");
                 OnFailed(args);
                 return false;
             }

@@ -15,7 +15,8 @@ namespace CleanMachine
                 {
                     Trigger = triggerArgs.Trigger,
                     Cause = triggerArgs.Cause,
-                    CauseArgs = triggerArgs.CauseArgs
+                    CauseArgs = triggerArgs.CauseArgs,
+                    Signal = internalArgs.Signal
                 };
             }
             else
@@ -23,7 +24,7 @@ namespace CleanMachine
                 signalArgs = new Interfaces.SignalEventArgs()
                 {
                     Cause = internalArgs.Cause,
-                    CauseArgs = internalArgs.CauseArgs
+                    Signal = internalArgs.Signal
                 };
             }
 
@@ -101,7 +102,7 @@ namespace CleanMachine
         {
             var stateArgs = new StateChangedEventArgs<TState>()
             {
-                CurrentState = transition.To.ToEnum<TState>(),
+                ResultingState = transition.To.ToEnum<TState>(),
                 PreviousState = transition.From.ToEnum<TState>(),
                 TransitionArgs = transition.ToITransitionArgs(internalArgs)
             };
@@ -109,7 +110,7 @@ namespace CleanMachine
             return stateArgs;
         }
 
-        internal static StateEnteredEventArgs<TState> ToStateEnteredArgs<TState>(this Interfaces.StateEnteredEventArgs args)
+        internal static StateEnteredEventArgs<TState> ToStateEnteredArgs<TState>(this Interfaces.StateEnteredEventArgs args) where TState : struct
         {
             var stateArgs = new StateEnteredEventArgs<TState>()
             {
@@ -120,7 +121,7 @@ namespace CleanMachine
             return stateArgs;
         }
 
-        internal static StateExitedEventArgs<TState> ToStateExitedArgs<TState>(this Interfaces.StateExitedEventArgs args)
+        internal static StateExitedEventArgs<TState> ToStateExitedArgs<TState>(this Interfaces.StateExitedEventArgs args) where TState : struct
         {
             var stateArgs = new StateExitedEventArgs<TState>()
             {

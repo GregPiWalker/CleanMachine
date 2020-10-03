@@ -1,4 +1,5 @@
 ﻿using System;
+using CleanMachine.Generic;
 
 namespace CleanMachine
 {
@@ -6,7 +7,7 @@ namespace CleanMachine
     {
         public object Cause { get; set; }
 
-        public EventArgs CauseArgs { get; set; }
+        public string Signal { get; set; }
     }
 
     public class TriggerEventArgs : SignalEventArgs
@@ -14,29 +15,57 @@ namespace CleanMachine
         internal IDisposable TriggerContext { get; set; }
 
         public TriggerBase Trigger { get; set; }
+
+        public EventArgs CauseArgs { get; set; }
     }
 
     public class StateChangedEventArgs<TState> : EventArgs
     {
         public TState PreviousState { get; set; }
 
-        public TState CurrentState { get; set; }
+        public TState ResultingState { get; set; }
 
         public Interfaces.TransitionEventArgs TransitionArgs { get; set; }
     }
 
-    public class StateEnteredEventArgs<TState> : EventArgs
+    public class StateEnteredEventArgs<TState> : EventArgs where TState : struct
     {
         public TState State { get; set; }
 
         public Interfaces.TransitionEventArgs TransitionArgs { get; set; }
+
+        public TState EnteredFromState
+        {
+            get
+            {
+                if (TransitionArgs == null || TransitionArgs.Transition == null)
+                {
+                    return (TState)Enum.Parse(typeof(TState), StateMachine<TState>.RequiredCommonStateValue);
+                }
+
+                return TransitionArgs.Transition.Supplier.Name.ToEnum<TState>();
+            }
+        }
     }
 
-    public class StateExitedEventArgs<TState> : EventArgs
+    public class StateExitedEventArgs<TState> : EventArgs where TState : struct
     {
         public TState State { get; set; }
 
         public Interfaces.TransitionEventArgs TransitionArgs { get; set; }
+
+        public TState ExitedToState
+        {
+            get
+            {
+                if (TransitionArgs == null || TransitionArgs.Transition == null)
+                {
+                    return (TState)Enum.Parse(typeof(TState), StateMachine<TState>.RequiredCommonStateValue);
+                }
+
+                return TransitionArgs.Transition.Consumer.Name.ToEnum<TState>();
+            }
+        }
     }
 
     public class TransitionEventArgs : EventArgs

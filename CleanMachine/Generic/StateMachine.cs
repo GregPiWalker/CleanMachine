@@ -8,7 +8,7 @@ namespace CleanMachine.Generic
 {
     public class StateMachine<TState> : StateMachineBase where TState : struct
     {
-        protected const string RequiredCommonStateValue = "Unknown";
+        public const string RequiredCommonStateValue = "Unknown";
 
         /// <summary>
         /// 
@@ -47,24 +47,39 @@ namespace CleanMachine.Generic
             get { return FindState(value); }
         }
 
+        /// <summary>
+        /// Try to traverse exactly one outgoing transition from the current state,
+        /// looking for the first available transition whose guard condition succeeds.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="callerName"></param>
+        /// <returns>The current state - a new state if a transition succeeded; the prior existing state if not.</returns>
         public virtual TState TryTransition(object sender = null, [CallerMemberName] string callerName = null)
         {
             var args = new SignalEventArgs()
             {
                 Cause = sender,
-                CauseArgs = new EventArgs<string> { Argument = callerName }
+                Signal = callerName
             };
 
             TryTransitionTo(null, args);
             return CurrentState;
         }
 
+        /// <summary>
+        /// Try to traverse exactly one outgoing transition from the current state that leads to the supplied target state,
+        /// looking for the first available transition whose guard condition succeeds.
+        /// </summary>
+        /// <param name="toState"></param>
+        /// <param name="sender"></param>
+        /// <param name="callerName"></param>
+        /// <returns>True if a transition was traversed; false otherwise.</returns>
         public virtual bool TryTransitionTo(TState toState, object sender = null, [CallerMemberName] string callerName = null)
         {
             var args = new SignalEventArgs()
             {
                 Cause = sender,
-                CauseArgs = new EventArgs<string> { Argument = callerName }
+                Signal = callerName
             };
 
             return TryTransitionTo(toState.ToString(), args);
@@ -148,8 +163,9 @@ namespace CleanMachine.Generic
 
             try
             {
-                Logger.Debug($"{Name}:  raising '{nameof(StateEntered)}' event.");
-                StateEntered?.Invoke(this, args.ToStateEnteredArgs<TState>());
+                var enteredArgs = args.ToStateEnteredArgs<TState>();
+                Logger.Debug($"{Name}:  raising '{nameof(StateEntered)}' event with {enteredArgs.State}.");
+                StateEntered?.Invoke(this, enteredArgs);
             }
             catch (Exception ex)
             {
@@ -166,8 +182,9 @@ namespace CleanMachine.Generic
 
             try
             {
-                Logger.Debug($"{Name}:  raising '{nameof(StateExited)}' event.");
-                StateExited?.Invoke(this, args.ToStateExitedArgs<TState>());
+                var exitedArgs = args.ToStateExitedArgs<TState>();
+                Logger.Debug($"{Name}:  raising '{nameof(StateExited)}' event with {exitedArgs.State}.");
+                StateExited?.Invoke(this, exitedArgs);
             }
             catch (Exception ex)
             {

@@ -52,7 +52,7 @@ namespace CleanMachine
 
         public override string ToString()
         {
-            return string.IsNullOrEmpty(_filterProperty) ? Name : $"{Name}[Name=={_filterProperty}]";
+            return string.IsNullOrEmpty(_filterProperty) ? $"{Name}[Property: *]" : $"{Name}[Property: {_filterProperty}]";
         }
 
         protected override void Enable()

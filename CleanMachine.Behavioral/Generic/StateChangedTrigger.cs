@@ -55,7 +55,7 @@ namespace CleanMachine.Behavioral.Generic
 
         private void HandleSourceStateChanged(object sender, StateChangedEventArgs<TState> args)
         {
-            if (!_filterState.HasValue || args.CurrentState.Equals(_filterState.Value))
+            if (!_filterState.HasValue || args.ResultingState.Equals(_filterState.Value))
             {
                 Trip(sender, args);
             }

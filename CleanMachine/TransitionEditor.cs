@@ -1,8 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
-using CleanMachine.Generic;
 using System.Collections.Specialized;
 using log4net;
+using CleanMachine.Generic;
 
 namespace CleanMachine
 {
@@ -27,9 +27,21 @@ namespace CleanMachine
             return this;
         }
 
-        public TransitionEditor GuardWithTriggerCondition<TArg>(Func<EventArgs<TArg>, bool> condition, string name)
+        public TransitionEditor EffectOnSuccess(EventHandler<Interfaces.TransitionEventArgs> successEffect)
         {
-            _transition.Guard = new Constraint<EventArgs<TArg>>(name, condition, (s) => ((SignalEventArgs)s).CauseArgs as EventArgs<TArg>, _logger);
+            _transition.Succeeded += successEffect;
+            return this;
+        }
+
+        /// <summary>
+        /// Set the Guard to a condition that the incoming signal matches the desiredSignal.
+        /// </summary>
+        /// <param name="desiredSignal"></param>
+        /// <param name="guardName"></param>
+        /// <returns></returns>
+        public TransitionEditor GuardWithSignalCondition(string desiredSignal, string guardName)
+        {
+            _transition.Guard = new Constraint<SignalEventArgs>(guardName, (s) => s.Signal == desiredSignal, _logger);
             return this;
         }
 

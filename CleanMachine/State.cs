@@ -34,6 +34,11 @@ namespace CleanMachine
             get { return _outboundTransitions.Cast<ITransition>().ToList().AsReadOnly(); }
         }
 
+        public IEnumerable<ITransition> this[string toStateName]
+        {
+            get { return FindTransitions(toStateName); }
+        }
+
         public bool IsCurrentState
         {
             get { return _isCurrentState; }
@@ -53,7 +58,6 @@ namespace CleanMachine
         /// </summary>
         //TODO: figure out a way to make this internal and internal protected
         public IDisposable EntryContext { get; protected set; }
-
 
         /// <summary>
         /// Gets the <see cref="TransitionEventArgs"/> associated with the most recent entry into this state.

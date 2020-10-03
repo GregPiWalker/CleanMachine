@@ -2,7 +2,6 @@
 using System.Text;
 using System.Reactive.Concurrency;
 using log4net;
-using CleanMachine;
 using CleanMachine.Interfaces;
 
 namespace CleanMachine.Behavioral
@@ -58,7 +57,10 @@ namespace CleanMachine.Behavioral
         }
 
         /// <summary>
-        /// Scheduling the Effect and events keeps the flow of external behaviors synchronized.
+        /// Attempt to traverse this transition.  If the attempt succeeds, the supplier state will be exited,
+        /// then the consumer state will be entered, then the Effect will be invoked or scheduled, and finally the
+        /// <see cref="Succeeded"/> event will be raised.
+        /// Scheduling the Effect keeps the flow of external behaviors synchronized.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="args"></param>
@@ -72,20 +74,20 @@ namespace CleanMachine.Behavioral
 
             if (args.SignalArgs is TriggerEventArgs)
             {
-                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning on behalf of '{(args.SignalArgs as TriggerEventArgs).Trigger}' trigger.");
+                _logger.Info($"({Name}).{nameof(AttemptTransition)}: transitioning on behalf of '{(args.SignalArgs as TriggerEventArgs).Trigger}' trigger.");
             }
             else
             {
-                _logger.Info($"{Name}.{nameof(AttemptTransition)}: transitioning due to signal.");
+                _logger.Info($"({Name}).{nameof(AttemptTransition)}: transitioning due to signal.");
             }
 
             From.Exit(this);
             To.Enter(args);
-            _logger.Info($"{Name}.{nameof(AttemptTransition)}: transition complete.");
+            _logger.Info($"({Name}).{nameof(AttemptTransition)}: transition complete.");
             
             if (Effect != null)
             {
-                _logger.Debug($"{Name}.{nameof(AttemptTransition)}: running EFFECT.");
+                _logger.Debug($"({Name}).{nameof(AttemptTransition)}: running EFFECT.");
                 if (_scheduler == null)
                 {
                     Effect?.Invoke();
