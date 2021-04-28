@@ -35,7 +35,7 @@
                   ToolTip="The On/Off switch starts and stops all of the child models.  It also triggers the One-->Two transition."/>
         <TextBox x:Name="expressionBox" HorizontalAlignment="Left" Height="22" Margin="150,51,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="161"
                  Text="{Binding Path=Expression, UpdateSourceTrigger=PropertyChanged}" KeyDown="ExpressionTextBox_KeyDown"
-                 ToolTip="Create a boolean expression.  Pressing the ENTER key will compile the expression and trigger the 'Four-->Three' transition."/>
+                 ToolTip="Create a boolean expression.  Pressing the ENTER key will compile the expression and trigger the 'Four-->Three' transition. Success is guarded by Loop count=0 and TRUE expression evaluation."/>
         <TextBox x:Name="countBox" HorizontalAlignment="Left" Height="22" Margin="217,9,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="25"
                  Text="{Binding Path=Model.CollectionCount, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, Converter={StaticResource IntToStringConverter}}"
                  ToolTip="This sets a quantity of items in a collection.  It triggers the 'Two-->Four' transition ONLY when the quantity is 5 by using a trigger filter."/>
