@@ -11,7 +11,7 @@ namespace CleanMachine
     /// </summary>
     public abstract class TriggerBase : ITrigger
     {
-        protected const BindingFlags FullAccessBindingFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+        public const BindingFlags FullAccessBindingFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
         protected readonly ILog _logger;
         private readonly object _sync = new object();
 

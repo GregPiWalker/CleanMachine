@@ -30,6 +30,21 @@ namespace CleanMachine.Generic
             _eventInfo = typeof(TSource).GetEvent(eventName, FullAccessBindingFlags);
             if (_eventInfo == null)
             {
+                // First try to get events from inherited interfaces.  This must be done
+                // explicitly when the source is an interface because its Type class does 
+                // not return events that are inherited from other interfaces.
+                foreach (var interfaceT in typeof(TSource).GetInterfaces())
+                {
+                    _eventInfo = interfaceT.GetEvent(eventName, FullAccessBindingFlags);
+                    if (_eventInfo != null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (_eventInfo == null)
+            {
                 throw new ArgumentException($"No event named {eventName} was found on the {typeof(TSource)} type.");
             }
 
