@@ -24,7 +24,7 @@ namespace CleanMachine.Tests
             harness.BuildOneWayMachine();
 
             // The DO behavior should be able to complete its work independent of the current waiting thread.
-            Assert.IsTrue(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(1000)), "Waited too long for DO behavior execution.");
+            Assert.IsTrue(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(1)), "Waited too long for DO behavior execution.");
         }
 
         [TestMethod]

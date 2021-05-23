@@ -4,6 +4,7 @@ using System.Reactive.Concurrency;
 using System.Threading;
 using Unity.Lifetime;
 using Unity;
+using CleanMachine.Behavioral.Generic;
 
 namespace CleanMachine.Behavioral
 {
@@ -19,14 +20,14 @@ namespace CleanMachine.Behavioral
         /// <param name="name"></param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static StateMachine<TState> CreateAsync<TState>(string name, ILog logger) where TState : struct
+        public static BehavioralStateMachine<TState> CreateAsync<TState>(string name, ILog logger) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
             var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Trigger Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.TriggerSchedulerKey, triggerScheduler, new ContainerControlledLifetimeManager());
             var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Behavior Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.BehaviorSchedulerKey, behaviorScheduler, new ContainerControlledLifetimeManager());
-            var machine = new StateMachine<TState>(name, container, logger, true, null);
+            var machine = new BehavioralStateMachine<TState>(name, container, logger, true, null);
             return machine;
         }
 
@@ -39,12 +40,12 @@ namespace CleanMachine.Behavioral
         /// <param name="name">The state machine name.</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static StateMachine<TState> CreateTriggerAsync<TState>(string name, ILog logger) where TState : struct
+        public static BehavioralStateMachine<TState> CreateTriggerAsync<TState>(string name, ILog logger) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
             var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Trigger Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.TriggerSchedulerKey, triggerScheduler, new ContainerControlledLifetimeManager());
-            var machine = new StateMachine<TState>(name, container, logger, true, null);
+            var machine = new BehavioralStateMachine<TState>(name, container, logger, true, null);
             return machine;
         }
 
@@ -59,12 +60,12 @@ namespace CleanMachine.Behavioral
         /// <param name="externalSynchronizer">An optional object to synchronize the state machine's internal triggers and signals with other external threaded work.
         /// If none is supplied, an internal object is used.</param>
         /// <returns></returns>
-        public static StateMachine<TState> CreateBehaviorAsync<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
+        public static BehavioralStateMachine<TState> CreateBehaviorAsync<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
             var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Behavior Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.BehaviorSchedulerKey, behaviorScheduler, new ContainerControlledLifetimeManager());
-            var machine = new StateMachine<TState>(name, container, logger, true, externalSynchronizer);
+            var machine = new BehavioralStateMachine<TState>(name, container, logger, true, externalSynchronizer);
             return machine;
         }
     }

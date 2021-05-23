@@ -1,6 +1,7 @@
 ﻿using CleanMachine.Interfaces;
 using System;
 using System.Reflection;
+using Unity;
 
 namespace CleanMachine
 {
@@ -228,6 +229,20 @@ namespace CleanMachine
             }
 
             return false;
+        }
+
+        public static bool HasTypeRegistration<TReg>(this IUnityContainer container)
+        {
+            try
+            {
+                container.Resolve<TReg>();
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
         }
 
         //internal static Interfaces.SignalEventArgs ToISignalArgs(this SignalEventArgs internalArgs)

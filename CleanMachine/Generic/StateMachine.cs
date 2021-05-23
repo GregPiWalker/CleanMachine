@@ -130,7 +130,7 @@ namespace CleanMachine.Generic
 
             foreach (var stateName in stateNames)
             {
-                var state = new State(stateName, Logger);
+                var state = new State(stateName, RuntimeContainer, Logger);
                 _states.Add(state);
                 state.Entered += HandleStateEntered;
                 state.Exited += HandleStateExited;

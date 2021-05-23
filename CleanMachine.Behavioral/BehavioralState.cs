@@ -15,7 +15,6 @@ namespace CleanMachine.Behavioral
         protected const string EntryBehaviorName = "ENTER Behavior";
         protected const string ExitBehaviorName = "EXIT Behavior";
         protected const string DoBehaviorName = "DO Behavior";
-        protected readonly IUnityContainer _runtimeContainer;
         private readonly List<IBehavior> _doBehaviors = new List<IBehavior>();
 
         private IBehavior _entryBehavior;
@@ -25,13 +24,11 @@ namespace CleanMachine.Behavioral
         /// 
         /// </summary>
         /// <param name="name">The unique name the defines this <see cref="BehavioralState"/>.</param>
-        /// <param name="logger"></param>
         /// <param name="container"></param>
-        /// <param name="behaviorScheduler"></param>
-        public BehavioralState(string name, ILog logger, IUnityContainer container)
-            : base(name, logger)
+        /// <param name="logger"></param>
+        public BehavioralState(string name, IUnityContainer container, ILog logger)
+            : base(name, container, logger)
         {
-            _runtimeContainer = container;
             ValidateTrips = true;
         }
 
@@ -117,6 +114,8 @@ namespace CleanMachine.Behavioral
             var enterOn = tripArgs?.FindLastTransition() as Transition;
 
             IsCurrentState = true;
+            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.EnteredStateKey, this, new ContainerControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.EnteredOnKey, enterOn, new ContainerControlledLifetimeManager());
 
             OnEntryInitiated(enterOn);
 
@@ -154,6 +153,8 @@ namespace CleanMachine.Behavioral
             _logger.Debug($"Exiting state {Name}.");
             
             IsCurrentState = false;
+            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.ExitedStateKey, this, new ContainerControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.ExitedOnKey, exitOn, new ContainerControlledLifetimeManager());
             Disable();
 
             OnExitInitiated(exitOn);
@@ -171,8 +172,7 @@ namespace CleanMachine.Behavioral
             try
             {
                 _logger.Debug($"State {Name}:  performing ENTRY behavior.");
-                _runtimeContainer.RegisterInstance(enteredOn, new ContainerControlledLifetimeManager());
-                _entryBehavior?.Invoke(_runtimeContainer);
+                _entryBehavior?.Invoke(RuntimeContainer);
             }
             catch (Exception ex)
             {
@@ -185,8 +185,7 @@ namespace CleanMachine.Behavioral
             try
             {
                 _logger.Debug($"State {Name}:  performing EXIT behavior.");
-                _runtimeContainer.RegisterInstance(exitedOn, new ContainerControlledLifetimeManager());
-                _exitBehavior?.Invoke(_runtimeContainer);
+                _exitBehavior?.Invoke(RuntimeContainer);
             }
             catch (Exception ex)
             {
@@ -205,8 +204,7 @@ namespace CleanMachine.Behavioral
             
             try
             {
-                _runtimeContainer.RegisterInstance(this, new ContainerControlledLifetimeManager());
-                doBehavior?.Invoke(_runtimeContainer);
+                doBehavior?.Invoke(RuntimeContainer);
             }
             catch (Exception ex)
             {

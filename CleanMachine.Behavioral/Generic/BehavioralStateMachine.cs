@@ -1,12 +1,52 @@
-﻿//using System;
-//using System.Reactive.Concurrency;
-//using System.Collections.Generic;
-//using System.Reactive.Disposables;
-//using System.Threading;
-//using log4net;
-//using Unity;
-//using CleanMachine.Generic;
-//using CleanMachine.Interfaces;
+﻿using System;
+using System.Collections.Generic;
+using log4net;
+using Unity;
+using CleanMachine.Generic;
+using System.Linq;
+
+namespace CleanMachine.Behavioral.Generic
+{
+    /// <summary>
+    /// For now, this class just exists to satisfy a project dependency.
+    /// TODO:  Refactor StateMachine<>, and State<>, and eliminate Behavioral namespace.
+    /// </summary>
+    /// <typeparam name="TState"></typeparam>
+    public sealed class BehavioralStateMachine<TState> : StateMachine<TState> where TState : struct
+    {
+        public BehavioralStateMachine(string name, ILog logger) : base(name, logger)
+        {
+        }
+
+        public BehavioralStateMachine(string name, ILog logger, bool createStates) : base(name, logger, createStates)
+        {
+        }
+
+        public BehavioralStateMachine(string name, IUnityContainer runtimeContainer, ILog logger, bool createStates, object synchronizer) : base(name, runtimeContainer, logger, createStates, synchronizer)
+        {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stateNames"></param>
+        protected override void CreateStates(IEnumerable<string> stateNames)
+        {
+            if (!stateNames.Any(name => name.Equals(RequiredCommonStateValue)))
+            {
+                throw new InvalidOperationException($"StateMachine requires a state enum that contains the value {RequiredCommonStateValue}.");
+            }
+
+            foreach (var stateName in stateNames)
+            {
+                var state = new BehavioralState(stateName, RuntimeContainer, Logger);
+                _states.Add(state);
+                state.Entered += HandleStateEntered;
+                state.Exited += HandleStateExited;
+            }
+        }
+    }
+}
 
 //namespace CleanMachine.Behavioral.Generic
 //{

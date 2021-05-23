@@ -1,18 +1,24 @@
-﻿using log4net;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.ComponentModel;
 using CleanMachine.Interfaces;
-using System.Reactive.Concurrency;
+using log4net;
 using Unity;
+using Unity.Lifetime;
+using NodaTime;
 
 namespace CleanMachine
 {
     //TODO: use Diversions.DivertingBindableBase as base class
     public abstract class StateMachineBase : IStateMachine, INotifyPropertyChanged
     {
+        public const string EnteredStateKey = "EnteredState";
+        public const string ExitedStateKey = "ExitedState";
+        public const string EnteredOnKey = "EnteredOn";
+        public const string ExitedOnKey = "ExitedOn";
         public const string BehaviorSchedulerKey = "BehaviorScheduler";
         public const string TriggerSchedulerKey = "TriggerScheduler";
         protected readonly List<Transition> _transitions = new List<Transition>();
@@ -41,6 +47,12 @@ namespace CleanMachine
             Name = name;
             Logger = logger;
             RuntimeContainer = runtimeContainer ?? new UnityContainer();
+
+            // If a clock hasn't been provided, then register a standard system clock.
+            if (!RuntimeContainer.HasTypeRegistration<IClock>())
+            {
+                RuntimeContainer.RegisterInstance<IClock>(SystemClock.Instance);
+            }
 
             try
             {

@@ -27,7 +27,7 @@ namespace CleanMachine.Tests
             Machine.Edit();
             Machine.SetInitialState(initialState);
             
-            foreach (BehavioralState state in Machine.States)
+            foreach (var state in Machine.States)
             {
                 //state.EntryInitiated += State_EntryInitiated;
                 //state.EntryCompleted += State_EntryCompleted;
@@ -49,13 +49,12 @@ namespace CleanMachine.Tests
 
         public void BuildOneWayMachine()
         {
-            var states = Machine.States.Cast<BehavioralState>().ToList();
-            for (int i = 0; i < states.Count; i++)
+            for (int i = 0; i < Machine.States.Count; i++)
             {
-                if (i + 1 < states.Count)
+                if (i + 1 < Machine.States.Count)
                 {
                     var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
-                    var transition = Machine.CreateTransition(states[i].Name, states[i + 1].Name);
+                    var transition = Machine.CreateTransition(Machine.States[i].Name, Machine.States[i + 1].Name);
                     transition.Edit();
                     transition.AddTrigger(trigger);
 
@@ -70,10 +69,9 @@ namespace CleanMachine.Tests
             BuildOneWayMachine();
 
             // Transition from the last state back to the first.
-            var states = Machine.States.Cast<BehavioralState>().ToList();
-            int last = states.Count - 1;
+            int last = Machine.States.Count - 1;
             var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
-            var transition = Machine.CreateTransition(states[last].Name, states[0].Name);
+            var transition = Machine.CreateTransition(Machine.States[last].Name, Machine.States[0].Name);
             transition.Edit();
             transition.AddTrigger(trigger);
 
@@ -83,7 +81,8 @@ namespace CleanMachine.Tests
 
         public void AddDoBehavior(Action<IUnityContainer> action)
         {
-            foreach (BehavioralState state in Machine.States)
+            var states = Machine.States.OfType<BehavioralState>().ToList();
+            foreach (BehavioralState state in states)
             {
                 state.AddDoBehavior(action);
             }
@@ -104,7 +103,7 @@ namespace CleanMachine.Tests
             Machine.CompleteEdit();
 
             // Hookup transitions after initial state already entered to avoid measuring the wrong transaction.
-            foreach (BehavioralState state in Machine.States)
+            foreach (var state in Machine.States)
             {
                 foreach (Transition transition in state.Transitions)
                 {
@@ -142,15 +141,14 @@ namespace CleanMachine.Tests
         /// <returns></returns>
         public bool WaitUntilAsyncDoBehavior(TimeSpan waitTime)
         {
-            var behavioralMachine = Machine as StateMachine<TState>;
-            Assert.IsNotNull(behavioralMachine, "Use a BehavioralStateMachine to test asynchronous behaviors");
+            Assert.IsNotNull(Machine, "Use a BehavioralStateMachine to test asynchronous behaviors");
 
             if (waitTime < TimeSpan.FromMilliseconds(500))
             {
                 Assert.Fail("Configured waitTime value must be 500ms or greater.");
             }
 
-            if (behavioralMachine.HasTriggerScheduler)
+            if (Machine.HasTriggerScheduler)
             {
                 return WaitUntilFullyAsyncDoBehavior(waitTime);
             }
@@ -182,14 +180,14 @@ namespace CleanMachine.Tests
             Machine.CompleteEdit();
 
             // Now wait to make sure the initial DO behavior set its signal so that we can reset it for the real test.
-            _doBehaviorDone.WaitOne(waitTime);
+            bool doIsDone = _doBehaviorDone.WaitOne(waitTime);
 
             // Got initial state change out of the way, so reset everything for the test.
             _doBehaviorDone.Reset();
             _transitionPreparedForDo.Reset();
 
             // Hookup transitions after initial state already entered to avoid measuring the wrong transaction.
-            foreach (BehavioralState state in Machine.States)
+            foreach (var state in Machine.States)
             {
                 foreach (Transition transition in state.Transitions)
                 {

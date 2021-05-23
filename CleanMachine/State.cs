@@ -5,6 +5,8 @@ using System.Collections.ObjectModel;
 using log4net;
 using CleanMachine.Interfaces;
 using System.Reactive.Disposables;
+using Unity;
+using Unity.Lifetime;
 
 namespace CleanMachine
 {
@@ -20,8 +22,8 @@ namespace CleanMachine
         /// </summary>
         /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
         /// <param name="logger"></param>
-        public State(string name, ILog logger)
-            : this(name, null, logger)
+        public State(string name, IUnityContainer runtimeContainer, ILog logger)
+            : this(name, null, runtimeContainer, logger)
         {
         }
 
@@ -31,18 +33,19 @@ namespace CleanMachine
         /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
         /// <param name="stereotype"></param>
         /// <param name="logger"></param>
-        public State(string name, string stereotype, ILog logger)
+        public State(string name, string stereotype, IUnityContainer runtimeContainer, ILog logger)
         {
             Name = name;
             Stereotype = stereotype;
+            RuntimeContainer = runtimeContainer;
             _logger = logger;
             ValidateTrips = false;
         }
 
         public virtual event EventHandler<StateEnteredEventArgs> Entered;
         public virtual event EventHandler<StateExitedEventArgs> Exited;
-        public virtual event EventHandler<Interfaces.TransitionEventArgs> TransitionSucceeded;
-        public virtual event EventHandler<Interfaces.TransitionEventArgs> TransitionFailed;
+        public virtual event EventHandler<TransitionEventArgs> TransitionSucceeded;
+        public virtual event EventHandler<TransitionEventArgs> TransitionFailed;
 
         internal event EventHandler<bool> IsCurrentValueChanged;
 
@@ -84,6 +87,11 @@ namespace CleanMachine
         /// </summary>
 
         internal protected BooleanDisposable VisitIdentifier { get; protected set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal protected IUnityContainer RuntimeContainer { get; }
 
         internal bool IsEnabled { get; private set; }
 
@@ -194,6 +202,8 @@ namespace CleanMachine
             var enterOn = tripArgs?.FindLastTransition() as Transition;
 
             IsCurrentState = true;
+            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.EnteredStateKey, this, new ContainerControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.EnteredOnKey, enterOn, new ContainerControlledLifetimeManager());
 
             OnEntered(enterOn);
             if (tripArgs != null)
@@ -223,6 +233,8 @@ namespace CleanMachine
             _logger.Debug($"Exiting state {Name}.");
             
             IsCurrentState = false;
+            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.ExitedStateKey, this, new ContainerControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.ExitedOnKey, exitOn, new ContainerControlledLifetimeManager());
             Disable();
             
             OnExited(exitOn);
