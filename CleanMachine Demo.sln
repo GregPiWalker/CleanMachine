@@ -1,21 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Interfaces", "CleanMachine.Interfaces\CleanMachine.Interfaces.csproj", "{B50895DE-D25C-4C79-A540-E0BDD7060E5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanMachine.Interfaces", "CleanMachine.Interfaces\CleanMachine.Interfaces.csproj", "{B50895DE-D25C-4C79-A540-E0BDD7060E5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine", "CleanMachine\CleanMachine.csproj", "{E31E0C32-63BD-4E0F-94E0-32997096A600}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanMachine", "CleanMachine\CleanMachine.csproj", "{E31E0C32-63BD-4E0F-94E0-32997096A600}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachineDemo", "CleanMachineDemo\CleanMachineDemo.csproj", "{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanMachineDemo", "CleanMachineDemo\CleanMachineDemo.csproj", "{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Tests", "CleanMachine.Tests\CleanMachine.Tests.csproj", "{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanMachine.Behavioral", "CleanMachine.Behavioral\CleanMachine.Behavioral.csproj", "{3C62F29A-EDB9-4C1F-88AF-09E43C6AED29}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanMachine.Behavioral", "CleanMachine.Behavioral\CleanMachine.Behavioral.csproj", "{3C62F29A-EDB9-4C1F-88AF-09E43C6AED29}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diversions", "..\Diversions\Standard\Diversions\Diversions.csproj", "{0F7DB95F-8794-4C8A-AF27-209BEB6F90A7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diversions.Mvvm", "..\Diversions\Standard\Diversions.Mvvm\Diversions.Mvvm.csproj", "{EE821AA4-1F52-45D9-B70C-B1B040B66F23}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sequentials", "Activity\Sequentials.csproj", "{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

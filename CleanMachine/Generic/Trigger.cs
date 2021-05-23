@@ -1,6 +1,7 @@
 ﻿using log4net;
 using System;
 using System.Globalization;
+using System.Reactive.Concurrency;
 using System.Reflection;
 
 namespace CleanMachine.Generic
@@ -10,7 +11,7 @@ namespace CleanMachine.Generic
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>
-    public class Trigger<TSource, TEventArgs> : TriggerBase where TEventArgs : EventArgs
+    public class Trigger<TSource, TEventArgs> : TriggerBase //where TEventArgs : EventArgs
     {
         private delegate void EventHandlerDelegate(object sender, TEventArgs args);
         private readonly EventHandlerDelegate _handler;
@@ -23,8 +24,10 @@ namespace CleanMachine.Generic
         /// <param name="source"></param>
         /// <param name="eventName"></param>
         /// <param name="filter"></param>
-        public Trigger(TSource source, string eventName, Constraint<TEventArgs> filter, ILog logger)
-            : base(string.Empty, source, logger)
+        /// <param name="scheduler"></param>
+        /// <param name="logger"></param>
+        public Trigger(TSource source, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, ILog logger)
+            : base(string.Empty, source, scheduler, logger)
         {
             _handler = HandleEventRaised;
             _eventInfo = typeof(TSource).GetEvent(eventName, FullAccessBindingFlags);
@@ -58,8 +61,13 @@ namespace CleanMachine.Generic
             _filterName = filter == null ? string.Empty : filter.Name;
         }
 
+        public Trigger(TSource source, string eventName, IScheduler scheduler, ILog logger)
+            : this(source, eventName, null, scheduler, logger)
+        {
+        }
+
         public Trigger(TSource source, string eventName, ILog logger)
-            : this(source, eventName, null, logger)
+            : this(source, eventName, null, null, logger)
         {
         }
 
@@ -73,14 +81,25 @@ namespace CleanMachine.Generic
             return string.IsNullOrEmpty(_filterName) ? Name : $"{Name}[{_filterName}]";
         }
 
-        public override bool CanTrigger(EventArgs causeEventArgs)
+        public override bool CanTrigger(/*EventArgs*/object causeEventArgs)
         {
-            return CanTrigger(causeEventArgs as TEventArgs);
+            return CanTrigger((TEventArgs)causeEventArgs);
         }
 
         public bool CanTrigger(TEventArgs causeEventArgs)
         {
-            return Filter == null || Filter.IsTrue(causeEventArgs);
+            if (!base.CanTrigger(causeEventArgs))
+            {
+                return false;
+            }
+
+            if (Filter != null && !Filter.IsTrue(causeEventArgs))
+            {
+                //log it
+                return false;
+            }
+
+            return true;
         }
 
         protected override void Enable()

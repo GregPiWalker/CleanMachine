@@ -2,6 +2,9 @@
 
 namespace CleanMachine.Generic
 {
+    /// <summary>
+    /// TODO: REFACTOR
+    /// </summary>
     public class MachineEditor<TState> : IDisposable where TState : struct
     {
         public MachineEditor(StateMachine<TState> machine)

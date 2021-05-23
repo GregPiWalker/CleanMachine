@@ -4,6 +4,6 @@ namespace CleanMachine.Interfaces
 {
     public interface ITransitionBehavior
     {
-        Action Effect { get; set; }
+        IBehavior Effect { get; set; }
     }
 }

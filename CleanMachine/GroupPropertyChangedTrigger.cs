@@ -1,6 +1,7 @@
 ﻿using log4net;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reactive.Concurrency;
 
 namespace CleanMachine
 {
@@ -9,13 +10,13 @@ namespace CleanMachine
         private readonly string _filterProperty;
         private readonly object _handlerSync = new object();
 
-        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, ILog logger)
-            : this(sourceGroup, string.Empty, logger)
+        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, IScheduler scheduler, ILog logger)
+            : this(sourceGroup, string.Empty, scheduler, logger)
         {
         }
         
-        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, string propertyFilter, ILog logger)
-            : base($"{sourceGroup.GetType().Name}.(Group)PropertyChanged", sourceGroup, logger)
+        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, string propertyFilter, IScheduler scheduler, ILog logger)
+            : base($"{sourceGroup.GetType().Name}.(Group)PropertyChanged", sourceGroup, scheduler, logger)
         {
             _filterProperty = propertyFilter;
         }

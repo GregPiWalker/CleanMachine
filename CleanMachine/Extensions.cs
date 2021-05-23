@@ -1,149 +1,98 @@
-﻿using System;
+﻿using CleanMachine.Interfaces;
+using System;
 using System.Reflection;
 
 namespace CleanMachine
 {
     public static class Extensions
     {
-        internal static Interfaces.SignalEventArgs ToISignalArgs(this SignalEventArgs internalArgs)
+        internal static TransitionEventArgs ToTransitionArgs(this TripEventArgs internalArgs, Transition transition)
         {
-            Interfaces.SignalEventArgs signalArgs;
-            var triggerArgs = internalArgs as TriggerEventArgs;
-            if (triggerArgs != null)
+            var origin = (DataWaypoint)internalArgs.GetTripOrigin();
+            var transitionArgs = new TransitionEventArgs()
             {
-                signalArgs = new Interfaces.TriggerEventArgs()
-                {
-                    Trigger = triggerArgs.Trigger,
-                    Cause = triggerArgs.Cause,
-                    CauseArgs = triggerArgs.CauseArgs,
-                    Signal = internalArgs.Signal
-                };
-            }
-            else
-            {
-                signalArgs = new Interfaces.SignalEventArgs()
-                {
-                    Cause = internalArgs.Cause,
-                    Signal = internalArgs.Signal
-                };
-            }
-
-            return signalArgs;
-        }
-
-        internal static Interfaces.TransitionEventArgs ToITransitionArgs(this SignalEventArgs internalArgs, Transition transition)
-        {
-            var transitionArgs = new Interfaces.TransitionEventArgs()
-            {
-                TriggerArgs = internalArgs == null ? null : internalArgs.ToISignalArgs(),
+                Signal = origin.Juncture,
+                SignalData = origin.Signal,
+                Trigger = internalArgs.FindTrigger(),
+                TripRoute = internalArgs.Waypoints,
                 Transition = transition
             };
 
             return transitionArgs;
         }
 
-        internal static Interfaces.TriggerEventArgs ToITriggerArgs(this TriggerEventArgs internalArgs)
+        internal static TransitionEventArgs ToTransitionArgs(this Transition transition, TripEventArgs internalArgs)
         {
-            var triggerArgs = new Interfaces.TriggerEventArgs()
+            var origin = (DataWaypoint)internalArgs.GetTripOrigin();
+            var transitionArgs = new TransitionEventArgs()
             {
-                Trigger = internalArgs.Trigger,
-                Cause = internalArgs.Cause,
-                CauseArgs = internalArgs.CauseArgs
-            };
-
-            return triggerArgs;
-        }
-
-        //internal static Interfaces.TransitionEventArgs ToITransitionArgs(this TriggerEventArgs internalArgs, Transition transition)
-        //{
-        //    var transitionArgs = new Interfaces.TransitionEventArgs()
-        //    {
-        //        TriggerArgs = internalArgs == null ? null : internalArgs.ToITriggerArgs(),
-        //        Transition = transition
-        //    };
-
-        //    return transitionArgs;
-        //}
-
-        internal static Interfaces.TransitionEventArgs ToITransitionArgs(this Transition transition, SignalEventArgs internalArgs)
-        {
-            var transitionArgs = new Interfaces.TransitionEventArgs()
-            {
-                TriggerArgs = internalArgs == null ? new Interfaces.SignalEventArgs() : internalArgs.ToISignalArgs(),
+                Signal = origin.Juncture,
+                SignalData = origin.Signal,
+                Trigger = internalArgs.FindTrigger(),
+                TripRoute = internalArgs.Waypoints,
                 Transition = transition
             };
 
             return transitionArgs;
         }
 
-        internal static Interfaces.StateEnteredEventArgs ToIStateEnteredArgs(this Transition transition, TriggerEventArgs internalArgs)
+        internal static StateEnteredEventArgs ToIStateEnteredArgs(this Transition transition, TripEventArgs internalArgs)
         {
-            var stateArgs = new Interfaces.StateEnteredEventArgs()
+            var stateArgs = new StateEnteredEventArgs()
             {
                 State = transition.To,
-                TransitionArgs = transition.ToITransitionArgs(internalArgs)
+                TransitionArgs = transition.ToTransitionArgs(internalArgs)
             };
 
             return stateArgs;
         }
 
-        internal static Interfaces.StateExitedEventArgs ToIStateExitedArgs(this Transition transition, TriggerEventArgs internalArgs)
+        internal static StateExitedEventArgs ToIStateExitedArgs(this Transition transition, TripEventArgs internalArgs)
         {
-            var stateArgs = new Interfaces.StateExitedEventArgs()
+            var stateArgs = new StateExitedEventArgs()
             {
                 State = transition.From,
-                TransitionArgs = transition.ToITransitionArgs(internalArgs)
+                TransitionArgs = transition.ToTransitionArgs(internalArgs)
             };
 
             return stateArgs;
         }
 
-        internal static StateChangedEventArgs<TState> ToIStateChangedArgs<TState>(this Transition transition, SignalEventArgs internalArgs)
+        internal static StateChangedEventArgs<TState> ToIStateChangedArgs<TState>(this Transition transition, TripEventArgs internalArgs)
         {
             var stateArgs = new StateChangedEventArgs<TState>()
             {
                 ResultingState = transition.To.ToEnum<TState>(),
                 PreviousState = transition.From.ToEnum<TState>(),
-                TransitionArgs = transition.ToITransitionArgs(internalArgs)
+                TransitionArgs = transition.ToTransitionArgs(internalArgs)
             };
 
             return stateArgs;
         }
 
-        internal static StateEnteredEventArgs<TState> ToStateEnteredArgs<TState>(this Interfaces.StateEnteredEventArgs args) where TState : struct
+        internal static StateEnteredEventArgs<TState> ToStateEnteredArgs<TState>(this StateEnteredEventArgs args) where TState : struct
         {
             var stateArgs = new StateEnteredEventArgs<TState>()
             {
                 State = args.State.ToEnum<TState>(),
-                TransitionArgs = args.TransitionArgs == null ? new Interfaces.TransitionEventArgs() : args.TransitionArgs
+                TransitionArgs = args.TransitionArgs == null ? new TransitionEventArgs() : args.TransitionArgs
             };
 
             return stateArgs;
         }
 
-        internal static StateExitedEventArgs<TState> ToStateExitedArgs<TState>(this Interfaces.StateExitedEventArgs args) where TState : struct
+        internal static StateExitedEventArgs<TState> ToStateExitedArgs<TState>(this StateExitedEventArgs args) where TState : struct
         {
             var stateArgs = new StateExitedEventArgs<TState>()
             {
                 State = args.State.ToEnum<TState>(),
-                TransitionArgs = args.TransitionArgs == null ? new Interfaces.TransitionEventArgs() : args.TransitionArgs
+                TransitionArgs = args.TransitionArgs == null ? new TransitionEventArgs() : args.TransitionArgs
             };
 
             return stateArgs;
         }
 
-        internal static TransitionEventArgs ToTransitionArgs(this Transition transition, SignalEventArgs internalArgs)
-        {
-            var transitionArgs = new TransitionEventArgs()
-            {
-                SignalArgs = internalArgs ?? new SignalEventArgs(),
-                Transition = transition
-            };
-
-            return transitionArgs;
-        }
-
-        public static TState ToEnum<TState>(this Interfaces.IState state)
+        public static TState ToEnum<TState>(this IState state)
         {
             return state.Name.ToEnum<TState>();
         }
@@ -252,5 +201,82 @@ namespace CleanMachine
 
             return true;
         }
+
+        public static bool HasStereotype<TEnum>(this ITransition transition, TEnum stereotype) where TEnum : struct
+        {
+            if (transition.Stereotype.Equals(stereotype.ToString()))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool HasAnyStereotype<TEnum>(this ITransition transition, TEnum stereotype, params TEnum[] otherStereotypes) where TEnum : struct
+        {
+            if (transition.Stereotype.Equals(stereotype.ToString()))
+            {
+                return true;
+            }
+
+            foreach (var st in otherStereotypes)
+            {
+                if (transition.Stereotype.Equals(st.ToString()))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        //internal static Interfaces.SignalEventArgs ToISignalArgs(this SignalEventArgs internalArgs)
+        //{
+        //    Interfaces.SignalEventArgs signalArgs;
+        //    var triggerArgs = internalArgs as TriggerEventArgs;
+        //    if (triggerArgs != null)
+        //    {
+        //        signalArgs = new Interfaces.TriggerEventArgs()
+        //        {
+        //            Trigger = triggerArgs.Trigger,
+        //            Cause = triggerArgs.Cause,
+        //            CauseArgs = triggerArgs.CauseArgs,
+        //            Signal = internalArgs.Signal
+        //        };
+        //    }
+        //    else
+        //    {
+        //        signalArgs = new Interfaces.SignalEventArgs()
+        //        {
+        //            Cause = internalArgs.Cause,
+        //            Signal = internalArgs.Signal
+        //        };
+        //    }
+
+        //    return signalArgs;
+        //}
+
+        //internal static Interfaces.TriggerEventArgs ToITriggerArgs(this TriggerEventArgs internalArgs)
+        //{
+        //    var triggerArgs = new Interfaces.TriggerEventArgs()
+        //    {
+        //        Trigger = internalArgs.Trigger,
+        //        Cause = internalArgs.Cause,
+        //        CauseArgs = internalArgs.CauseArgs
+        //    };
+
+        //    return triggerArgs;
+        //}
+
+        //internal static Interfaces.TransitionEventArgs ToITransitionArgs(this TriggerEventArgs internalArgs, Transition transition)
+        //{
+        //    var transitionArgs = new Interfaces.TransitionEventArgs()
+        //    {
+        //        TriggerArgs = internalArgs == null ? null : internalArgs.ToITriggerArgs(),
+        //        Transition = transition
+        //    };
+
+        //    return transitionArgs;
+        //}
     }
 }

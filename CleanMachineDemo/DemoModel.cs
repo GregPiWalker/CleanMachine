@@ -122,7 +122,7 @@ namespace CleanMachineDemo
                 using (var builder = DemoMachineBuilder.BuildStateMachine(this, StateMachine))
                 {
                     // If we loop around the state machine, reset the loop count variable;
-                    (StateMachine[DemoState.One] as IStateBehavior).AddDoBehavior(s => { Reset(); });
+                    (StateMachine[DemoState.One] as IStateBehavior).AddDoBehavior(c => { Reset(); });
                 }
             }
             catch (Exception ex)

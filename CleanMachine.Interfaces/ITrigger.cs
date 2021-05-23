@@ -35,14 +35,15 @@ namespace CleanMachine.Interfaces
         bool IsActive { get; }
 
         /// <summary>
-        /// Connects the trigger.
+        /// Activate this trigger, making it responsive to surrounding events.
         /// </summary>
-        //void Connect();
+        /// <param name="validity"></param>
+        void Activate(IDisposable validity);
 
         /// <summary>
         /// Disconnects the trigger.
         /// </summary>
-        //void Disconnect();
+        void Deactivate();
 
         /// <summary>
         /// Conditionally trip the trigger.  If tripped, the <see cref="Triggered"/> event is raised.

@@ -1,5 +1,6 @@
 ﻿using log4net;
 using System.ComponentModel;
+using System.Reactive.Concurrency;
 
 namespace CleanMachine
 {
@@ -17,9 +18,10 @@ namespace CleanMachine
         /// Create an unfiltered trigger that trips for all PropertyChanged events from the source.
         /// </summary>
         /// <param name="source"></param>
+        /// <param name="tripScheduler"></param>
         /// <param name="logger"></param>
-        public PropertyChangedTrigger(INotifyPropertyChanged source, ILog logger)
-            : this(source, null, logger)
+        public PropertyChangedTrigger(INotifyPropertyChanged source, IScheduler tripScheduler, ILog logger)
+            : this(source, null, tripScheduler, logger)
         {
         }
         
@@ -31,9 +33,10 @@ namespace CleanMachine
         /// </summary>
         /// <param name="source"></param>
         /// <param name="propertyNameChain">optional property name chain to use as a filter</param>
+        /// <param name="tripScheduler"></param>
         /// <param name="logger"></param>
-        public PropertyChangedTrigger(INotifyPropertyChanged source, string propertyNameChain, ILog logger)
-            : base($"{source.GetType().Name}.{nameof(source.PropertyChanged)}", source, logger)
+        public PropertyChangedTrigger(INotifyPropertyChanged source, string propertyNameChain, IScheduler tripScheduler, ILog logger)
+            : base($"{source.GetType().Name}.{nameof(source.PropertyChanged)}", source, tripScheduler, logger)
         {
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))
             {

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net48</TargetFramework>
+		<TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
 		<AssemblyName>CleanMachine.Interfaces</AssemblyName>
 		<Product></Product>
 		<Description></Description>
@@ -9,5 +9,10 @@
 		<Copyright>Copyright © 2020</Copyright>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="NodaTime" Version="3.0.5" />
+	  <PackageReference Include="Unity" Version="5.11.10" />
+	</ItemGroup>
 
 </Project>

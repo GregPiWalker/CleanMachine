@@ -1,6 +1,9 @@
 ﻿
 namespace CleanMachine.Generic
 {
+    /// <summary>
+    /// TODO: REFACTOR
+    /// </summary>
     public class StateEditor<TState> where TState : struct
     {
         internal StateEditor(StateMachine<TState> machine, TState state)
@@ -17,7 +20,7 @@ namespace CleanMachine.Generic
         {
             var transition = Machine.CreateTransition(State, toState);
             transition.Edit();
-            return new TransitionEditor(transition, Machine.Logger);
+            return new TransitionEditor(transition, Machine.TriggerScheduler, Machine.Logger);
         }
     }
 }

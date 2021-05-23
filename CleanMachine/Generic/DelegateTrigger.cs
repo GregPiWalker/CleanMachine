@@ -1,5 +1,6 @@
 ﻿using log4net;
 using System;
+using System.Reactive.Concurrency;
 
 namespace CleanMachine.Generic
 {
@@ -8,7 +9,7 @@ namespace CleanMachine.Generic
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>
-    public class DelegateTrigger<TSource, TDelegate, TEventArgs> : Trigger<TSource, TEventArgs> where TEventArgs : EventArgs
+    public class DelegateTrigger<TSource, TDelegate, TEventArgs> : Trigger<TSource, TEventArgs> //where TEventArgs : EventArgs
     {
         /// <summary>
         /// 
@@ -16,13 +17,15 @@ namespace CleanMachine.Generic
         /// <param name="source"></param>
         /// <param name="eventName"></param>
         /// <param name="filter"></param>
-        public DelegateTrigger(TSource source, string eventName, Constraint<TEventArgs> filter, ILog logger)
-            : base(source, eventName, filter, logger)
+        /// <param name="tripScheduler"></param>
+        /// <param name="logger"></param>
+        public DelegateTrigger(TSource source, string eventName, Constraint<TEventArgs> filter, IScheduler tripScheduler, ILog logger)
+            : base(source, eventName, filter, tripScheduler, logger)
         {
         }
 
-        public DelegateTrigger(TSource source, string eventName, ILog logger)
-            : this(source, eventName, null, logger)
+        public DelegateTrigger(TSource source, string eventName, IScheduler tripScheduler, ILog logger)
+            : this(source, eventName, null, tripScheduler, logger)
         {
         }
 

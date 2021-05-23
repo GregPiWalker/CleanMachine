@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Collections.Specialized;
 using log4net;
 using CleanMachine.Generic;
+using CleanMachine.Interfaces;
+using System.Reactive.Concurrency;
 
 namespace CleanMachine
 {
@@ -10,11 +12,13 @@ namespace CleanMachine
     {
         protected readonly Transition _transition;
         protected readonly ILog _logger;
+        protected readonly IScheduler _triggerScheduler;
 
-        internal TransitionEditor(Transition transition, ILog logger)
+        internal TransitionEditor(Transition transition, IScheduler triggerScheduler, ILog logger)
         {
             _transition = transition;
             _logger = logger;
+            _triggerScheduler = triggerScheduler;
         }
 
         internal protected ILog Logger => _logger;
@@ -27,7 +31,7 @@ namespace CleanMachine
             return this;
         }
 
-        public TransitionEditor EffectOnSuccess(EventHandler<Interfaces.TransitionEventArgs> successEffect)
+        public TransitionEditor EffectOnSuccess(EventHandler<TransitionEventArgs> successEffect)
         {
             _transition.Succeeded += successEffect;
             return this;
@@ -41,41 +45,41 @@ namespace CleanMachine
         /// <returns></returns>
         public TransitionEditor GuardWithSignalCondition(string desiredSignal, string guardName)
         {
-            _transition.Guard = new Constraint<SignalEventArgs>(guardName, (s) => s.Signal == desiredSignal, _logger);
+            _transition.Guard = new Constraint<TripEventArgs>(guardName, (s) => s.GetTripOrigin().Signal == desiredSignal, _logger);
             return this;
         }
 
         public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs
         {
-            var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, _logger);
+            var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
         public TransitionEditor TriggerWithEvent<TSource, TDelegate, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs
         {
-            var trigger = new DelegateTrigger<TSource, TDelegate, TFilterArgs>(source, eventName, _logger);
+            var trigger = new DelegateTrigger<TSource, TDelegate, TFilterArgs>(source, eventName, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
         public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName, Constraint<TFilterArgs> filter) where TFilterArgs : EventArgs
         {
-            var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, filter, _logger);
+            var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, filter, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
         public TransitionEditor TriggerWithProperty(INotifyPropertyChanged sender, string propertyNameChain = "")
         {
-            var trigger = new PropertyChangedTrigger(sender, propertyNameChain, _logger);
+            var trigger = new PropertyChangedTrigger(sender, propertyNameChain, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
         public TransitionEditor TriggerWithCollection(INotifyCollectionChanged sender, int tripOnCount = -1)
         {
-            var trigger = new CollectionChangedTrigger(sender, tripOnCount, _logger);
+            var trigger = new CollectionChangedTrigger(sender, tripOnCount, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }

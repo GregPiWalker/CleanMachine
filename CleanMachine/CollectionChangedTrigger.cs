@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Reactive.Concurrency;
 
 namespace CleanMachine
 {
@@ -9,13 +10,13 @@ namespace CleanMachine
     {
         private readonly int _tripFilter;
 
-        public CollectionChangedTrigger(INotifyCollectionChanged source, ILog logger)
-            : this(source, -1, logger)
+        public CollectionChangedTrigger(INotifyCollectionChanged source, IScheduler tripScheduler, ILog logger)
+            : this(source, -1, tripScheduler, logger)
         {
         }
 
-        public CollectionChangedTrigger(INotifyCollectionChanged source, int tripFilter, ILog logger)
-            : base($"{source.GetType().Name}.{nameof(source.CollectionChanged)}", source, logger)
+        public CollectionChangedTrigger(INotifyCollectionChanged source, int tripFilter, IScheduler tripScheduler, ILog logger)
+            : base($"{source.GetType().Name}.{nameof(source.CollectionChanged)}", source, tripScheduler, logger)
         {
             _tripFilter = tripFilter;
         }

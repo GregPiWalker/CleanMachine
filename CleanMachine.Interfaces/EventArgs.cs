@@ -1,10 +1,86 @@
-﻿using System;
+﻿using NodaTime;
+using System;
+using System.Collections.Generic;
 
 namespace CleanMachine.Interfaces
 {
+    public class TripEventArgs : EventArgs
+    {
+        public TripEventArgs(IDisposable visitorId)
+        {
+            VisitorIdentifier = visitorId;
+        }
+
+        /// <summary>
+        /// Gets the trip route as a linked list of waypoints.
+        /// </summary>
+        public LinkedList<IWaypoint> Waypoints { get; private set; } = new LinkedList<IWaypoint>();
+
+        public IDisposable VisitorIdentifier { get; }
+
+        public ITrigger FindTrigger()
+        {
+            LinkedListNode<IWaypoint> node = Waypoints.First;
+            while (node != null)
+            {
+                if (node.Value.Juncture is ITrigger)
+                {
+                    return node.Value.Juncture as ITrigger;
+                }
+
+                node = node.Next;
+            }
+
+            return null;
+        }
+
+        public ITransition FindLastTransition()
+        {
+            LinkedListNode<IWaypoint> node = Waypoints.Last;
+            while (node != null)
+            {
+                if (node.Value.Juncture is ITransition)
+                {
+                    return node.Value.Juncture as ITransition;
+                }
+
+                node = node.Previous;
+            }
+
+            return null;
+        }
+
+        public ITransition FindFirstTransition()
+        {
+            LinkedListNode<IWaypoint> node = Waypoints.First;
+            while (node != null)
+            {
+                if (node.Value.Juncture is ITransition)
+                {
+                    return node.Value.Juncture as ITransition;
+                }
+
+                node = node.Next;
+            }
+
+            return null;
+        }
+
+        public DataWaypoint GetTripOrigin()
+        {
+            return (DataWaypoint)Waypoints.First.Value;
+        }
+    }
+
     public class TransitionEventArgs : EventArgs
     {
-        public SignalEventArgs TriggerArgs { get; set; }
+        public object Signal { get; set; }
+
+        public object SignalData { get; set; }
+
+        public ITrigger Trigger { get; set; }
+
+        public LinkedList<IWaypoint> TripRoute { get; set; }
 
         public ITransition Transition { get; set; }
     }
@@ -49,17 +125,26 @@ namespace CleanMachine.Interfaces
         }
     }
 
-    public class SignalEventArgs : EventArgs
+    public class ClockedEventArgs : EventArgs
     {
-        public object Cause { get; set; }
+        public ClockedEventArgs(IClock clock)
+        {
+            CreatedTime = clock.GetCurrentInstant();
+        }
 
-        public string Signal { get; set; }
+        public Instant CreatedTime { get; set; }
     }
 
-    public class TriggerEventArgs : SignalEventArgs
+    public class FaultedEventArgs : ClockedEventArgs
     {
-        public ITrigger Trigger { get; set; }
+        public FaultedEventArgs(Exception e, IClock clock)
+            : base(clock)
+        {
+            Fault = e;
+        }
 
-        public EventArgs CauseArgs { get; set; }
+        public Exception Fault { get; set; }
+
+        public object Sender { get; set; }
     }
 }

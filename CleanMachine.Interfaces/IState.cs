@@ -12,6 +12,8 @@ namespace CleanMachine.Interfaces
 
         string Name { get; }
 
+        string Stereotype { get; }
+
         bool IsCurrentState { get; }
 
         ReadOnlyCollection<ITransition> Transitions { get; }

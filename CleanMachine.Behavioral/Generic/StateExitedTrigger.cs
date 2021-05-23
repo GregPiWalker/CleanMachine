@@ -1,5 +1,7 @@
-﻿using CleanMachine.Interfaces;
+﻿using CleanMachine.Generic;
+using CleanMachine.Interfaces;
 using log4net;
+using System.Reactive.Concurrency;
 
 namespace CleanMachine.Behavioral.Generic
 {
@@ -14,8 +16,8 @@ namespace CleanMachine.Behavioral.Generic
         private readonly IState _state;
 
         //TODO: Change this to accept a collection like StateChangedTrigger
-        public StateExitedTrigger(BehavioralStateMachine<TState> source, TState? tripOnState, ILog logger)
-            : base($"{typeof(BehavioralStateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateExitedEventArgs<TState>).Name}>", source, logger)
+        public StateExitedTrigger(StateMachine<TState> source, TState? tripOnState, IScheduler tripScheduler, ILog logger)
+            : base($"{typeof(StateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateExitedEventArgs<TState>).Name}>", source, tripScheduler, logger)
         {
             if (tripOnState.HasValue)
             {
@@ -25,17 +27,17 @@ namespace CleanMachine.Behavioral.Generic
             _filterState = tripOnState;
         }
 
-        public StateExitedTrigger(string sourceName, BehavioralStateMachine<TState> source, ILog logger)
-            : this(source, null, logger)
+        public StateExitedTrigger(StateMachine<TState> source, IScheduler tripScheduler, ILog logger)
+            : this(source, null, tripScheduler, logger)
         {
         }
 
         /// <summary>
         /// Gets the type cast base source.
         /// </summary>
-        public BehavioralStateMachine<TState> StateMachine
+        public StateMachine<TState> StateMachine
         {
-            get { return base.Source as BehavioralStateMachine<TState>; }
+            get { return base.Source as StateMachine<TState>; }
         }
 
         protected override void Enable()

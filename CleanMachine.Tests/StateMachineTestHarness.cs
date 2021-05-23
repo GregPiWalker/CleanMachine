@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Unity;
 
 namespace CleanMachine.Tests
 {
@@ -80,11 +81,11 @@ namespace CleanMachine.Tests
             //transition.Failed += Transition_Failed;
         }
 
-        public void AddDoBehavior(Action<IState> action)
+        public void AddDoBehavior(Action<IUnityContainer> action)
         {
             foreach (BehavioralState state in Machine.States)
             {
-                state.AddDoBehavior(action);
+                state.AddDoBehavior(new Behavior(action));
             }
         }
 

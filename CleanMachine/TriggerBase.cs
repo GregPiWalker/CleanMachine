@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Reflection;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using CleanMachine.Interfaces;
 using log4net;
-using System.Threading.Tasks;
-using System.Reflection;
 
 namespace CleanMachine
 {
@@ -12,18 +13,22 @@ namespace CleanMachine
     public abstract class TriggerBase : ITrigger
     {
         public const BindingFlags FullAccessBindingFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+        protected readonly IScheduler _tripScheduler;
         protected readonly ILog _logger;
-        private readonly object _sync = new object();
+        protected BooleanDisposable _visitorId;
+        //private readonly object _sync = new object();
+        private readonly object _visitLock = new object();
 
-        public TriggerBase(string name, object source, ILog logger)
+        public TriggerBase(string name, object source, IScheduler tripScheduler, ILog logger)
         {
+            _tripScheduler = tripScheduler;
             _logger = logger;
             Name = name;
             Source = source;
             IsActive = false;
         }
 
-        public event EventHandler<TriggerEventArgs> Triggered;
+        public event EventHandler<TripEventArgs> Triggered;
 
         public string Name { get; protected set; }
         
@@ -42,14 +47,19 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Acivate this trigger, making it responsive to surrounding events.
+        /// Activate this trigger, making it responsive to surrounding events.
         /// </summary>
-        public void Activate()
+        /// <param name="stateVisitId"></param>
+        public void Activate(IDisposable stateVisitId)
         {
-            if (!IsActive)
+            lock (_visitLock)
             {
-                IsActive = true;
-                Enable();
+                if (!IsActive)
+                {
+                    IsActive = true;
+                    _visitorId = stateVisitId as BooleanDisposable;
+                    Enable();
+                }
             }
         }
 
@@ -69,13 +79,38 @@ namespace CleanMachine
         /// Conditionally trip the trigger.  If tripped, the <see cref="Triggered"/> event is raised.
         /// If the Guard condition is false, then the trigger is not tripped.
         /// </summary>
-        /// <param name="cause">The optional object that caused the trigger to trip.</param>
-        /// <param name="causeEventArgs">The optional EventArgs related to the source event.</param>
-        public void Trip(object cause, EventArgs causeEventArgs)
+        /// <param name="origin">The optional origin of the trip.</param>
+        /// <param name="originEventArgs">The optional data related to the origin event.</param>
+        public void Trip(object origin, object originEventArgs)
         {
-            if (IsActive && CanTrigger(causeEventArgs))
+            lock (_visitLock)
             {
-                OnTriggered(cause, causeEventArgs);
+                if (IsActive)
+                {
+                    if (_tripScheduler != null)
+                    {
+                        // Making a local copy here prevents the lambda from potentially closing on the
+                        // field after a new value has been assigned in the Activate method.
+                        var localIdCopy = _visitorId;
+                        _tripScheduler.Schedule(() => BeginTrip(origin, originEventArgs, localIdCopy));
+                    }
+                    else
+                    {
+                        BeginTrip(origin, originEventArgs, _visitorId);
+                    }
+                }
+            }
+        }
+
+        private void BeginTrip(object origin, object originEventArgs, IDisposable visitorId)
+        {
+            if (CanTrigger(originEventArgs))
+            {
+                var trip = new TripEventArgs(visitorId);
+                // Add the trip source and its arguments to the route history.
+                trip.Waypoints.AddLast(new DataWaypoint(origin, originEventArgs));
+
+                OnTriggered(trip);
             }
         }
 
@@ -84,14 +119,32 @@ namespace CleanMachine
         /// </summary>
         /// <param name="causeEventArgs"></param>
         /// <returns></returns>
-        public virtual bool CanTrigger(EventArgs causeEventArgs)
+        public virtual bool CanTrigger(/*EventArgs*/object causeEventArgs)
         {
-            //Empty base.
+            // When Triggers are asynchronous, they are queued up and serviced serially.  While moving through the queue,
+            // they can go stale for different reasons.
+            if (_tripScheduler != null)
+            {
+                // Provide escape route in case the trigger was deactivated while the trip was waiting to be serviced.
+                if (!IsActive)
+                {
+                    _logger.Debug($"{Name}.{nameof(OnTriggered)}:  trigger trip rejected for '{ToString()}'. Trigger is currently inactive.");
+                    return false;
+                }
+
+                // Provide escape route in case the trip became irrelevant while it was waiting to be serviced.
+                if (_visitorId != null && _visitorId.IsDisposed)
+                {
+                    _logger.Debug($"{Name}.{nameof(OnTriggered)}:  trigger trip rejected for  '{ToString()}'.  The trip is no longer valid in relation to its surroundings.");
+                    return false;
+                }
+            }
+
             return true;
         }
 
         /// <summary>
-        /// 
+        /// Connect this trigger to it's associated event.
         /// </summary>
         protected virtual void Enable()
         {
@@ -99,7 +152,7 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// 
+        /// Disconnect this trigger from it's associated event.
         /// </summary>
         protected virtual void Disable()
         {
@@ -109,16 +162,19 @@ namespace CleanMachine
         /// <summary>
         /// Do not schedule trigger events so that the call stack is maintained.
         /// </summary>
-        /// <param name="cause"></param>
-        /// <param name="causeEventArgs"></param>
-        private void OnTriggered(object cause, EventArgs causeEventArgs)
+        /// <param name="tripArgs"></param>
+        private void OnTriggered(TripEventArgs tripArgs)
         {
             try
             {
-                Triggered?.Invoke(this, new TriggerEventArgs() { Cause = cause, CauseArgs = causeEventArgs, Trigger = this });
+                // Add self to the route history.
+                tripArgs.Waypoints.AddLast(new Waypoint(this));
+                Triggered?.Invoke(this, tripArgs);
             }
             catch (Exception ex)
             {
+                //TODO: remove self from route history?
+
                 _logger.Error($"{ex.GetType().Name} during {nameof(Triggered)} event from {Name} trigger.", ex);
             }
         }

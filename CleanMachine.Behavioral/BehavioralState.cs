@@ -1,36 +1,51 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Reactive.Concurrency;
-using System.Reactive.Disposables;
 using log4net;
 using CleanMachine;
 using CleanMachine.Interfaces;
+using CleanMachine.Behavioral.Behaviors;
+using Unity;
+using Unity.Lifetime;
 
 namespace CleanMachine.Behavioral
 {
     public class BehavioralState : State, IStateBehavior
     {
-        protected readonly IScheduler _scheduler;
-        private readonly List<Action<IState>> _doBehaviors = new List<Action<IState>>();
+        protected const string EntryBehaviorName = "ENTER Behavior";
+        protected const string ExitBehaviorName = "EXIT Behavior";
+        protected const string DoBehaviorName = "DO Behavior";
+        protected readonly IUnityContainer _runtimeContainer;
+        private readonly List<IBehavior> _doBehaviors = new List<IBehavior>();
 
-        private Action<ITransition> _entryBehavior;
-        private Action<ITransition> _exitBehavior;
-        
-        public BehavioralState(string name, ILog logger, IScheduler behaviorScheduler)
+        private IBehavior _entryBehavior;
+        private IBehavior _exitBehavior;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name">The unique name the defines this <see cref="BehavioralState"/>.</param>
+        /// <param name="logger"></param>
+        /// <param name="container"></param>
+        /// <param name="behaviorScheduler"></param>
+        public BehavioralState(string name, ILog logger, IUnityContainer container)
             : base(name, logger)
         {
-            _scheduler = behaviorScheduler;
+            _runtimeContainer = container;
+            ValidateTrips = true;
         }
 
         public event EventHandler<StateEnteredEventArgs> EntryInitiated;
         public event EventHandler<StateExitedEventArgs> ExitInitiated;
+
+        public IEnumerable<Transition> PassiveTransitions => _outboundTransitions.OfType<Transition>().Where(t => t.IsPassive);
 
         public override string ToString()
         {
             return Name;
         }
 
-        public void SetEntryBehavior(Action<ITransition> behavior)
+        public void SetEntryBehavior(IBehavior behavior)
         {
             if (!Editable)
             {
@@ -40,7 +55,12 @@ namespace CleanMachine.Behavioral
             _entryBehavior = behavior;
         }
 
-        public void AddDoBehavior(Action<IState> behavior)
+        public void SetEntryBehavior(Action<IUnityContainer> action)
+        {
+            SetEntryBehavior(new Behavior(EntryBehaviorName, action));
+        }
+
+        public void AddDoBehavior(IBehavior behavior)
         {
             if (!Editable)
             {
@@ -50,7 +70,13 @@ namespace CleanMachine.Behavioral
             _doBehaviors.Add(behavior);
         }
 
-        public void SetExitBehavior(Action<ITransition> behavior)
+        public void AddDoBehavior(Action<IUnityContainer> action)
+        {
+            var name = $"{DoBehaviorName} {_doBehaviors.Count + 1}";
+            AddDoBehavior(new Behavior(name, action));
+        }
+
+        public void SetExitBehavior(IBehavior behavior)
         {
             if (!Editable)
             {
@@ -60,20 +86,17 @@ namespace CleanMachine.Behavioral
             _exitBehavior = behavior;
         }
 
-        internal override void Enable()
+        public void SetExitBehavior(Action<IUnityContainer> action)
         {
-            // Start a new state selection context in order to associate all incoming trigger handlers
-            // with a single state selection.
-            EntryContext = new BooleanDisposable();
-            base.Enable();
+            SetExitBehavior(new Behavior(ExitBehaviorName, action));
         }
 
-        internal override Transition CreateTransitionTo(string context, State consumer)
-        {
-            var transition = new BehavioralTransition(context, this, consumer as BehavioralState, _logger);
-            AddTransition(transition);
-            return transition;
-        }
+        //internal override Transition CreateTransitionTo(string context, State consumer)
+        //{
+        //    var transition = new Transition(context, this, consumer, _logger);
+        //    AddTransition(transition);
+        //    return transition;
+        //}
 
         /// <summary>
         /// Entering a state involves in order:
@@ -87,38 +110,31 @@ namespace CleanMachine.Behavioral
         /// raised before transition triggers are enabled to decrease likelihood of
         /// recursive eventing.
         /// </summary>
-        /// <param name="enterOn"></param>
-        internal override void Enter(TransitionEventArgs enterOn)
-        {            
+        /// <param name="tripArgs"></param>
+        internal override void Enter(TripEventArgs tripArgs)
+        {
             _logger.Debug($"Entering state {Name}.");
+            var enterOn = tripArgs?.FindLastTransition() as Transition;
 
             IsCurrentState = true;
-            History = enterOn;
-            //_entryCompletedSignal.Reset();
 
-            OnEntryInitiated(enterOn.Transition);
+            OnEntryInitiated(enterOn);
 
             if (_entryBehavior != null)
             {
-                if (_scheduler == null)
-                {
-                    OnEntryBehavior(enterOn.Transition);
-                }
-                else
-                {
-                    _scheduler.Schedule(enterOn.Transition, (_, t) => { return OnEntryBehavior(t); });
-                }
+                OnEntryBehavior(enterOn);
             }
 
-            // Schedule a signal for the entry completion.
-            //_scheduler.Schedule(() => _entryCompletedSignal.Set());
-
-            OnEntered(enterOn.Transition);
+            OnEntered(enterOn);
 
             // Now that all ENTRY work is complete, enable all transition triggers.
             Enable();
 
-            ScheduleDoBehaviors();
+            if (_doBehaviors.Any())
+            {
+                _logger.Debug($"State {Name}:  performing DO behaviors.");
+                _doBehaviors.ForEach(b => OnDoBehavior(b));
+            }
         }
 
         /// <summary>
@@ -140,107 +156,62 @@ namespace CleanMachine.Behavioral
             IsCurrentState = false;
             Disable();
 
-            // Wait for certain completion of all entry behaviors.
-            //_entryCompletedSignal.WaitOne();
-
             OnExitInitiated(exitOn);
 
             if (_exitBehavior != null)
             {
-                if (_scheduler == null)
-                {
-                    OnExitBehavior(exitOn);
-                }
-                else
-                {
-                    _scheduler.Schedule(exitOn, (_, t) => { return OnExitBehavior(t); });
-                }
+                OnExitBehavior(exitOn);
             }
             
             OnExited(exitOn);
         }
 
-        ///// <summary>
-        ///// In case the scheduler was not able to be set in construction.
-        ///// </summary>
-        ///// <param name="behaviorScheduler"></param>
-        //internal void SetScheduler(IScheduler behaviorScheduler)
-        //{
-        //    if (behaviorScheduler == null || _scheduler != null)
-        //    {
-        //        return;
-        //    }
-
-        //    _scheduler = behaviorScheduler;
-        //}
-
-        protected IDisposable OnEntryBehavior(ITransition enteredOn)
+        protected void OnEntryBehavior(ITransition enteredOn)
         {
             try
             {
                 _logger.Debug($"State {Name}:  performing ENTRY behavior.");
-                _entryBehavior?.Invoke(enteredOn);
+                _runtimeContainer.RegisterInstance(enteredOn, new ContainerControlledLifetimeManager());
+                _entryBehavior?.Invoke(_runtimeContainer);
             }
             catch (Exception ex)
             {
                 _logger.Error($"{ex.GetType().Name} during ENTRY behavior in state {Name}.", ex);
             }
-
-            return Disposable.Empty;
         }
 
-        protected void ScheduleDoBehaviors()
-        {
-            _logger.Debug($"State {Name}:  performing DO behaviors.");
-
-            if (_scheduler == null)
-            {
-                _doBehaviors.ForEach(a => OnDoBehavior(a));
-            }
-            else
-            {
-                // Schedule all the DO behaviors independently.
-                for (int i = 0; i < _doBehaviors.Count; i++)
-                {
-                    _scheduler.Schedule(_doBehaviors[i], (_, a) => { return OnDoBehavior(a); });
-                }
-            }
-        }
-
-        protected IDisposable OnExitBehavior(ITransition exitedOn)
+        protected void OnExitBehavior(ITransition exitedOn)
         {
             try
             {
                 _logger.Debug($"State {Name}:  performing EXIT behavior.");
-                _exitBehavior?.Invoke(exitedOn);
+                _runtimeContainer.RegisterInstance(exitedOn, new ContainerControlledLifetimeManager());
+                _exitBehavior?.Invoke(_runtimeContainer);
             }
             catch (Exception ex)
             {
                 _logger.Error($"{ex.GetType().Name} during EXIT behavior in state {Name}.", ex);
             }
-
-            return Disposable.Empty;
         }
 
-        private IDisposable OnDoBehavior(Action<IState> doBehavior)
+        private void OnDoBehavior(IBehavior doBehavior)
         {
             // State changes don't need to wait for all the DO behaviors to finish.
             if (!IsCurrentState)
             {
                 _logger.Debug($"State {Name}:  DO behavior ignored because {Name} is no longer the current state.");
-                return Disposable.Empty;
+                return;
             }
             
             try
             {
-                doBehavior?.Invoke(this);
+                _runtimeContainer.RegisterInstance(this, new ContainerControlledLifetimeManager());
+                doBehavior?.Invoke(_runtimeContainer);
             }
             catch (Exception ex)
             {
                 _logger.Error($"{ex.GetType().Name} during DO behavior in state {Name}.", ex);
             }
-
-            return Disposable.Empty;
         }
 
         private void OnEntryInitiated(Transition enteredOn)

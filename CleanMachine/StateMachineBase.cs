@@ -5,31 +5,93 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.ComponentModel;
 using CleanMachine.Interfaces;
+using System.Reactive.Concurrency;
+using Unity;
 
 namespace CleanMachine
 {
+    //TODO: use Diversions.DivertingBindableBase as base class
     public abstract class StateMachineBase : IStateMachine, INotifyPropertyChanged
     {
+        public const string BehaviorSchedulerKey = "BehaviorScheduler";
+        public const string TriggerSchedulerKey = "TriggerScheduler";
         protected readonly List<Transition> _transitions = new List<Transition>();
         protected readonly List<State> _states = new List<State>();
         protected State _currentState;
         protected State _initialState;
 
         /// <summary>
-        /// 
+        /// This is used for all synchronization constructs internal to this machine.  When triggers are synchronous
+        /// they are not put on a serializing event queue, so they need some other mechanism for synchronization -
+        /// hence the synchronizer.
+        /// </summary>
+        protected readonly object _synchronizer;
+
+        /// <summary>
+        /// Construct a machine with asynchronous triggering using the given scheduler.
+        /// If no scheduler is provided, then triggering is done synchronously using the provided synchronizing object.
+        /// If no synchronizer is provided, a default is supplied.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="runtimeContainer"></param>
+        /// <param name="logger"></param>
+        /// <param name="synchronizer">An object that is used to synchronize internal operation of this machine.</param>
+        protected StateMachineBase(string name, IUnityContainer runtimeContainer, ILog logger, object synchronizer)
+        {
+            Name = name;
+            Logger = logger;
+            RuntimeContainer = runtimeContainer ?? new UnityContainer();
+
+            try
+            {
+                TriggerScheduler = RuntimeContainer.Resolve<IScheduler>(TriggerSchedulerKey);
+                Logger.Debug($"{Name}:  was initialized with asynchronous triggers.");
+            }
+            catch
+            {
+                if (synchronizer == null)
+                {
+                    // When configured with synchronous triggers, this machine must have a local synchronization context.
+                    Logger.Debug($"{Name}:  was initialized for synchronous operation using a default synchronization object.");
+                    _synchronizer = new object();
+                }
+                else
+                {
+                    Logger.Debug($"{Name}:  was initialized for synchronous operation.");
+                    _synchronizer = synchronizer;
+                }
+            }
+
+            try
+            {
+                BehaviorScheduler = RuntimeContainer.Resolve<IScheduler>(BehaviorSchedulerKey);
+                Logger.Debug($"{Name}:  was initialized with asynchronous behaviors.");
+            }
+            catch
+            {
+                Logger.Debug($"{Name}:  was initialized with synchronous behaviors.");
+            }
+        }
+
+        /// <summary>
+        /// Construct a machine with synchronous triggers.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
         protected StateMachineBase(string name, ILog logger)
+            : this(name, null, logger, null)
         {
-            Name = name;
-            Logger = logger;
         }
 
         public virtual event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// 
+        /// </summary>
+        public IUnityContainer RuntimeContainer { get; }
+
+        /// <summary>
+        /// Gets this machine's name.
         /// </summary>
         public string Name { get; }
 
@@ -38,8 +100,14 @@ namespace CleanMachine
         /// </summary>
         public ILog Logger { get; }
 
+        public IState CurrentState => _currentState;
+
+        internal protected IScheduler TriggerScheduler { get; }
+
+        internal protected IScheduler BehaviorScheduler { get; }
+
         /// <summary>
-        /// 
+        /// Gets a read-only collection of this machine's states.
         /// </summary>
         public ReadOnlyCollection<IState> States
         {
@@ -49,16 +117,26 @@ namespace CleanMachine
         //public State FinalState { get; private set; }
 
         /// <summary>
+        /// Gets the list of <see cref="IWaypoint"/>s that occurred in the most recent successful trip.
+        /// </summary>
+        public LinkedList<IWaypoint> History { get; protected set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the machine should automatically attempt another
+        /// state transition after a successful transition.  When the machine stimulates
+        /// a state, only passive Transitions will be attempted.
+        /// </summary>
+        public bool AutoAdvance { get; protected set; }
+
+        /// <summary>
         /// 
         /// </summary>
         internal bool Editable { get; private set; }
 
         /// <summary>
-        /// 
+        /// Gets a value indicating whether this machine is fully assembled yet.
         /// </summary>
         internal bool IsAssembled { get; private set; }
-
-        internal State CurrentState => _currentState;
 
         /// <summary>
         /// Set the machine's desired initial state.  This is enforced
@@ -155,19 +233,26 @@ namespace CleanMachine
             }
 
             var transition = supplier.CreateTransitionTo(Name, consumer);
-            transition.Requested += HandleTransitionRequest;
+            //transition.TraversalRequested += HandleTransitionRequest;
             return transition;
         }
 
-        internal bool TryTransitionTo(string toState, SignalEventArgs args)
+        /// <summary>
+        /// Try to traverse exactly one outgoing transition from the current state
+        /// that leads to the given desired state,
+        /// looking for the first available transition whose guard condition succeeds.
+        /// This ignores the passive quality of the attempted Transitions.
+        /// </summary>
+        /// <param name="toState"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        internal bool TryTransitionTo(string toState, TripEventArgs args)
         {
-            var transitionArgs = new TransitionEventArgs() { SignalArgs = args };
             var transitions = _currentState.FindTransitions(toState);
             var state = _currentState;
             foreach (var transition in transitions)
             {
-                transitionArgs.Transition = transition;
-                var attempted = AttemptTransition(transitionArgs);
+                var attempted = AttemptTransition(transition, args);
 
                 // This only tells whether a transition attempt was made.
                 if (attempted.HasValue && attempted.Value)
@@ -210,7 +295,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="transition"></param>
         /// <param name="args"></param>
-        protected abstract void OnStateChanged(Transition transition, SignalEventArgs args);
+        protected abstract void OnStateChanged(Transition transition, TripEventArgs args);
 
         /// <summary>
         /// Perform state-entered work.
@@ -250,16 +335,61 @@ namespace CleanMachine
             JumpToState(_initialState);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="args"></param>
-        /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
-        internal virtual bool? AttemptTransition(TransitionEventArgs args)
+        public bool Signal(DataWaypoint signalSource)
         {
-            return AttemptTransitionUnsafe(args);
+            var tripArgs = new TripEventArgs(_currentState.VisitIdentifier);
+            tripArgs.Waypoints.AddLast(signalSource);
+
+            return false;
         }
 
+        /// <summary>
+        /// Stimulate passive transitions from the current state.
+        /// </summary>
+        /// <param name="signalSource"></param>
+        /// <returns></returns>
+        protected bool Stimulate(TripEventArgs tripArgs)
+        {
+            var passiveTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
+            foreach (var transition in passiveTransitions)
+            {
+                if (transition.AttemptTraverse(tripArgs))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Try to traverse the given transition.
+        /// </summary>
+        /// <param name="transition">The Transition to try to traverse.</param>
+        /// <param name="args">The related TripEventArgs.</param>
+        /// <returns>True if a transition attempt was made; false or null otherwise.  NOT an indicator for transition success.</returns>
+        internal virtual bool? AttemptTransition(Transition transition, TripEventArgs args)
+        {
+            if (_synchronizer == null)
+            {
+                return AttemptTransitionUnsafe(transition, args);
+            }
+            else
+            {
+                // This lock regulates all transition triggers associated to the given synchronization context.
+                // This means that only one of any number of transitions can successfully exit the current state,
+                // whether those transitions all exist in one state machine or are distributed across a set of machines.
+                lock (_synchronizer)
+                {
+                    return AttemptTransitionUnsafe(transition, args);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Jump into a specified state, circumventing the normal StateMachine operation.
+        /// </summary>
+        /// <param name="jumpTo"></param>
         internal virtual void JumpToState(State jumpTo)
         {
             if (jumpTo == null)
@@ -267,40 +397,57 @@ namespace CleanMachine
                 throw new ArgumentNullException("jumpTo");
             }
 
-            JumpToStateUnsafe(jumpTo);
+            if (_synchronizer == null)
+            {
+                JumpToStateUnsafe(jumpTo);
+            }
+            else
+            {
+                lock (_synchronizer)
+                {
+                    JumpToStateUnsafe(jumpTo);
+                }
+            }
+        }
+
+        protected void JumpToStateUnsafe(State jumpTo)
+        {
+            Logger.Debug($"{Name}:  jumping to state {jumpTo.Name}.");
+            if (!jumpTo.CanEnter(null))
+            {
+                Logger.Warn($"{Name}:  state {jumpTo.Name} has false CanEnter value.");
+                //throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
+            }
+
+            jumpTo.Enter(null);
+            _currentState = jumpTo;
+            History = null;
+
+            OnStateChanged(null, null);
         }
 
         /// <summary>
         /// The first successful transition will dispose of all other trigger handlers that were competing for action
         /// by disposing of the state selection context associated to the triggers.
         /// </summary>
-        /// <param name="args"></param>
+        /// <param name="transition">The Transition to try to traverse.</param>
+        /// <param name="args">The related TripEventArgs.</param>
         /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
-        protected virtual bool AttemptTransitionUnsafe(TransitionEventArgs args)
+        protected virtual bool AttemptTransitionUnsafe(Transition transition, TripEventArgs args)
         {
-            var triggerArgs = args.SignalArgs as TriggerEventArgs;
-            if (triggerArgs != null)
+            if (transition != null && transition.AttemptTraverse(args))
             {
-                // Provide escape route in case the trigger became irrelevant while the handler for it was waiting.
-                //TODO: it's possible this condition can move into BehavioralStateMachine.
-                if (triggerArgs.TriggerContext != _currentState.EntryContext)
-                {
-                    Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{triggerArgs.Trigger.ToString()}'.  The trigger occurred in a different context of selection of state {_currentState.Name}.");
-                    return false;
-                }
+                _currentState = transition.To;
 
-                // Provide escape route in case the trigger was deactivated while the handler for it was waiting.
-                if (!triggerArgs.Trigger.IsActive)
-                {
-                    Logger.Debug($"{Name}.{nameof(AttemptTransitionUnsafe)}:  transition rejected for trigger '{triggerArgs.Trigger.ToString()}'. Trigger is currently inactive.");
-                    return false;
-                }
-            }
+                // Once a trip results in a state change, hold onto the route history.
+                History = args.Waypoints;
+                OnStateChanged(transition, args);
 
-            if (args.Transition.AttemptTransition(args))
-            {
-                _currentState = args.Transition.To;
-                OnStateChanged(args.Transition, args.SignalArgs);
+                // When a transition succeeds, auto-advance may be appropriate.
+                if (AutoAdvance)
+                {
+                    Stimulate(args);
+                }
             }
             else
             {
@@ -311,38 +458,37 @@ namespace CleanMachine
             return true;
         }
 
-        protected void JumpToStateUnsafe(State jumpTo)
+        /// <summary>
+        /// Raises this object's PropertyChanged event.
+        /// </summary>
+        /// <param name="name">The property name.</param>
+        protected void OnPropertyChanged(string name)
         {
-            if (!jumpTo.CanEnter(null))
-            {
-                throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
-            }
-
-            Logger.Debug($"{Name}:  jumping to state {jumpTo.Name}.");
-            jumpTo.Enter(new TransitionEventArgs());
-            _currentState = jumpTo;
-
-            OnStateChanged(null, new SignalEventArgs() { Cause = this });
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        protected virtual void HandleTransitionRequest(object sender, SignalEventArgs args)
-        {
-            var triggerArgs = args as TriggerEventArgs;
-            if (triggerArgs != null && triggerArgs.TriggerContext == null)
-            {
-                return;
-            }
+        //todo: delete this
+        //protected virtual void HandleTransitionRequest_delete(object sender, TripEventArgs args)
+        //{
+        //    var trigger = args.FindTrigger();
+        //    if (trigger != null && args.VisitorIdentifier == null)
+        //    {
+        //        // If a trigger was the source of the trip and no visitor ID exists, something went wrong.
+        //        //TODO: log it
+        //        return;
+        //    }
 
-            var currentState = _currentState;
-            if (currentState == null || !currentState.IsEnabled)
-            {
-                return;
-            }
+        //    var currentState = _currentState;
+        //    if (currentState == null || !currentState.IsEnabled)
+        //    {
+        //        //TODO: log it?
+        //        return;
+        //    }
 
-            var transition = sender as Transition;
-            var transitionArgs = transition.ToTransitionArgs(args);
+        //    var transition = sender as Transition;
+        //    var transitionArgs = transition.ToTransitionArgs(args);
 
-            AttemptTransition(transitionArgs);
-        }
+        //    AttemptTransition(transitionArgs);
+        //}
     }
 }

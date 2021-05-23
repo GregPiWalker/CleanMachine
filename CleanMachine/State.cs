@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.ObjectModel;
 using log4net;
 using CleanMachine.Interfaces;
+using System.Reactive.Disposables;
 
 namespace CleanMachine
 {
@@ -13,13 +14,31 @@ namespace CleanMachine
         protected readonly List<Transition> _outboundTransitions = new List<Transition>();
         
         private bool _isCurrentState;
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
+        /// <param name="logger"></param>
         public State(string name, ILog logger)
+            : this(name, null, logger)
+        {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
+        /// <param name="stereotype"></param>
+        /// <param name="logger"></param>
+        public State(string name, string stereotype, ILog logger)
         {
             Name = name;
+            Stereotype = stereotype;
             _logger = logger;
+            ValidateTrips = false;
         }
-        
+
         public virtual event EventHandler<StateEnteredEventArgs> Entered;
         public virtual event EventHandler<StateExitedEventArgs> Exited;
         public virtual event EventHandler<Interfaces.TransitionEventArgs> TransitionSucceeded;
@@ -27,7 +46,9 @@ namespace CleanMachine
 
         internal event EventHandler<bool> IsCurrentValueChanged;
 
-        public string Name { get; }
+        public string Name { get; protected internal set; }
+
+        public string Stereotype { get; protected internal set; }
 
         public ReadOnlyCollection<ITransition> Transitions
         {
@@ -51,18 +72,18 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Gets the state's latest entry context.  The entry context tracks a unique entry into this
-        /// state.  It can be used to distinguish different times the same state is entered.  For instance,
-        /// a transition from this state to this state will result in the same current state, but will
-        /// give two different entry contexts.
+        /// 
         /// </summary>
-        //TODO: figure out a way to make this internal and internal protected
-        public IDisposable EntryContext { get; protected set; }
+        public bool ValidateTrips { get; set; }
 
         /// <summary>
-        /// Gets the <see cref="TransitionEventArgs"/> associated with the most recent entry into this state.
+        /// Gets the state's latest visit marker.  The visit marker tracks a unique visit (entry) to this
+        /// state.  It can be used to distinguish different times the same state is entered.  For instance,
+        /// a transition from this state to this state will result in the same current state, but will
+        /// give two different visit markers.
         /// </summary>
-        public TransitionEventArgs History { get; protected set; }
+
+        internal protected BooleanDisposable VisitIdentifier { get; protected set; }
 
         internal bool IsEnabled { get; private set; }
 
@@ -86,6 +107,38 @@ namespace CleanMachine
             }
 
             return _outboundTransitions.Where(t => t.Consumer.Name == toState);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="enterOn"></param>
+        /// <returns></returns>
+        public virtual bool CanEnter(Transition enterOn)
+        {
+            if (IsCurrentState && enterOn != null && enterOn.Supplier != enterOn.Consumer)
+            {
+                _logger.Debug($"Cannot enter state {Name}.");
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="exitOn"></param>
+        /// <returns></returns>
+        public virtual bool CanExit(Transition exitOn)
+        {
+            if (!IsCurrentState)
+            {
+                _logger.Debug($"Cannot exit state {Name}; not the current state.");
+                return false;
+            }
+
+            return true;
         }
 
         internal void Edit()
@@ -122,28 +175,6 @@ namespace CleanMachine
             _logger.Debug($"State {Name}:  editing completed.");
         }
 
-        internal bool CanEnter(Transition enterOn)
-        {
-            if (IsCurrentState && enterOn != null && enterOn.Supplier != enterOn.Consumer)
-            {
-                _logger.Debug($"Cannot enter state {Name}.");
-                return false;
-            }
-
-            return true;
-        }
-
-        internal bool CanExit(Transition enterOn)
-        {
-            if (!IsCurrentState)
-            {
-                _logger.Debug($"Cannot exit state {Name}; not the current state.");
-                return false;
-            }
-
-            return true;
-        }
-
         /// <summary>
         /// Entering a state involves in order:
         /// 1) Raising <see cref="EntryInitiated"/> event.
@@ -156,15 +187,19 @@ namespace CleanMachine
         /// raised before transition triggers are enabled to decrease likelihood of
         /// recursive eventing.
         /// </summary>
-        /// <param name="enterOn"></param>
-        internal virtual void Enter(TransitionEventArgs enterOn)
-        {            
+        /// <param name="tripArgs"></param>
+        internal virtual void Enter(TripEventArgs tripArgs)
+        {
             _logger.Debug($"Entering state {Name}.");
+            var enterOn = tripArgs?.FindLastTransition() as Transition;
 
             IsCurrentState = true;
-            History = enterOn;
 
-            OnEntered(enterOn.Transition);
+            OnEntered(enterOn);
+            if (tripArgs != null)
+            {
+                tripArgs.Waypoints.AddLast(new Waypoint(this));
+            }
 
             // Now that all ENTRY work is complete, enable all transition triggers.
             // This assigns the state's SelectionContext to all the outgoing transitions.
@@ -217,31 +252,54 @@ namespace CleanMachine
             t.Failed += HandleTransitionFailed;
         }
 
+        /// <summary>
+        /// Enable triggers on outbound connectors.
+        /// </summary>
         internal virtual void Enable()
         {
-            if (EntryContext == null)
+            if (ValidateTrips)
             {
-                // Start a new state selection context in order to associate all incoming trigger handlers
-                // with a single state selection.
-                EntryContext = new BlankDisposable();
+                VisitIdentifier = new BooleanDisposable();
             }
 
-            _logger.Info($"State {Name}: enabling all transitions.");
-            _outboundTransitions.ForEach(t => t.Enable(EntryContext));
+            _logger.Info($"State {Name}: enabling outbound connectors.");
+            _outboundTransitions.ForEach(t => t.Enable(VisitIdentifier));
             IsEnabled = true;
         }
 
+        /// <summary>
+        /// Disable triggers on outbound connectors.
+        /// </summary>
         internal void Disable()
         {
-            // Dispose of the selection context so that trigger handlers can be cancelled.
-            EntryContext?.Dispose();
-            _logger.Info($"State {Name}: disabling all transitions.");
+            // Dispose of the visit ID so that irrelevant trips can be cancelled.
+            VisitIdentifier?.Dispose();
+            _logger.Info($"State {Name}: disabling outbound connectors.");
             _outboundTransitions.ForEach(t => t.Disable());
             IsEnabled = false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context">Description of this <see cref="State"/>'s existential context.</param>
+        /// <param name="stereotype"></param>
+        /// <returns></returns>
+        protected Transition CreateTransition(string context, string stereotype)
+        {
+            var transition = new Transition(context, stereotype, this, null, _logger);
+            AddTransition(transition);
+            return transition;
+        }
+
         protected void OnEntered(Transition enteredOn)
         {
+            if (enteredOn == null)
+            {
+                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnEntered)}.");
+                return;
+            }
+
             try
             {
                 //TODO: trace logging
@@ -262,6 +320,12 @@ namespace CleanMachine
 
         protected void OnExited(Transition exitedOn)
         {
+            if (exitedOn == null)
+            {
+                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnExited)}.");
+                return;
+            }
+
             try
             {
                 //TODO: trace logging
@@ -279,7 +343,7 @@ namespace CleanMachine
             Exited?.Invoke(this, args);
         }
 
-        protected void HandleTransitionSucceeded(object sender, Interfaces.TransitionEventArgs args)
+        protected void HandleTransitionSucceeded(object sender, TransitionEventArgs args)
         {
             try
             {
@@ -291,7 +355,7 @@ namespace CleanMachine
             }
         }
 
-        protected void HandleTransitionFailed(object sender, Interfaces.TransitionEventArgs args)
+        protected void HandleTransitionFailed(object sender, TransitionEventArgs args)
         {
             try
             {

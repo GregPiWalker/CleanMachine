@@ -1,8 +1,12 @@
-﻿using log4net;
+﻿using CleanMachine.Interfaces;
+using log4net;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
+using Unity;
 
 namespace CleanMachine.Generic
 {
@@ -11,24 +15,46 @@ namespace CleanMachine.Generic
         public const string RequiredCommonStateValue = "Unknown";
 
         /// <summary>
-        /// 
+        /// Construct a machine with asynchronous triggers and populate its states.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
+        /// <param name="triggerScheduler">The IScheduler used by all triggers in this machine.</param>
+        /// <param name="behaviorScheduler">The IScheduler used by any default behaviors in this machine.</param>
         public StateMachine(string name, ILog logger)
             : this(name, logger, true)
         {
         }
 
         /// <summary>
-        /// Create a <see cref="StateMachine{TState}"/> instance. This ctor
-        /// gives a derived class the chance to delay state creation.
+        /// Create a <see cref="StateMachine{TState}"/> instance with asynchronous triggers.
+        /// This ctor gives a derived class the chance to delay state creation.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
+        /// <param name="triggerScheduler">The IScheduler used by all triggers in this machine.</param>
+        /// <param name="behaviorScheduler">The IScheduler used by any default behaviors in this machine.</param>
         /// <param name="createStates">Indicate whether this ctor should create state objects or not.</param>
-        protected StateMachine(string name, ILog logger, bool createStates)
-            : base(name, logger)
+        public StateMachine(string name, ILog logger, bool createStates)
+            : base(name, null, logger, null)
+        {
+            if (createStates)
+            {
+                CreateStates(typeof(TState).GetEnumNames());
+            }
+        }
+
+        /// <summary>
+        /// Create a <see cref="StateMachine{TState}"/> instance with synchronous triggers.
+        /// This ctor gives a derived class the chance to delay state creation.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="runtimeContainer"></param>
+        /// <param name="logger"></param>
+        /// <param name="createStates">Indicate whether this ctor should create state objects or not.</param>
+        /// <param name="synchronizer">An object that is used to synchronize internal operation of this machine.</param>
+        public StateMachine(string name, IUnityContainer runtimeContainer, ILog logger, bool createStates, object synchronizer)
+            : base(name, runtimeContainer, logger, synchronizer)
         {
             if (createStates)
             {
@@ -42,7 +68,7 @@ namespace CleanMachine.Generic
 
         public new TState CurrentState => _currentState == null ? RequiredCommonStateValue.ToEnum<TState>() : _currentState.ToEnum<TState>();
 
-        public Interfaces.IState this[TState value]
+        public IState this[TState value]
         {
             get { return FindState(value); }
         }
@@ -50,39 +76,35 @@ namespace CleanMachine.Generic
         /// <summary>
         /// Try to traverse exactly one outgoing transition from the current state,
         /// looking for the first available transition whose guard condition succeeds.
+        /// This ignores the passive quality of the attempted Transitions.
         /// </summary>
         /// <param name="sender"></param>
-        /// <param name="callerName"></param>
+        /// <param name="callerName">Name of the calling method. (supplied by runtime).</param>
         /// <returns>The current state - a new state if a transition succeeded; the prior existing state if not.</returns>
         public virtual TState TryTransition(object sender = null, [CallerMemberName] string callerName = null)
         {
-            var args = new SignalEventArgs()
-            {
-                Cause = sender,
-                Signal = callerName
-            };
+            var tripArgs = new TripEventArgs(new BlankDisposable());
+            tripArgs.Waypoints.AddLast(new DataWaypoint(sender, callerName));
 
-            TryTransitionTo(null, args);
+            TryTransitionTo(null, tripArgs);
             return CurrentState;
         }
 
         /// <summary>
         /// Try to traverse exactly one outgoing transition from the current state that leads to the supplied target state,
         /// looking for the first available transition whose guard condition succeeds.
+        /// This ignores the passive quality of the attempted Transitions.
         /// </summary>
         /// <param name="toState"></param>
         /// <param name="sender"></param>
-        /// <param name="callerName"></param>
+        /// <param name="callerName">Name of the calling method. (supplied by runtime).</param>
         /// <returns>True if a transition was traversed; false otherwise.</returns>
         public virtual bool TryTransitionTo(TState toState, object sender = null, [CallerMemberName] string callerName = null)
         {
-            var args = new SignalEventArgs()
-            {
-                Cause = sender,
-                Signal = callerName
-            };
+            var tripArgs = new TripEventArgs(new BlankDisposable());
+            tripArgs.Waypoints.AddLast(new DataWaypoint(sender, callerName));
 
-            return TryTransitionTo(toState.ToString(), args);
+            return TryTransitionTo(toState.ToString(), tripArgs);
         }
 
         /// <summary>
@@ -125,12 +147,24 @@ namespace CleanMachine.Generic
             return CreateTransition(supplierState.ToString(), consumerState.ToString());
         }
 
+        protected override bool AttemptTransitionUnsafe(Transition transition, TripEventArgs args)
+        {
+            bool result = base.AttemptTransitionUnsafe(transition, args);
+            if (result)
+            {
+                //TODO: beware auto-advance stepping through multiple states
+                OnPropertyChanged(nameof(CurrentState));
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// Raise the <see cref="StateChanged"/> event synchronously.
         /// </summary>
         /// <param name="transition"></param>
         /// <param name="args"></param>
-        protected override void OnStateChanged(Transition transition, SignalEventArgs args)
+        protected override void OnStateChanged(Transition transition, TripEventArgs args)
         {
             if (StateChanged == null || transition == null)
             {
@@ -154,7 +188,7 @@ namespace CleanMachine.Generic
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        protected override void HandleStateEntered(object sender, Interfaces.StateEnteredEventArgs args)
+        protected override void HandleStateEntered(object sender, StateEnteredEventArgs args)
         {
             if (StateEntered == null)
             {
@@ -173,7 +207,7 @@ namespace CleanMachine.Generic
             }
         }
 
-        protected override void HandleStateExited(object sender, Interfaces.StateExitedEventArgs args)
+        protected override void HandleStateExited(object sender, StateExitedEventArgs args)
         {
             if (StateExited == null)
             {
