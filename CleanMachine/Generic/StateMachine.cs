@@ -52,7 +52,7 @@ namespace CleanMachine.Generic
         /// <param name="runtimeContainer"></param>
         /// <param name="logger"></param>
         /// <param name="createStates">Indicate whether this ctor should create state objects or not.</param>
-        /// <param name="synchronizer">An object that is used to synchronize internal operation of this machine.</param>
+        /// <param name="synchronizer">An object that is used to synchronize internal operation of this machine when a trigger <see cref="IScheduler"/> is not supplied.</param>
         public StateMachine(string name, IUnityContainer runtimeContainer, ILog logger, bool createStates, object synchronizer)
             : base(name, runtimeContainer, logger, synchronizer)
         {

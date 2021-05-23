@@ -102,6 +102,10 @@ namespace CleanMachine
 
         public IState CurrentState => _currentState;
 
+        public bool HasTriggerScheduler => TriggerScheduler != null;
+
+        public bool HasBehaviorScheduler => BehaviorScheduler != null;
+
         internal protected IScheduler TriggerScheduler { get; }
 
         internal protected IScheduler BehaviorScheduler { get; }

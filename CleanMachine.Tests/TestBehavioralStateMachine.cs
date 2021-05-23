@@ -43,7 +43,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialAsync_DoBehaviorIsNotAsync()
         {
-            var uut = Behavioral.StateMachineFactory.CreatePartialAsync<DummyState>("Demo StateMachine", _logger);
+            var uut = Behavioral.StateMachineFactory.CreateTriggerAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -56,7 +56,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialAsync_TransitionIsAsync()
         {
-            var uut = Behavioral.StateMachineFactory.CreatePartialAsync<DummyState>("Demo StateMachine", _logger);
+            var uut = Behavioral.StateMachineFactory.CreateTriggerAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -65,20 +65,9 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void ChangeState_GivenPartialSync_WhereBehaviorIsNotAsync_DoBehaviorIsNotAsync()
-        {
-            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, false);
-            var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
-            harness.BuildOneWayMachine();
-
-            Assert.IsFalse(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(1)), "DO behavior executed asynchronously.");
-        }
-
-        [TestMethod]
-        [TestCategory("Integration")]
         public void ChangeState_GivenPartialSync_WhereBehaviorIsAsync_DoBehaviorIsAsync()
         {
-            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, true);
+            var uut = Behavioral.StateMachineFactory.CreateBehaviorAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -90,7 +79,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialSync_WhereBehaviorIsNotAsync_TransitionIsNotAsync()
         {
-            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, false);
+            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
 
@@ -102,12 +91,23 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void ChangeState_GivenPartialSync_WhereBehaviorIsAsync_TransitionIsNotAsync()
         {
-            var uut = Behavioral.StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger, true);
+            var uut = Behavioral.StateMachineFactory.CreateBehaviorAsync<DummyState>("Demo StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             harness.BuildOneWayMachine();
             
             // The transition should be blocked from completing its work because the transition happens on the current thread.
             Assert.IsFalse(harness.WaitUntilAsyncTransitionSuccess(TimeSpan.FromSeconds(1)), "Transition executed asynchronously.");
+        }
+
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void ChangeState_GivenPartialSync_WhereBehaviorIsNotAsync_DoBehaviorIsNotAsync()
+        {
+            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger);
+            var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
+            harness.BuildOneWayMachine();
+
+            Assert.IsFalse(harness.WaitUntilAsyncDoBehavior(TimeSpan.FromSeconds(1)), "DO behavior executed asynchronously.");
         }
     }
 }

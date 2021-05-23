@@ -1,6 +1,6 @@
 ﻿using CleanMachine;
 using CleanMachine.Behavioral;
-using CleanMachine.Behavioral.Generic;
+using CleanMachine.Behavioral.Behaviors;
 using CleanMachine.Generic;
 using CleanMachine.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -85,7 +85,7 @@ namespace CleanMachine.Tests
         {
             foreach (BehavioralState state in Machine.States)
             {
-                state.AddDoBehavior(new Behavior(action));
+                state.AddDoBehavior(action);
             }
         }
 
@@ -106,7 +106,7 @@ namespace CleanMachine.Tests
             // Hookup transitions after initial state already entered to avoid measuring the wrong transaction.
             foreach (BehavioralState state in Machine.States)
             {
-                foreach (BehavioralTransition transition in state.Transitions)
+                foreach (Transition transition in state.Transitions)
                 {
                     transition.Succeeded += (a, b) =>
                     {
@@ -142,7 +142,7 @@ namespace CleanMachine.Tests
         /// <returns></returns>
         public bool WaitUntilAsyncDoBehavior(TimeSpan waitTime)
         {
-            var behavioralMachine = Machine as BehavioralStateMachine<TState>;
+            var behavioralMachine = Machine as StateMachine<TState>;
             Assert.IsNotNull(behavioralMachine, "Use a BehavioralStateMachine to test asynchronous behaviors");
 
             if (waitTime < TimeSpan.FromMilliseconds(500))
@@ -150,7 +150,7 @@ namespace CleanMachine.Tests
                 Assert.Fail("Configured waitTime value must be 500ms or greater.");
             }
 
-            if (behavioralMachine.HasTransitionScheduler)
+            if (behavioralMachine.HasTriggerScheduler)
             {
                 return WaitUntilFullyAsyncDoBehavior(waitTime);
             }
@@ -191,7 +191,7 @@ namespace CleanMachine.Tests
             // Hookup transitions after initial state already entered to avoid measuring the wrong transaction.
             foreach (BehavioralState state in Machine.States)
             {
-                foreach (BehavioralTransition transition in state.Transitions)
+                foreach (Transition transition in state.Transitions)
                 {
                     transition.Succeeded += (a, b) =>
                     {

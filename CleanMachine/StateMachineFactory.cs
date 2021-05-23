@@ -28,11 +28,12 @@ namespace CleanMachine
         /// <typeparam name="TState"></typeparam>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="signalSynchronizer"></param>
+        /// <param name="externalSynchronizer">An optional object to synchronize the state machine's internal triggers and signals with other external threaded work.
+        /// If none is supplied, an internal object is used.</param>
         /// <returns></returns>
-        public static StateMachine<TState> Create<TState>(string name, ILog logger, object signalSynchronizer) where TState : struct
+        public static StateMachine<TState> Create<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
         {
-            return new StateMachine<TState>(name, null, logger, false, signalSynchronizer);
+            return new StateMachine<TState>(name, null, logger, false, externalSynchronizer);
         }
     }
 }
