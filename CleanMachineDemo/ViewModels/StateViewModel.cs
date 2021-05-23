@@ -1,9 +1,8 @@
 ﻿using log4net;
 using System;
-using CleanMachine.Behavioral.Generic;
 using CleanMachine.Interfaces;
+using CleanMachine.Generic;
 using Diversions;
-
 
 namespace CleanMachineDemo
 {
@@ -12,7 +11,7 @@ namespace CleanMachineDemo
     {
         private DemoState _myState;
 
-        public StateViewModel(string stateName, BehavioralStateMachine<DemoState> machine, ILog logger)
+        public StateViewModel(string stateName, StateMachine<DemoState> machine, ILog logger)
             : base(logger)
         {
             _myState = (DemoState)Enum.Parse(typeof(DemoState), stateName);

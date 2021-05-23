@@ -4,6 +4,7 @@ using System.Timers;
 using CleanMachine.Behavioral.Generic;
 using Diversions.Mvvm;
 using CleanMachine.Behavioral;
+using CleanMachine.Generic;
 
 namespace CleanMachineDemo
 {
@@ -20,7 +21,7 @@ namespace CleanMachineDemo
             CreateStateMachine(globalSyncContext);
         }
 
-        public BehavioralStateMachine<ChildState> StateMachine { get; private set; }
+        public StateMachine<ChildState> StateMachine { get; private set; }
 
         public Timer RandomTimer { get; } = new Timer() { AutoReset = false };
 

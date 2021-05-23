@@ -1,8 +1,7 @@
 ﻿using log4net;
 using System;
-using CleanMachine.Behavioral.Generic;
+using CleanMachine.Generic;
 using Diversions;
-
 
 namespace CleanMachineDemo
 {
@@ -13,7 +12,7 @@ namespace CleanMachineDemo
         private readonly DiversionDelegate<EventArgs> _failure = new DiversionDelegate<EventArgs>();
         private string _transitionName;
 
-        public TransitionViewModel(string transitionName, BehavioralStateMachine<DemoState> machine, string stateName, ILog logger)
+        public TransitionViewModel(string transitionName, StateMachine<DemoState> machine, string stateName, ILog logger)
             : base(logger)
         {
             _transitionName = transitionName;

@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diversions", "..\Diversions
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diversions.Mvvm", "..\Diversions\Standard\Diversions.Mvvm\Diversions.Mvvm.csproj", "{EE821AA4-1F52-45D9-B70C-B1B040B66F23}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sequentials", "Activity\Sequentials.csproj", "{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,7 +36,6 @@ Global
 		{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7764E05E-B0CF-45BF-9592-DD2D49DDBBAF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80D738F1-E7BF-4466-A2F5-07F7F8CA59FA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3C62F29A-EDB9-4C1F-88AF-09E43C6AED29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -53,10 +50,6 @@ Global
 		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE821AA4-1F52-45D9-B70C-B1B040B66F23}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9BB3C9CA-FF5A-40A2-A831-8C2E498F840B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

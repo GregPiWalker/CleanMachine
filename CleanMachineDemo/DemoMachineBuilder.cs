@@ -7,7 +7,7 @@ namespace CleanMachineDemo
 {
     public static class DemoMachineBuilder
     {
-        public static MachineEditor<DemoState> BuildStateMachine(this DemoModel model, BehavioralStateMachine<DemoState> machine)
+        public static MachineEditor<DemoState> BuildStateMachine(this DemoModel model, StateMachine<DemoState> machine)
         {
             var builder = MachineEditor<DemoState>.Edit(machine);
             machine.SetInitialState(DemoState.One);
@@ -54,7 +54,7 @@ namespace CleanMachineDemo
             // Transition from THREE to ONE
             var threeToOne = three.TransitionTo(DemoState.One)
                 .GuardWith(() => model.Children.All(c => c.StateMachine.CurrentState == ChildState.Ready), "All Children Ready")
-                .TriggerWithStateChange(model.Children.Select(c => c.StateMachine).ToList(), ChildState.Ready)
+                .TriggerWithStateChange(builder.Machine, model.Children.Select(c => c.StateMachine).ToList(), ChildState.Ready)
                 .TriggerWithEvent<DemoModel, DemoEventArgs>(model, nameof(model.TriggerEvent));
         }
 

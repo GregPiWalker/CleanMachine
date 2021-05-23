@@ -32,19 +32,20 @@ namespace CleanMachine.Behavioral
 
         /// <summary>
         /// Create a partially asynchronous StateMachine.  A scheduler with a dedicated background thread is instantiated for
-        /// internal transitions.  UML behaviors (ENTRY, DO, EXIT, EFFECT) are executed synchronously on the same transition thread.
+        /// internal triggers and signals.  UML behaviors (ENTRY, DO, EXIT, EFFECT) are executed synchronously on the same internal thread.
         /// The scheduler serializes its workflow, but will operate asynchronously with respect to incoming trigger invocations.
         /// </summary>
         /// <typeparam name="TState"></typeparam>
-        /// <param name="name"></param>
+        /// <param name="name">The state machine name.</param>
         /// <param name="logger"></param>
+        /// <param name="synchronizer">an optional object to synchronize the state machine internally and externally.</param>
         /// <returns></returns>
-        public static StateMachine<TState> CreatePartialAsync<TState>(string name, ILog logger) where TState : struct
+        public static StateMachine<TState> CreatePartialAsync<TState>(string name, ILog logger, object synchronizer) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
             var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Trigger Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.TriggerSchedulerKey, triggerScheduler, new ContainerControlledLifetimeManager());
-            var machine = new StateMachine<TState>(name, container, logger, true, null);
+            var machine = new StateMachine<TState>(name, container, logger, true, synchronizer);
             return machine;
         }
     }

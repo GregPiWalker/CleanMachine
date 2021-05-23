@@ -7,7 +7,7 @@ namespace CleanMachineDemo
 {
     public static class ChildMachineBuilder
     {
-        public static MachineEditor<ChildState> BuildStateMachine(this ChildModel model, BehavioralStateMachine<ChildState> machine)
+        public static MachineEditor<ChildState> BuildStateMachine(this ChildModel model, StateMachine<ChildState> machine)
         {
             var builder = MachineEditor<ChildState>.Edit(machine);
             machine.SetInitialState(ChildState.Ready);
@@ -24,7 +24,7 @@ namespace CleanMachineDemo
             // Transition from READY to BUSY
             var readyToBusy = ready.TransitionTo(ChildState.Busy)
                 .TriggerWithEvent<Timer, ElapsedEventHandler, ElapsedEventArgs>(model.RandomTimer, nameof(model.RandomTimer.Elapsed))
-                .HaveEffect(() => model.RunTimer());
+                .HaveEffect("Run Timer", (di) => model.RunTimer());
         }
 
         private static void BuildBusyState(ChildModel model, MachineEditor<ChildState> builder)
@@ -34,7 +34,7 @@ namespace CleanMachineDemo
             // Transition from BUSY to READY
             var busyToReady = busy.TransitionTo(ChildState.Ready)
                 .TriggerWithEvent<Timer, ElapsedEventHandler, ElapsedEventArgs>(model.RandomTimer, nameof(model.RandomTimer.Elapsed))
-                .HaveEffect(() => model.RunTimer());
+                .HaveEffect("Run Timer", (di) => model.RunTimer());
         }
     }
 }

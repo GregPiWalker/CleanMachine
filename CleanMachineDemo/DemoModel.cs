@@ -3,12 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CleanMachine;
-using CleanMachine.Behavioral.Generic;
 using CleanMachine.Interfaces;
+using CleanMachine.Generic;
 using Diversions;
 using Diversions.Mvvm;
 using Diversions.ObjectModel;
-using CleanMachine.Behavioral;
 
 namespace CleanMachineDemo
 {
@@ -41,7 +40,7 @@ namespace CleanMachineDemo
 
         public event EventHandler<DemoEventArgs> TriggerEvent;
 
-        public BehavioralStateMachine<DemoState> StateMachine { get; private set; }
+        public StateMachine<DemoState> StateMachine { get; private set; }
 
         public bool OnOff
         {
@@ -112,7 +111,7 @@ namespace CleanMachineDemo
         {
             try
             {
-                StateMachine = CleanMachine.Behavioral.StateMachineFactory.CreatePartialAsync<DemoState>("Demo StateMachine", _logger);
+                StateMachine = CleanMachine.Behavioral.StateMachineFactory.CreatePartialAsync<DemoState>("Demo StateMachine", _logger, null);
                 foreach (var state in StateMachine.States)
                 {
                     state.Exited += HandleStateExited;

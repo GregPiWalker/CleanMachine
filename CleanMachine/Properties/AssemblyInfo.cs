@@ -7,8 +7,8 @@ using System.Runtime.CompilerServices;
 // This assembly is the default dynamic assembly generated Castle DynamicProxy, 
 // used by Moq.
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
-[assembly: InternalsVisibleTo("CleanMachine.Tests")]
 
 // Let the behavioral assembly be a friend
+[assembly: InternalsVisibleTo("CleanMachine.Tests")]
 [assembly: InternalsVisibleTo("CleanMachine.Behavioral")]
 [assembly: InternalsVisibleTo("Activity")]
