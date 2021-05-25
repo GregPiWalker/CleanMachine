@@ -274,6 +274,7 @@ namespace CleanMachine
             }
 
             var transition = supplier.CreateTransitionTo(Name, consumer);
+            transition.RuntimeContainer = RuntimeContainer;
             transition.SucceededInternal += HandleTransitionSucceededInternal;
             return transition;
         }

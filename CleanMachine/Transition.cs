@@ -117,7 +117,7 @@ namespace CleanMachine
                 {
                     throw new InvalidOperationException($"Transition {Name} must be editable in order to set the effect.");
                 }
-                if (value != null && Container == null)
+                if (value != null && RuntimeContainer == null)
                 {
                     throw new InvalidOperationException($"Transition {Name} must have a runtime container in order to set the effect.");
                 }
@@ -128,7 +128,7 @@ namespace CleanMachine
 
         protected bool Editable { get; private set; }
 
-        internal protected IUnityContainer Container { get; internal set; }
+        internal protected IUnityContainer RuntimeContainer { get; internal set; }
 
         public override string ToString()
         {
@@ -266,7 +266,7 @@ namespace CleanMachine
             if (Effect != null)
             {
                 _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: running EFFECT.");
-                Effect?.Invoke(Container);
+                Effect?.Invoke(RuntimeContainer);
             }
 
             // After call to OnSucceeded(), the new state will be settled.

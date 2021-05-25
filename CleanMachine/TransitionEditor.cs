@@ -1,10 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Collections.Specialized;
+using System.Reactive.Concurrency;
 using log4net;
 using CleanMachine.Generic;
 using CleanMachine.Interfaces;
-using System.Reactive.Concurrency;
 
 namespace CleanMachine
 {
