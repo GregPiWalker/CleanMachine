@@ -29,9 +29,10 @@ namespace CleanMachine.Behavioral.Behaviors
                     _action(runtimeContainer);
                     OnExecutableFinished(clock);
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    OnExecutableFaulted(e, clock);
+                    Fault = ex;
+                    OnExecutableFaulted(ex, clock);
                 }
             });
         }

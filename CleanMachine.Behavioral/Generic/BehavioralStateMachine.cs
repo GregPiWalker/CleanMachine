@@ -41,6 +41,7 @@ namespace CleanMachine.Behavioral.Generic
             {
                 var state = new BehavioralState(stateName, RuntimeContainer, Logger);
                 _states.Add(state);
+                state.EnteredInternal += HandleStateEnteredInternal;
                 state.Entered += HandleStateEntered;
                 state.Exited += HandleStateExited;
             }

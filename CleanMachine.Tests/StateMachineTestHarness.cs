@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Threading;
 using Unity;
 
@@ -53,7 +54,7 @@ namespace CleanMachine.Tests
             {
                 if (i + 1 < Machine.States.Count)
                 {
-                    var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
+                    var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.TriggerScheduler, Machine.Logger);
                     var transition = Machine.CreateTransition(Machine.States[i].Name, Machine.States[i + 1].Name);
                     transition.Edit();
                     transition.AddTrigger(trigger);
@@ -70,7 +71,7 @@ namespace CleanMachine.Tests
 
             // Transition from the last state back to the first.
             int last = Machine.States.Count - 1;
-            var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.Logger);
+            var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.TriggerScheduler, Machine.Logger);
             var transition = Machine.CreateTransition(Machine.States[last].Name, Machine.States[0].Name);
             transition.Edit();
             transition.AddTrigger(trigger);
@@ -168,7 +169,7 @@ namespace CleanMachine.Tests
             AddDoBehavior((a) =>
             {
                 // Wait until the waithandle is in the reset state before signaling done.
-                if (_transitionPreparedForDo.WaitOne(TimeSpan.FromMilliseconds(500)))
+                if (_transitionPreparedForDo.WaitOne(TimeSpan.FromMilliseconds(1000)))
                 {
                     _doBehaviorDone.Set();
                 }
@@ -194,13 +195,13 @@ namespace CleanMachine.Tests
                     transition.Succeeded += (a, b) =>
                     {
                         // Block until the outer test thread is ready.
-                        if (!_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(500)))
+                        if (!_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(1000)))
                         {
                             return;
                         }
 
 
-                        if (!BlockUntilDoBehaviorCompletes(TimeSpan.FromMilliseconds(500)))
+                        if (!SignalDoAndWaitForItToFinish(TimeSpan.FromMilliseconds(1000)))
                         {
                             return;
                         }
@@ -234,7 +235,7 @@ namespace CleanMachine.Tests
             AddDoBehavior((a) =>
             {
                 // Wait until the waithandle is in the reset state before signaling done.
-                if (_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(500)))
+                if (_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(1000)))
                 {
                     _doBehaviorDone.Set();
                 }
@@ -266,13 +267,13 @@ namespace CleanMachine.Tests
             return _doBehaviorDone.WaitOne(waitTime);
         }
 
-        private bool BlockUntilDoBehaviorCompletes(TimeSpan waitTime)
+        private bool SignalDoAndWaitForItToFinish(TimeSpan waitTime)
         {
             // First set the waithandle to unblock the DO action.
             _transitionPreparedForDo.Set();
 
             // Then wait until the DO action finishes its work.
-            return _doBehaviorDone.WaitOne(TimeSpan.FromMilliseconds(500));
+            return _doBehaviorDone.WaitOne(waitTime);
         }
 
         /// <summary>

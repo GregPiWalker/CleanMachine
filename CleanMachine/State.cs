@@ -47,6 +47,11 @@ namespace CleanMachine
         public virtual event EventHandler<TransitionEventArgs> TransitionSucceeded;
         public virtual event EventHandler<TransitionEventArgs> TransitionFailed;
 
+        /// <summary>
+        /// Mandatory event raised when this State's entry operations are complete.
+        /// </summary>
+        internal protected event EventHandler<TripEventArgs> EnteredInternal;
+
         internal event EventHandler<bool> IsCurrentValueChanged;
 
         public string Name { get; protected internal set; }
@@ -198,6 +203,12 @@ namespace CleanMachine
         /// <param name="tripArgs"></param>
         internal virtual void Enter(TripEventArgs tripArgs)
         {
+            BeginEntry(tripArgs);
+            EndEntry(tripArgs);
+        }
+
+        protected void BeginEntry(TripEventArgs tripArgs)
+        {
             _logger.Debug($"Entering state {Name}.");
             var enterOn = tripArgs?.FindLastTransition() as Transition;
 
@@ -205,15 +216,28 @@ namespace CleanMachine
             RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.EnteredStateKey, this, new ContainerControlledLifetimeManager());
             RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.EnteredOnKey, enterOn, new ContainerControlledLifetimeManager());
 
-            OnEntered(enterOn);
             if (tripArgs != null)
             {
                 tripArgs.Waypoints.AddLast(new Waypoint(this));
             }
+        }
+
+        protected void EndEntry(TripEventArgs tripArgs)
+        {
+            OnEntered(tripArgs);
 
             // Now that all ENTRY work is complete, enable all transition triggers.
             // This assigns the state's SelectionContext to all the outgoing transitions.
             Enable();
+        }
+
+        /// <summary>
+        /// Empty base implementation.
+        /// </summary>
+        /// <param name="tripArgs"></param>
+        internal virtual void Settle(TripEventArgs tripArgs)
+        {
+            // Empty base implementation.
         }
 
         /// <summary>
@@ -227,17 +251,27 @@ namespace CleanMachine
         /// raised after transition triggers are disabled to decrease likelihood of
         /// recursive eventing.
         /// </summary>
-        /// <param name="exitOn"></param>
-        internal virtual void Exit(Transition exitOn)
+        /// <param name="tripArgs"></param>
+        internal virtual void Exit(TripEventArgs tripArgs)
+        {
+            BeginExit(tripArgs);
+            EndExit(tripArgs);
+        }
+
+        protected void BeginExit(TripEventArgs tripArgs)
         {
             _logger.Debug($"Exiting state {Name}.");
-            
             IsCurrentState = false;
+            Disable();
+
+            var exitOn = tripArgs?.FindLastTransition() as Transition;
             RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.ExitedStateKey, this, new ContainerControlledLifetimeManager());
             RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.ExitedOnKey, exitOn, new ContainerControlledLifetimeManager());
-            Disable();
-            
-            OnExited(exitOn);
+        }
+
+        protected void EndExit(TripEventArgs tripArgs)
+        {
+            OnExited(tripArgs);
         }
 
         internal void SetAsInitialState()
@@ -304,8 +338,20 @@ namespace CleanMachine
             return transition;
         }
 
-        protected void OnEntered(Transition enteredOn)
+        /// <summary>
+        /// Raise the mandatory EnteredInternal event, followed by the optional Entered event.
+        /// </summary>
+        /// <param name="tripArgs"></param>
+        protected void OnEntered(TripEventArgs tripArgs)
         {
+            EnteredInternal?.Invoke(this, tripArgs);
+
+            if (Entered == null)
+            {
+                return;
+            }
+
+            var enteredOn = tripArgs?.FindLastTransition() as Transition;
             if (enteredOn == null)
             {
                 _logger.Debug($"State {Name}: NULL transition found in {nameof(OnEntered)}.");
@@ -316,7 +362,7 @@ namespace CleanMachine
             {
                 //TODO: trace logging
 
-                var enteredArgs = enteredOn == null ? new StateEnteredEventArgs() { State = this } : enteredOn.ToIStateEnteredArgs(null);
+                var enteredArgs = enteredOn.ToIStateEnteredArgs(tripArgs);
                 RaiseEntered(enteredArgs);
             }
             catch (Exception ex)
@@ -330,8 +376,14 @@ namespace CleanMachine
             Entered?.Invoke(this, args);
         }
 
-        protected void OnExited(Transition exitedOn)
+        protected void OnExited(TripEventArgs tripArgs)
         {
+            if (Exited == null)
+            {
+                return;
+            }
+
+            var exitedOn = tripArgs?.FindLastTransition() as Transition;
             if (exitedOn == null)
             {
                 _logger.Debug($"State {Name}: NULL transition found in {nameof(OnExited)}.");
@@ -341,7 +393,7 @@ namespace CleanMachine
             try
             {
                 //TODO: trace logging
-                var exitArgs = exitedOn == null ? new StateExitedEventArgs() { State = this } : exitedOn.ToIStateExitedArgs(null);
+                var exitArgs = exitedOn.ToIStateExitedArgs(tripArgs);
                 RaiseExited(exitArgs);
             }
             catch (Exception ex)

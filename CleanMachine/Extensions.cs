@@ -14,8 +14,8 @@ namespace CleanMachine
             {
                 Signal = origin.Juncture,
                 SignalData = origin.Signal,
-                Trigger = internalArgs.FindTrigger(),
-                TripRoute = internalArgs.Waypoints,
+                Trigger = internalArgs?.FindTrigger(),
+                TripRoute = internalArgs == null ? null : internalArgs.Waypoints,
                 Transition = transition
             };
 
@@ -29,8 +29,8 @@ namespace CleanMachine
             {
                 Signal = origin.Juncture,
                 SignalData = origin.Signal,
-                Trigger = internalArgs.FindTrigger(),
-                TripRoute = internalArgs.Waypoints,
+                Trigger = internalArgs?.FindTrigger(),
+                TripRoute = internalArgs == null ? null : internalArgs.Waypoints,
                 Transition = transition
             };
 
@@ -236,6 +236,20 @@ namespace CleanMachine
             try
             {
                 container.Resolve<TReg>();
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool HasTypeRegistration<TReg>(this IUnityContainer container, string key)
+        {
+            try
+            {
+                container.Resolve<TReg>(key);
             }
             catch
             {

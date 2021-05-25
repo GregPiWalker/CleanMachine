@@ -16,7 +16,7 @@ namespace CleanMachine
         protected readonly IScheduler _tripScheduler;
         protected readonly ILog _logger;
         protected BooleanDisposable _visitorId;
-        //private readonly object _sync = new object();
+        //TODO: looks like this should be the same object as the Machine's sync object, when no trigger scheduler is used.
         private readonly object _visitLock = new object();
 
         public TriggerBase(string name, object source, IScheduler tripScheduler, ILog logger)
@@ -85,19 +85,21 @@ namespace CleanMachine
         {
             lock (_visitLock)
             {
-                if (IsActive)
+                if (!IsActive)
                 {
-                    if (_tripScheduler != null)
-                    {
-                        // Making a local copy here prevents the lambda from potentially closing on the
-                        // field after a new value has been assigned in the Activate method.
-                        var localIdCopy = _visitorId;
-                        _tripScheduler.Schedule(() => BeginTrip(origin, originEventArgs, localIdCopy));
-                    }
-                    else
-                    {
-                        BeginTrip(origin, originEventArgs, _visitorId);
-                    }
+                    return;
+                }
+
+                if (_tripScheduler != null)
+                {
+                    // Making a local copy here prevents the lambda from potentially closing on the
+                    // field after a new value has been assigned in the Activate method.
+                    var localIdCopy = _visitorId;
+                    _tripScheduler.Schedule(() => BeginTrip(origin, originEventArgs, localIdCopy));
+                }
+                else
+                {
+                    BeginTrip(origin, originEventArgs, _visitorId);
                 }
             }
         }

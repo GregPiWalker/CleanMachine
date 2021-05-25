@@ -60,11 +60,9 @@ namespace CleanMachine
         public virtual event EventHandler<TransitionEventArgs> Failed;
 
         /// <summary>
-        /// Raised when this Transition needs to request a traversal attempt.
-        /// Traversal must be initiated from a supervisory position because it involves
-        /// exiting a node and entering another node.
+        /// Raised when this Transition needs to communicate internally a traversal success.
         /// </summary>
-        internal event EventHandler<TripEventArgs> TraversalRequested;
+        internal event EventHandler<TripEventArgs> SucceededInternal;
 
         public string Name { get; protected set; }
 
@@ -232,7 +230,8 @@ namespace CleanMachine
         /// 2) Appending a new <see cref="Waypoint"/> to the <see cref="TripEventArgs"/>.
         /// 3) Exiting the supplier state.
         /// 4) Entering the consumer state.
-        /// 5) Raising <see cref="Succeeded"/> event.
+        /// 5) Running the EFFECT if one exists.
+        /// 6) Raising <see cref="Succeeded"/> event.
         /// </summary>
         /// <param name="args">TripEventArgs related to the attempt to traverse.</param>
         /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
@@ -258,9 +257,11 @@ namespace CleanMachine
             // Add self to the trip history.
             args.Waypoints.AddLast(new Waypoint(this));
 
-            From.Exit(this);
+            From.Exit(args);
+
+            // After call to Enter(), the state machine's CurrentState property will be updated.
             To.Enter(args);
-            _logger.Info($"({Name}).{nameof(AttemptTraverse)}: traversal complete.");
+            _logger.Info($"({Name}).{nameof(AttemptTraverse)}: old state exit and new state entry complete.");
 
             if (Effect != null)
             {
@@ -268,6 +269,7 @@ namespace CleanMachine
                 Effect?.Invoke(Container);
             }
 
+            // After call to OnSucceeded(), the new state will be settled.
             OnSucceeded(args);
 
             return true;
@@ -313,8 +315,17 @@ namespace CleanMachine
             return true;
         }
 
+        /// <summary>
+        /// Raise the mandatory internal TraversalSucceeded event, and the optional
+        /// Succeeded event.
+        /// TraversalSucceeded signals the state machine to update itself relative to the new state.
+        /// </summary>
+        /// <param name="args"></param>
         protected void OnSucceeded(TripEventArgs args)
         {
+            // This event is not optional, the StateMachine behavior depends on it.
+            SucceededInternal?.Invoke(this, args);
+
             try
             {
                 Succeeded?.Invoke(this, args.ToTransitionArgs(this));
@@ -337,18 +348,6 @@ namespace CleanMachine
             }
         }
 
-        /// <summary>
-        /// Raises the events that indicate a request to transition from supplier state to consumer state.
-        /// </summary>
-        /// <param name="args"></param>
-        private void OnRequested(TripEventArgs args)
-        {
-            _logger.Debug($"Transition {ToString()}: raising '{nameof(TraversalRequested)}' event.");
-
-            // This event is not optional, the StateMachine behavior depends on it.
-            TraversalRequested?.Invoke(this, args);
-        }
-
         private void HandleTrigger(object sender, TripEventArgs args)
         {
             if (!_enabled)
@@ -357,7 +356,10 @@ namespace CleanMachine
             }
 
             //OnRequested(args);
-            AttemptTraverse(args);
+            if (AttemptTraverse(args))
+            {
+                _logger.Debug($"Transition {ToString()}: raising '{nameof(SucceededInternal)}' event.");
+            }
         }
     }
 }

@@ -22,6 +22,8 @@ namespace CleanMachine.Behavioral.Behaviors
 
         public string Name { get; protected set; }
 
+        public Exception Fault { get; protected set; }
+
         public virtual void Invoke(IUnityContainer runtimeContainer)
         {
             var clock = runtimeContainer.Resolve<IClock>();
@@ -32,6 +34,7 @@ namespace CleanMachine.Behavioral.Behaviors
             }
             catch (Exception e)
             {
+                Fault = e;
                 OnExecutableFaulted(e, clock);
             }
         }

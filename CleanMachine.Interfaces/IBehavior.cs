@@ -12,6 +12,8 @@ namespace CleanMachine.Interfaces
 
         string Name { get; }
 
+        Exception Fault { get; }
+
         /// <summary>
         /// TODO: perhaps change the IUnityContainer out for something more mutable.
         /// </summary>

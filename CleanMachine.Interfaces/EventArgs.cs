@@ -34,6 +34,22 @@ namespace CleanMachine.Interfaces
             return null;
         }
 
+        public IState FindLastState()
+        {
+            LinkedListNode<IWaypoint> node = Waypoints.Last;
+            while (node != null)
+            {
+                if (node.Value.Juncture is IState)
+                {
+                    return node.Value.Juncture as IState;
+                }
+
+                node = node.Previous;
+            }
+
+            return null;
+        }
+
         public ITransition FindLastTransition()
         {
             LinkedListNode<IWaypoint> node = Waypoints.Last;

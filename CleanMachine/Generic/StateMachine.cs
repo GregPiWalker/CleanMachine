@@ -132,6 +132,7 @@ namespace CleanMachine.Generic
             {
                 var state = new State(stateName, RuntimeContainer, Logger);
                 _states.Add(state);
+                state.EnteredInternal += HandleStateEnteredInternal;
                 state.Entered += HandleStateEntered;
                 state.Exited += HandleStateExited;
             }
@@ -162,10 +163,10 @@ namespace CleanMachine.Generic
         /// <summary>
         /// Raise the <see cref="StateChanged"/> event synchronously.
         /// </summary>
-        /// <param name="transition"></param>
         /// <param name="args"></param>
-        protected override void OnStateChanged(Transition transition, TripEventArgs args)
+        protected override void OnStateChanged(TripEventArgs args)
         {
+            var transition = args.FindLastTransition() as Transition;
             if (StateChanged == null || transition == null)
             {
                 return;
@@ -184,7 +185,16 @@ namespace CleanMachine.Generic
         }
 
         /// <summary>
-        /// 
+        /// Forward the State's Entered event through this Machine's StateEntered event.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        //protected override void OnStateEntered(StateEnteredEventArgs args)
+        //{
+        //}
+
+        /// <summary>
+        /// Forward the State's Entered event through this Machine's StateEntered event.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
@@ -207,6 +217,11 @@ namespace CleanMachine.Generic
             }
         }
 
+        /// <summary>
+        /// Forward the State's Exited event through this Machine's StateExited event.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
         protected override void HandleStateExited(object sender, StateExitedEventArgs args)
         {
             if (StateExited == null)

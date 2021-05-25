@@ -31,7 +31,7 @@ namespace CleanMachine
         /// they are not put on a serializing event queue, so they need some other mechanism for synchronization -
         /// hence the synchronizer.
         /// </summary>
-        protected readonly object _synchronizer;
+        internal protected readonly object _synchronizer;
 
         /// <summary>
         /// Construct a machine with asynchronous triggering using the given scheduler.
@@ -57,6 +57,7 @@ namespace CleanMachine
             try
             {
                 TriggerScheduler = RuntimeContainer.Resolve<IScheduler>(TriggerSchedulerKey);
+                TriggerScheduler.Schedule(() => { bool dummy = true; });
                 Logger.Debug($"{Name}:  was initialized with asynchronous triggers.");
             }
             catch
@@ -77,6 +78,7 @@ namespace CleanMachine
             try
             {
                 BehaviorScheduler = RuntimeContainer.Resolve<IScheduler>(BehaviorSchedulerKey);
+                BehaviorScheduler.Schedule(() => { bool dummy = true; });
                 Logger.Debug($"{Name}:  was initialized with asynchronous behaviors.");
             }
             catch
@@ -249,7 +251,7 @@ namespace CleanMachine
             }
 
             var transition = supplier.CreateTransitionTo(Name, consumer);
-            //transition.TraversalRequested += HandleTransitionRequest;
+            transition.SucceededInternal += HandleTransitionSucceededInternal;
             return transition;
         }
 
@@ -309,18 +311,16 @@ namespace CleanMachine
         /// Implementations of this method should be synchronous.  That is, they should avoid
         /// calling methods or raising events asynchronously.
         /// </summary>
-        /// <param name="transition"></param>
         /// <param name="args"></param>
-        protected abstract void OnStateChanged(Transition transition, TripEventArgs args);
+        protected abstract void OnStateChanged(TripEventArgs args);
 
         /// <summary>
-        /// Perform state-entered work.
+        /// Forward the State's Entered event through this Machine's StateEntered event.
         /// Implementations of this method should be synchronous.  That is, they should avoid
         /// calling methods or raising events asynchronously.
         /// </summary>
-        /// <param name="sender"></param>
         /// <param name="args"></param>
-        protected abstract void HandleStateEntered(object sender, StateEnteredEventArgs args);
+        //protected abstract void OnStateEntered(StateEnteredEventArgs args);
 
         /// <summary>
         /// Perform state-exited work.
@@ -330,6 +330,13 @@ namespace CleanMachine
         /// <param name="sender"></param>
         /// <param name="args"></param>
         protected abstract void HandleStateExited(object sender, StateExitedEventArgs args);
+
+        /// <summary>
+        /// Perform state-entered work.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        protected abstract void HandleStateEntered(object sender, StateEnteredEventArgs args);
 
         /// <summary>
         /// Enter the Initial state and mark it as the current state.  Also, try
@@ -351,16 +358,26 @@ namespace CleanMachine
             JumpToState(_initialState);
         }
 
+        /// <summary>
+        /// Signal this machine to stimulate its currently active transitions
+        /// in case one of them is traversable.
+        /// </summary>
+        /// <param name="signalSource"></param>
+        /// <returns></returns>
         public bool Signal(DataWaypoint signalSource)
         {
             var tripArgs = new TripEventArgs(_currentState.VisitIdentifier);
             tripArgs.Waypoints.AddLast(signalSource);
 
-            return false;
+            //TODO: FILL IN BLANK?
+            return Stimulate(tripArgs);
         }
 
         /// <summary>
-        /// Stimulate passive transitions from the current state.
+        /// Stimulate the currently enabled passive transitions to attempt to exit the current state.
+        /// 
+        /// TODO: Change this? Only passive transitions are stimulated because presence of a trigger is
+        /// taken to indicate that only the trigger should be able to stimulate the transition.
         /// </summary>
         /// <param name="signalSource"></param>
         /// <returns></returns>
@@ -435,11 +452,15 @@ namespace CleanMachine
                 //throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
             }
 
-            jumpTo.Enter(null);
+            //TODO: build some event args here
+            var jumpArgs = new TripEventArgs(null);
+            jumpArgs.Waypoints.AddLast(new DataWaypoint(this, nameof(JumpToState)));
+            jumpTo.Enter(jumpArgs);
             _currentState = jumpTo;
-            History = null;
+            History = jumpArgs.Waypoints;
 
-            OnStateChanged(null, null);
+            // There is no transition to signal success on a jump, so need to fake it here.
+            HandleTransitionSucceededInternal(this, jumpArgs);
         }
 
         /// <summary>
@@ -453,25 +474,51 @@ namespace CleanMachine
         {
             if (transition != null && transition.AttemptTraverse(args))
             {
-                _currentState = transition.To;
+             
+                
 
-                // Once a trip results in a state change, hold onto the route history.
-                History = args.Waypoints;
-                OnStateChanged(transition, args);
-
-                // When a transition succeeds, auto-advance may be appropriate.
-                if (AutoAdvance)
-                {
-                    Stimulate(args);
-                }
-            }
-            else
-            {
-                //OnTransitionFailed(transition, args);
             }
 
             // A transition attempt was made.
             return true;
+        }
+
+        /// <summary>
+        /// Run any activities that occur once the entire transition process is finished
+        /// and the change is settled.
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="args"></param>
+        private void OnTransitionEnteredState(State state, TripEventArgs args)
+        {
+            if (!state.IsCurrentState)
+            {
+                //TODO: log
+            }
+
+            state.Settle(args);
+
+            // When a state is entered successfully, auto-advance may be appropriate.
+            if (AutoAdvance)
+            {
+                Stimulate(args);
+            }
+        }
+
+        /// <summary>
+        /// Update the current state in reponse to a successful transition that has entered
+        /// its consumer state.
+        /// </summary>
+        /// <param name="transition"></param>
+        /// <param name="args"></param>
+        private void OnStateEntryFinished(State state, TripEventArgs args)
+        {
+            _currentState = state;
+
+            // Once a trip results in a state change, hold onto the route history.
+            History = args.Waypoints;
+
+            OnStateChanged(args);
         }
 
         /// <summary>
@@ -483,28 +530,59 @@ namespace CleanMachine
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        //todo: delete this
-        //protected virtual void HandleTransitionRequest_delete(object sender, TripEventArgs args)
-        //{
-        //    var trigger = args.FindTrigger();
-        //    if (trigger != null && args.VisitorIdentifier == null)
-        //    {
-        //        // If a trigger was the source of the trip and no visitor ID exists, something went wrong.
-        //        //TODO: log it
-        //        return;
-        //    }
+        /// <summary>
+        /// Update the current state in reponse to a successful transition
+        /// as signaled by the <see cref="Transition.SucceededInternal"/> event
+        /// or by the <see cref="JumpToState(State)"/> signal.
+        /// </summary>
+        /// <param name="sender">Sender is the original signal source that triggers a transition.
+        /// It might be a Transition or a StateMachine.</param>
+        /// <param name="args"></param>
+        protected virtual void HandleTransitionSucceededInternal(object sender, TripEventArgs args)
+        {
+            var transition = sender as Transition;
+            var state = transition == null ? args.FindLastState() as State : transition.To;
 
-        //    var currentState = _currentState;
-        //    if (currentState == null || !currentState.IsEnabled)
-        //    {
-        //        //TODO: log it?
-        //        return;
-        //    }
+            if (_synchronizer == null)
+            {
+                OnTransitionEnteredState(state, args);
+            }
+            else
+            {
+                // This lock regulates all transition triggers associated to the given synchronization context.
+                // This means that only one of any number of transitions can successfully exit the current state,
+                // whether those transitions all exist in one state machine or are distributed across a set of machines.
+                lock (_synchronizer)
+                {
+                    OnTransitionEnteredState(state, args);
+                }
+            }
+        }
 
-        //    var transition = sender as Transition;
-        //    var transitionArgs = transition.ToTransitionArgs(args);
-
-        //    AttemptTransition(transitionArgs);
-        //}
+        /// <summary>
+        /// Run any activities that occur once the state entry is finished
+        /// (as signaled by the State.EnteredInternal event),
+        /// and the change is settled.
+        /// </summary>
+        /// <param name="transition"></param>
+        /// <param name="args"></param>
+        protected virtual void HandleStateEnteredInternal(object sender, TripEventArgs args)
+        {
+            var state = sender as State;
+            if (_synchronizer == null)
+            {
+                OnStateEntryFinished(state, args);
+            }
+            else
+            {
+                // This lock regulates all transition triggers associated to the given synchronization context.
+                // This means that only one of any number of transitions can successfully exit the current state,
+                // whether those transitions all exist in one state machine or are distributed across a set of machines.
+                lock (_synchronizer)
+                {
+                    OnStateEntryFinished(state, args);
+                }
+            }
+        }
     }
 }

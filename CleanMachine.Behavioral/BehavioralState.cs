@@ -7,6 +7,7 @@ using CleanMachine.Interfaces;
 using CleanMachine.Behavioral.Behaviors;
 using Unity;
 using Unity.Lifetime;
+using System.Reactive.Concurrency;
 
 namespace CleanMachine.Behavioral
 {
@@ -54,7 +55,7 @@ namespace CleanMachine.Behavioral
 
         public void SetEntryBehavior(Action<IUnityContainer> action)
         {
-            SetEntryBehavior(new Behavior(EntryBehaviorName, action));
+            SetEntryBehavior(CreateBehavior(EntryBehaviorName, action));
         }
 
         public void AddDoBehavior(IBehavior behavior)
@@ -70,7 +71,7 @@ namespace CleanMachine.Behavioral
         public void AddDoBehavior(Action<IUnityContainer> action)
         {
             var name = $"{DoBehaviorName} {_doBehaviors.Count + 1}";
-            AddDoBehavior(new Behavior(name, action));
+            AddDoBehavior(CreateBehavior(name, action));
         }
 
         public void SetExitBehavior(IBehavior behavior)
@@ -85,7 +86,22 @@ namespace CleanMachine.Behavioral
 
         public void SetExitBehavior(Action<IUnityContainer> action)
         {
-            SetExitBehavior(new Behavior(ExitBehaviorName, action));
+            SetExitBehavior(CreateBehavior(ExitBehaviorName, action));
+        }
+
+        private IBehavior CreateBehavior(string name, Action<IUnityContainer> action)
+        {
+            IBehavior behavior;
+            if (RuntimeContainer.HasTypeRegistration<IScheduler>(StateMachineBase.BehaviorSchedulerKey))
+            {
+                behavior = new ScheduledBehavior(name, action, RuntimeContainer.Resolve<IScheduler>(StateMachineBase.BehaviorSchedulerKey));
+            }
+            else
+            {
+                behavior = new Behavior(name, action);
+            }
+
+            return behavior;
         }
 
         //internal override Transition CreateTransitionTo(string context, State consumer)
@@ -110,25 +126,24 @@ namespace CleanMachine.Behavioral
         /// <param name="tripArgs"></param>
         internal override void Enter(TripEventArgs tripArgs)
         {
-            _logger.Debug($"Entering state {Name}.");
-            var enterOn = tripArgs?.FindLastTransition() as Transition;
-
-            IsCurrentState = true;
-            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.EnteredStateKey, this, new ContainerControlledLifetimeManager());
-            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.EnteredOnKey, enterOn, new ContainerControlledLifetimeManager());
-
-            OnEntryInitiated(enterOn);
+            BeginEntry(tripArgs);
+            
+            OnEntryInitiated(tripArgs);
 
             if (_entryBehavior != null)
             {
-                OnEntryBehavior(enterOn);
+                OnEntryBehavior();
             }
 
-            OnEntered(enterOn);
+            EndEntry(tripArgs);
+        }
 
-            // Now that all ENTRY work is complete, enable all transition triggers.
-            Enable();
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tripArgs"></param>
+        internal override void Settle(TripEventArgs tripArgs)
+        {
             if (_doBehaviors.Any())
             {
                 _logger.Debug($"State {Name}:  performing DO behaviors.");
@@ -148,26 +163,21 @@ namespace CleanMachine.Behavioral
         /// recursive eventing.
         /// </summary>
         /// <param name="exitOn"></param>
-        internal override void Exit(Transition exitOn)
+        internal override void Exit(TripEventArgs tripArgs)
         {
-            _logger.Debug($"Exiting state {Name}.");
-            
-            IsCurrentState = false;
-            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.ExitedStateKey, this, new ContainerControlledLifetimeManager());
-            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.ExitedOnKey, exitOn, new ContainerControlledLifetimeManager());
-            Disable();
+            BeginExit(tripArgs);
 
-            OnExitInitiated(exitOn);
+            OnExitInitiated(tripArgs);
 
             if (_exitBehavior != null)
             {
-                OnExitBehavior(exitOn);
+                OnExitBehavior();
             }
-            
-            OnExited(exitOn);
+
+            EndExit(tripArgs);
         }
 
-        protected void OnEntryBehavior(ITransition enteredOn)
+        protected void OnEntryBehavior()
         {
             try
             {
@@ -180,7 +190,7 @@ namespace CleanMachine.Behavioral
             }
         }
 
-        protected void OnExitBehavior(ITransition exitedOn)
+        protected void OnExitBehavior()
         {
             try
             {
@@ -212,13 +222,25 @@ namespace CleanMachine.Behavioral
             }
         }
 
-        private void OnEntryInitiated(Transition enteredOn)
+        private void OnEntryInitiated(TripEventArgs tripArgs)
         {
+            if (EntryInitiated == null)
+            {
+                return;
+            }
+
+            var enteredOn = tripArgs?.FindLastTransition() as Transition;
+            if (enteredOn == null)
+            {
+                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnEntryInitiated)}.");
+                return;
+            }
+
             try
             {
                 //TODO: trace logging
 
-                var enteredArgs = enteredOn == null ? new StateEnteredEventArgs() { State = this } : enteredOn.ToIStateEnteredArgs(null);
+                var enteredArgs = enteredOn.ToIStateEnteredArgs(tripArgs);
                 EntryInitiated?.Invoke(this, enteredArgs);
             }
             catch (Exception ex)
@@ -227,13 +249,25 @@ namespace CleanMachine.Behavioral
             }
         }
 
-        private void OnExitInitiated(Transition exitedOn)
+        private void OnExitInitiated(TripEventArgs tripArgs)
         {
+            if (ExitInitiated == null)
+            {
+                return;
+            }
+
+            var exitedOn = tripArgs?.FindLastTransition() as Transition;
+            if (exitedOn == null)
+            {
+                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnExitInitiated)}.");
+                return;
+            }
+
             try
             {
                 //TODO: trace logging
 
-                var exitArgs = exitedOn == null ? new StateExitedEventArgs() { State = this } : exitedOn.ToIStateExitedArgs(null);
+                var exitArgs = exitedOn.ToIStateExitedArgs(tripArgs);
                 ExitInitiated?.Invoke(this, exitArgs);
             }
             catch (Exception ex)
