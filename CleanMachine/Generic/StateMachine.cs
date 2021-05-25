@@ -19,8 +19,6 @@ namespace CleanMachine.Generic
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="triggerScheduler">The IScheduler used by all triggers in this machine.</param>
-        /// <param name="behaviorScheduler">The IScheduler used by any default behaviors in this machine.</param>
         public StateMachine(string name, ILog logger)
             : this(name, logger, true)
         {
@@ -32,11 +30,9 @@ namespace CleanMachine.Generic
         /// </summary>
         /// <param name="name"></param>
         /// <param name="logger"></param>
-        /// <param name="triggerScheduler">The IScheduler used by all triggers in this machine.</param>
-        /// <param name="behaviorScheduler">The IScheduler used by any default behaviors in this machine.</param>
         /// <param name="createStates">Indicate whether this ctor should create state objects or not.</param>
         public StateMachine(string name, ILog logger, bool createStates)
-            : base(name, null, logger, null)
+            : base(name, null, logger)
         {
             if (createStates)
             {
@@ -52,9 +48,8 @@ namespace CleanMachine.Generic
         /// <param name="runtimeContainer"></param>
         /// <param name="logger"></param>
         /// <param name="createStates">Indicate whether this ctor should create state objects or not.</param>
-        /// <param name="synchronizer">An object that is used to synchronize internal operation of this machine when a trigger <see cref="IScheduler"/> is not supplied.</param>
-        public StateMachine(string name, IUnityContainer runtimeContainer, ILog logger, bool createStates, object synchronizer)
-            : base(name, runtimeContainer, logger, synchronizer)
+        public StateMachine(string name, IUnityContainer runtimeContainer, ILog logger, bool createStates)
+            : base(name, runtimeContainer, logger)
         {
             if (createStates)
             {

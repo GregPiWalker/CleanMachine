@@ -24,8 +24,8 @@ namespace CleanMachine.Behavioral.Generic
         {
         }
 
-        public BehavioralStateMachine(string name, IUnityContainer runtimeContainer, ILog logger, bool createStates, object synchronizer)
-            : base(name, runtimeContainer, logger, createStates, synchronizer)
+        public BehavioralStateMachine(string name, IUnityContainer runtimeContainer, ILog logger, bool createStates)
+            : base(name, runtimeContainer, logger, createStates)
         {
         }
 

@@ -1,5 +1,6 @@
 ﻿using CleanMachine.Generic;
 using log4net;
+using Unity;
 
 namespace CleanMachine
 {
@@ -12,10 +13,10 @@ namespace CleanMachine
         /// <param name="name"></param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static StateMachine<TState> Create<TState>(string name, ILog logger) where TState : struct
-        {
-            return new StateMachine<TState>(name, logger);
-        }
+        //public static StateMachine<TState> Create<TState>(string name, ILog logger) where TState : struct
+        //{
+        //    return new StateMachine<TState>(name, logger);
+        //}
 
         /// <summary>
         /// Create a StateMachine that transitions synchronously.  An option is given whether to make the UML behaviors
@@ -31,9 +32,16 @@ namespace CleanMachine
         /// <param name="externalSynchronizer">An object to synchronize the state machine's internal triggers and signals with other external threaded work.
         /// If none is supplied, an internal object is used.</param>
         /// <returns></returns>
-        public static StateMachine<TState> Create<TState>(string name, ILog logger, object externalSynchronizer) where TState : struct
+        public static StateMachine<TState> Create<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
         {
-            return new StateMachine<TState>(name, null, logger, false, externalSynchronizer);
+            IUnityContainer container = null;
+            if (externalSynchronizer != null)
+            {
+                container = new UnityContainer();
+                container.RegisterInstance(StateMachineBase.GlobalSynchronizerKey, externalSynchronizer);
+            }
+
+            return new StateMachine<TState>(name, container, logger, false);
         }
     }
 }

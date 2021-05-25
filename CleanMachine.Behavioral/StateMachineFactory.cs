@@ -27,7 +27,7 @@ namespace CleanMachine.Behavioral
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.TriggerSchedulerKey, triggerScheduler, new ContainerControlledLifetimeManager());
             var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Behavior Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.BehaviorSchedulerKey, behaviorScheduler, new ContainerControlledLifetimeManager());
-            var machine = new BehavioralStateMachine<TState>(name, container, logger, true, null);
+            var machine = new BehavioralStateMachine<TState>(name, container, logger, true);
             return machine;
         }
 
@@ -40,12 +40,17 @@ namespace CleanMachine.Behavioral
         /// <param name="name">The state machine name.</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static BehavioralStateMachine<TState> CreateTriggerAsync<TState>(string name, ILog logger) where TState : struct
+        public static BehavioralStateMachine<TState> CreateTriggerAsync<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
             var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Trigger Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.TriggerSchedulerKey, triggerScheduler, new ContainerControlledLifetimeManager());
-            var machine = new BehavioralStateMachine<TState>(name, container, logger, true, null);
+            if (externalSynchronizer != null)
+            {
+                container.RegisterInstance(StateMachineBase.GlobalSynchronizerKey, externalSynchronizer);
+            }
+
+            var machine = new BehavioralStateMachine<TState>(name, container, logger, true);
             return machine;
         }
 
@@ -65,7 +70,12 @@ namespace CleanMachine.Behavioral
             IUnityContainer container = new UnityContainer();
             var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Behavior Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.BehaviorSchedulerKey, behaviorScheduler, new ContainerControlledLifetimeManager());
-            var machine = new BehavioralStateMachine<TState>(name, container, logger, true, externalSynchronizer);
+            if (externalSynchronizer != null)
+            {
+                container.RegisterInstance(StateMachineBase.GlobalSynchronizerKey, externalSynchronizer);
+            }
+
+            var machine = new BehavioralStateMachine<TState>(name, container, logger, true);
             return machine;
         }
     }

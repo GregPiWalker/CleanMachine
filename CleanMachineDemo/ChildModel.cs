@@ -29,7 +29,7 @@ namespace CleanMachineDemo
         {
             try
             {
-                StateMachine = StateMachineFactory.CreatePartialAsync<ChildState>($"Child{_name} StateMachine", _logger, globalSyncContext);
+                StateMachine = StateMachineFactory.CreateTriggerAsync<ChildState>($"Child{_name} StateMachine", _logger, globalSyncContext);
 
                 using (var builder = ChildMachineBuilder.BuildStateMachine(this, StateMachine))
                 {

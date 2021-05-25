@@ -20,6 +20,7 @@ namespace CleanMachine
         public const string ExitedOnKey = "ExitedOn";
         public const string BehaviorSchedulerKey = "BehaviorScheduler";
         public const string TriggerSchedulerKey = "TriggerScheduler";
+        public const string GlobalSynchronizerKey = "GlobalSynchronizer";
         protected readonly List<Transition> _transitions = new List<Transition>();
         protected readonly List<State> _states = new List<State>();
         protected State _currentState;
@@ -34,15 +35,17 @@ namespace CleanMachine
         internal protected readonly object _synchronizer;
 
         /// <summary>
-        /// Construct a machine with asynchronous triggering using the given scheduler.
-        /// If no scheduler is provided, then triggering is done synchronously using the provided synchronizing object.
-        /// If no synchronizer is provided, a default is supplied.
+        /// Construct a machine.
+        /// If the runtime container has a trigger scheduler, asynchronous triggering is established.
+        /// If the runtime container has a behavior scheduler, asynchronous behaviors are established.
+        /// If no trigger scheduler is provided, then triggering is done synchronously using the provided synchronizing object.
+        /// If no external synchronizer is provided, a default is supplied.
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="runtimeContainer"></param>
+        /// <param name="runtimeContainer">Keys of interest: BehaviorSchedulerKey, TriggerSchedulerKey, GlobalSynchronizerKey.
+        /// Types of interest: IClock.</param>
         /// <param name="logger"></param>
-        /// <param name="synchronizer">An object that is used to synchronize internal operation of this machine.</param>
-        protected StateMachineBase(string name, IUnityContainer runtimeContainer, ILog logger, object synchronizer)
+        protected StateMachineBase(string name, IUnityContainer runtimeContainer, ILog logger)
         {
             Name = name;
             Logger = logger;
@@ -53,27 +56,31 @@ namespace CleanMachine
             {
                 RuntimeContainer.RegisterInstance<IClock>(SystemClock.Instance);
             }
-
+                        
             try
             {
+                // A synchronizer is not used when a trigger scheduler is provided because the scheduler
+                // already serializes work items by way of an work queue.
                 TriggerScheduler = RuntimeContainer.Resolve<IScheduler>(TriggerSchedulerKey);
                 TriggerScheduler.Schedule(() => { bool dummy = true; });
                 Logger.Debug($"{Name}:  was initialized with asynchronous triggers.");
             }
             catch
             {
-                if (synchronizer == null)
+                // When configured with synchronous triggers, this machine must have a local synchronization context.
+                // If a synchronizing object hasn't been provided, then register a new one.
+                if (!RuntimeContainer.HasTypeRegistration<object>(GlobalSynchronizerKey))
                 {
-                    // When configured with synchronous triggers, this machine must have a local synchronization context.
                     Logger.Debug($"{Name}:  was initialized for synchronous operation using a default synchronization object.");
-                    _synchronizer = new object();
+                    RuntimeContainer.RegisterInstance(GlobalSynchronizerKey, new object());
                 }
                 else
                 {
                     Logger.Debug($"{Name}:  was initialized for synchronous operation.");
-                    _synchronizer = synchronizer;
                 }
             }
+
+            _synchronizer = RuntimeContainer.TryGetTypeRegistration<object>(GlobalSynchronizerKey);
 
             try
             {
@@ -93,7 +100,7 @@ namespace CleanMachine
         /// <param name="name"></param>
         /// <param name="logger"></param>
         protected StateMachineBase(string name, ILog logger)
-            : this(name, null, logger, null)
+            : this(name, null, logger)
         {
         }
 

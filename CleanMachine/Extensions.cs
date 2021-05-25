@@ -259,6 +259,18 @@ namespace CleanMachine
             return true;
         }
 
+        public static TReg TryGetTypeRegistration<TReg>(this IUnityContainer container, string key) where TReg : class
+        {
+            try
+            {
+                return container.Resolve<TReg>(key);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         //internal static Interfaces.SignalEventArgs ToISignalArgs(this SignalEventArgs internalArgs)
         //{
         //    Interfaces.SignalEventArgs signalArgs;

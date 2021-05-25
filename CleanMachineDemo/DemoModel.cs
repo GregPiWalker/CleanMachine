@@ -111,7 +111,7 @@ namespace CleanMachineDemo
         {
             try
             {
-                StateMachine = CleanMachine.Behavioral.StateMachineFactory.CreatePartialAsync<DemoState>("Demo StateMachine", _logger, null);
+                StateMachine = CleanMachine.Behavioral.StateMachineFactory.CreateTriggerAsync<DemoState>("Demo StateMachine", _logger);
                 foreach (var state in StateMachine.States)
                 {
                     state.Exited += HandleStateExited;
