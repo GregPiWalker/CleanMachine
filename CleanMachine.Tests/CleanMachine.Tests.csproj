@@ -84,11 +84,13 @@
   <ItemGroup>
     <Compile Include="DummyState.cs" />
     <Compile Include="StateMachineTestHarness.cs" />
+    <Compile Include="TestBuilder.cs" />
     <Compile Include="TestPropertyChangedTrigger.cs" />
     <Compile Include="TestBehavioralStateMachine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestStateMachine.cs" />
     <Compile Include="TestStateMachineFactory.cs" />
+    <Compile Include="TestBehaviors.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CleanMachine.Behavioral\CleanMachine.Behavioral.csproj">

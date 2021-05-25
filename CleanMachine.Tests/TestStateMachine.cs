@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using log4net;
 using CleanMachine.Behavioral;
+using CleanMachine.Interfaces;
 
 namespace CleanMachine.Tests
 {
@@ -12,34 +13,40 @@ namespace CleanMachine.Tests
     {
         private static readonly ILog _logger = LogManager.GetLogger("Test Logger");
 
-        //
-        // You can use the following additional attributes as you write your tests:
-        //
-        // Use ClassInitialize to run code before running the first test in the class
-        // [ClassInitialize()]
-        // public static void MyClassInitialize(TestContext testContext) { }
-        //
-        // Use ClassCleanup to run code after all tests in a class have run
-        // [ClassCleanup()]
-        // public static void MyClassCleanup() { }
-        //
-        // Use TestInitialize to run code before running each test 
-        // [TestInitialize()]
-        // public void MyTestInitialize() { }
-        //
-        // Use TestCleanup to run code after each test has run
-        // [TestCleanup()]
-        // public void MyTestCleanup() { }
-        //
-
         [TestMethod]
-        public void TestMethod1()
+        [TestCategory("Integration")]
+        public void Signal_GivenPassiveTransitionExists_AndAutoAdvanceOn_TransitionTraversed()
         {
             var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger);
-            //
-            // TODO: Add test logic here
-            //
-            Assert.Inconclusive("TODO impl");
+            var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
+            TestBuilder.BuildOneWayMachineWithTriggers(harness.Machine, harness);
+
+            uut.AutoAdvance = true;
+            uut.CompleteEdit();
+            var result = uut.FindState(DummyState.One).Name.ToEnum<DummyState>();
+            Assert.AreEqual(uut.CurrentState, result);
+
+            Assert.IsFalse(uut.Signal(new DataWaypoint(this, "Test method")), "Failed to signal the machine under test.");
+            result = uut.FindState(DummyState.One).Name.ToEnum<DummyState>();
+            Assert.AreEqual(uut.CurrentState, result);
+        }
+
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void Signal_GivenPassiveTransitionExists_AndAutoAdvanceOff_TransitionNotTraversed()
+        {
+            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger);
+            var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
+            TestBuilder.BuildOneWayPassiveMachine(harness.Machine);
+
+            uut.AutoAdvance = false;
+            uut.CompleteEdit();
+            var result = uut.FindState(DummyState.One).Name.ToEnum<DummyState>();
+            Assert.AreEqual(uut.CurrentState, result);
+
+            Assert.IsTrue(uut.Signal(new DataWaypoint(this, "Test method")), "Failed to signal the machine under test.");
+            result = uut.FindState(DummyState.Two).Name.ToEnum<DummyState>();
+            Assert.AreEqual(uut.CurrentState, result);
         }
     }
 }

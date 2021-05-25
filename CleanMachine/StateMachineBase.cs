@@ -7,7 +7,6 @@ using System.ComponentModel;
 using CleanMachine.Interfaces;
 using log4net;
 using Unity;
-using Unity.Lifetime;
 using NodaTime;
 
 namespace CleanMachine
@@ -25,6 +24,7 @@ namespace CleanMachine
         protected readonly List<State> _states = new List<State>();
         protected State _currentState;
         protected State _initialState;
+        private bool _autoAdvance;
 
         /// <summary>
         /// This is used for all synchronization constructs internal to this machine.  When triggers are synchronous
@@ -144,7 +144,18 @@ namespace CleanMachine
         /// state transition after a successful transition.  When the machine stimulates
         /// a state, only passive Transitions will be attempted.
         /// </summary>
-        public bool AutoAdvance { get; protected set; }
+        public bool AutoAdvance
+        {
+            get => _autoAdvance;
+            set
+            {
+                if (!Editable)
+                {
+                    throw new InvalidOperationException($"{Name} must be editable in order to set AutoAdvance.");
+                }
+                _autoAdvance = value;
+            }
+        }
 
         /// <summary>
         /// 
@@ -197,7 +208,12 @@ namespace CleanMachine
             }
 
             Logger.Debug($"{Name}:  editing disabled.");
+
+            // Don't auto-advance when we are entering the initial state.
+            var useAutoAdvance = _autoAdvance;
+            _autoAdvance = false;
             EnterInitialState();
+            _autoAdvance = useAutoAdvance;
         }
 
         /// <summary>
@@ -363,7 +379,7 @@ namespace CleanMachine
         /// in case one of them is traversable.
         /// </summary>
         /// <param name="signalSource"></param>
-        /// <returns></returns>
+        /// <returns>True if the signal caused a transition; false otherwise.</returns>
         public bool Signal(DataWaypoint signalSource)
         {
             var tripArgs = new TripEventArgs(_currentState.VisitIdentifier);
@@ -380,7 +396,7 @@ namespace CleanMachine
         /// taken to indicate that only the trigger should be able to stimulate the transition.
         /// </summary>
         /// <param name="signalSource"></param>
-        /// <returns></returns>
+        /// <returns>True if the signal caused a transition; false otherwise.</returns>
         protected bool Stimulate(TripEventArgs tripArgs)
         {
             var passiveTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
@@ -474,8 +490,8 @@ namespace CleanMachine
         {
             if (transition != null && transition.AttemptTraverse(args))
             {
-             
-                
+
+
 
             }
 

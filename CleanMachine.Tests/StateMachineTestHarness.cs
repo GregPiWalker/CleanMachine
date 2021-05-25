@@ -1,16 +1,11 @@
-﻿using CleanMachine;
-using CleanMachine.Behavioral;
-using CleanMachine.Behavioral.Behaviors;
+﻿using CleanMachine.Behavioral;
 using CleanMachine.Generic;
 using CleanMachine.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reactive.Concurrency;
 using System.Threading;
-using Unity;
 
 namespace CleanMachine.Tests
 {
@@ -25,18 +20,7 @@ namespace CleanMachine.Tests
         public StateMachineTestHarness(StateMachine<TState> machine, string initialState)
         {
             Machine = machine;
-            Machine.Edit();
-            Machine.SetInitialState(initialState);
-            
-            foreach (var state in Machine.States)
-            {
-                //state.EntryInitiated += State_EntryInitiated;
-                //state.EntryCompleted += State_EntryCompleted;
-                //state.ExitInitiated += State_ExitInitiated;
-                //state.ExitCompleted += State_ExitCompleted;
-                //state.TransitionSucceeded += State_TransitionSucceeded;
-                //state.TransitionFailed += State_TransitionFailed;
-            }
+            TestBuilder.InitializeMachine(machine, initialState);
         }
 
         private event EventHandler<EventArgs> TestTrigger;
@@ -46,48 +30,7 @@ namespace CleanMachine.Tests
         public Action SuccessAction { get; set; }
         public Action FailureAction { get; set; }
 
-        private StateMachine<TState> Machine { get; set; }
-
-        public void BuildOneWayMachine()
-        {
-            for (int i = 0; i < Machine.States.Count; i++)
-            {
-                if (i + 1 < Machine.States.Count)
-                {
-                    var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.TriggerScheduler, Machine.Logger);
-                    var transition = Machine.CreateTransition(Machine.States[i].Name, Machine.States[i + 1].Name);
-                    transition.Edit();
-                    transition.AddTrigger(trigger);
-
-                    //transition.Succeeded += Transition_Succeeded;
-                    //transition.Failed += Transition_Failed;
-                }
-            }
-        }
-
-        public void BuildCircularMachine()
-        {
-            BuildOneWayMachine();
-
-            // Transition from the last state back to the first.
-            int last = Machine.States.Count - 1;
-            var trigger = new Trigger<StateMachineTestHarness<TState>, EventArgs>(this, nameof(TestTrigger), Machine.TriggerScheduler, Machine.Logger);
-            var transition = Machine.CreateTransition(Machine.States[last].Name, Machine.States[0].Name);
-            transition.Edit();
-            transition.AddTrigger(trigger);
-
-            //transition.Succeeded += Transition_Succeeded;
-            //transition.Failed += Transition_Failed;
-        }
-
-        public void AddDoBehavior(Action<IUnityContainer> action)
-        {
-            var states = Machine.States.OfType<BehavioralState>().ToList();
-            foreach (BehavioralState state in states)
-            {
-                state.AddDoBehavior(action);
-            }
-        }
+        public StateMachine<TState> Machine { get; set; }
 
         /// <summary>
         /// 
@@ -166,7 +109,7 @@ namespace CleanMachine.Tests
         /// <returns></returns>
         private bool WaitUntilFullyAsyncDoBehavior(TimeSpan waitTime)
         {
-            AddDoBehavior((a) =>
+            TestBuilder.AddDoBehaviorToAll(Machine, (a) =>
             {
                 // Wait until the waithandle is in the reset state before signaling done.
                 if (_transitionPreparedForDo.WaitOne(TimeSpan.FromMilliseconds(1000)))
@@ -232,7 +175,7 @@ namespace CleanMachine.Tests
         /// <returns></returns>
         private bool WaitUntilPartialAsyncDoBehavior(TimeSpan waitTime)
         {
-            AddDoBehavior((a) =>
+            TestBuilder.AddDoBehaviorToAll(Machine, (a) =>
             {
                 // Wait until the waithandle is in the reset state before signaling done.
                 if (_testIsPrepared.WaitOne(TimeSpan.FromMilliseconds(1000)))
