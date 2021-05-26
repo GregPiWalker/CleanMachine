@@ -17,7 +17,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void Signal_GivenPassiveTransitionExists_AndAutoAdvanceOn_TransitionTraversed()
         {
-            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger);
+            var uut = StateMachineFactory.Create<DummyState>("Test StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             TestBuilder.BuildOneWayMachineWithTriggers(harness.Machine, harness);
 
@@ -35,7 +35,7 @@ namespace CleanMachine.Tests
         [TestCategory("Integration")]
         public void Signal_GivenPassiveTransitionExists_AndAutoAdvanceOff_TransitionNotTraversed()
         {
-            var uut = StateMachineFactory.Create<DummyState>("Demo StateMachine", _logger);
+            var uut = StateMachineFactory.Create<DummyState>("Test StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
             TestBuilder.BuildOneWayPassiveMachine(harness.Machine);
 
