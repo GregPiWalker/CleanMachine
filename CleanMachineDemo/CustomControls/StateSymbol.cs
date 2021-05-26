@@ -6,7 +6,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Diversions;
 
-namespace CleanMachineDemo
+namespace CleanMachineDemo.CustomControls
 {
     [Diversion(MarshalOption.Dispatcher)]
     [TemplatePart(Name = "PART_RectangleFrame", Type = typeof(Path))]
@@ -18,14 +18,20 @@ namespace CleanMachineDemo
             DependencyProperty.Register("X", typeof(double), typeof(StateSymbol));
         public static readonly DependencyProperty YProperty =
             DependencyProperty.Register("Y", typeof(double), typeof(StateSymbol));
-        
-        private StateViewModel _viewModel;
+
+        private StateViewModel _viewModel = null;
 
         public StateSymbol()
         {
+            // Programmatically add the style for this control to it's resource dictionary.
             var styles = new ResourceDictionary();
-            styles.Source = new Uri($";component/CustomControls/{GetType().Name}.xaml", UriKind.RelativeOrAbsolute);
+            // Must use the "pack" URI syntax or else XAML Designer won't find it.
+            string assemblyName = "CleanMachineDemo";
+            string resourcePath = System.IO.Path.Combine("CustomControls", GetType().Name);
+            styles.Source = new Uri($"pack://application:,,,/{assemblyName};component/{resourcePath}.xaml", UriKind.RelativeOrAbsolute);
             Resources.MergedDictionaries.Add(styles);
+
+            DefaultStyleKey = typeof(StateSymbol);
         }
 
         public string StateName

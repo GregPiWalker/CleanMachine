@@ -1,17 +1,19 @@
-﻿<UserControl x:Class="CleanMachineDemo.ControlPanel"
+﻿<UserControl x:Class="CleanMachineDemo.Views.ControlPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:CleanMachineDemo"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:top="clr-namespace:CleanMachineDemo"
+             xmlns:conv="clr-namespace:CleanMachineDemo.Converters"
              mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=top:ControlPanelViewModel}"
              d:DesignHeight="100" d:DesignWidth="510"
              Height="100" Width="510">
 
     <UserControl.Resources>
-        <local:IntToStringConverter x:Key="IntToStringConverter"/>
+        <conv:IntToStringConverter x:Key="IntToStringConverter"/>
         <BooleanToVisibilityConverter x:Key="InvisibilityConverter" />
-        <local:InvertibleBooleanToVisibilityConverter x:Key="InvertibleInvisibilityConverter" />
+        <conv:InvertibleBooleanToVisibilityConverter x:Key="InvertibleInvisibilityConverter" />
 
         <EllipseGeometry x:Key="Circle" Center="5,5" RadiusX="5" RadiusY="5" />
 

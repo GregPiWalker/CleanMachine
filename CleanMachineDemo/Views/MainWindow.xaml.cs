@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Input;
 
-namespace CleanMachineDemo
+namespace CleanMachineDemo.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

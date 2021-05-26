@@ -1,9 +1,10 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:CleanMachineDemo">
+                    xmlns:local="clr-namespace:CleanMachineDemo.CustomControls" 
+                    xmlns:conv="clr-namespace:CleanMachineDemo.Converters">
 
     <SolidColorBrush x:Key="DefaultFillColor" Color="AntiqueWhite"/>
-    <local:SelectionToColorConverter x:Key="SelectionToStateFillColorConverter" Selected="Honeydew" Deselected="AntiqueWhite"/>
+    <conv:SelectionToColorConverter x:Key="SelectionToStateFillColorConverter" Selected="Honeydew" Deselected="AntiqueWhite"/>
     
     <Style TargetType="{x:Type local:StateSymbol}">
         <!--<Setter Property="OverridesDefaultStyle" Value="True" />-->

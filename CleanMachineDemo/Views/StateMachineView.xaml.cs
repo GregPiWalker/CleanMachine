@@ -1,8 +1,9 @@
-﻿using System;
+﻿using CleanMachineDemo.CustomControls;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace CleanMachineDemo
+namespace CleanMachineDemo.Views
 {
     /// <summary>
     /// Interaction logic for StateMachineView.xaml
@@ -10,7 +11,7 @@ namespace CleanMachineDemo
     [TemplatePart(Name = "PART_DiagramCanvas", Type = typeof(Canvas))]
     public partial class StateMachineView : UserControl
     {
-        private Canvas _mainCanvas;
+        private Canvas _mainCanvas = null;
 
         public StateMachineView()
         {

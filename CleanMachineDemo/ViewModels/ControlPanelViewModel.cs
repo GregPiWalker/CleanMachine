@@ -35,7 +35,7 @@ namespace CleanMachineDemo
         public string Expression
         {
             get { return _expression; }
-            set { SetProperty(ref _expression, value, nameof(Expression)); }
+            set { SetProperty(ref _expression, value); }
         }
 
         public DelegateCommand TriggerAllCommand { get; private set; }

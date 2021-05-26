@@ -6,7 +6,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Diversions;
 
-namespace CleanMachineDemo
+namespace CleanMachineDemo.CustomControls
 {
     [Diversion(MarshalOption.Dispatcher)]
     [TemplatePart(Name = "PART_ArrowShaft", Type = typeof(Path))]
@@ -14,9 +14,9 @@ namespace CleanMachineDemo
     {
         private const double ArrowheadHeight = 10d;
         private const double ArrowheadOverlap = 2d;
-        private TransitionViewModel _viewModel;
-        private Path _linePath;
-        
+        private TransitionViewModel _viewModel = null;
+        private Path _linePath = null;
+
         public static readonly DependencyProperty TransitionNameProperty =
             DependencyProperty.Register("TransitionName", typeof(string), typeof(TransitionSymbol));
         public static readonly DependencyProperty SnapToStateProperty =
@@ -45,9 +45,15 @@ namespace CleanMachineDemo
 
         public TransitionSymbol()
         {
+            // Programmatically add the style for this control to it's resource dictionary.
             var styles = new ResourceDictionary();
-            styles.Source = new Uri($";component/CustomControls/{GetType().Name}.xaml", UriKind.RelativeOrAbsolute);
+            // Must use the "pack" URI syntax or else XAML Designer won't find it.
+            string assemblyName = "CleanMachineDemo";
+            string resourcePath = System.IO.Path.Combine("CustomControls", GetType().Name);
+            styles.Source = new Uri($"pack://application:,,,/{assemblyName};component/{resourcePath}.xaml", UriKind.RelativeOrAbsolute);
             Resources.MergedDictionaries.Add(styles);
+
+            DefaultStyleKey = typeof(TransitionSymbol);
         }
 
         public event RoutedEventHandler Failure
@@ -151,14 +157,14 @@ namespace CleanMachineDemo
         {
             _viewModel.Deselect();
         }
-        
+
         public void HandleTransitionFailure(object sender, EventArgs args)
         {
             // This method body is automatically marshalled onto the UI dispatcher
             // since this classes diverter was set to the dispatcher delegate.
             RaiseEvent(new RoutedEventArgs(FailureEvent));
         }
-        
+
         public void HandleTransitionSuccess(object sender, EventArgs args)
         {
             // This method body is automatically marshalled onto the UI dispatcher
@@ -212,7 +218,7 @@ namespace CleanMachineDemo
             Height = 58.133;
             Width = 80.534;
 
-            TransformOrigin = new Point(0,0);
+            TransformOrigin = new Point(0, 0);
         }
     }
 }

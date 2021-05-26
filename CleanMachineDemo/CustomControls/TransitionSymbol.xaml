@@ -1,12 +1,13 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:CleanMachineDemo">
+                    xmlns:local="clr-namespace:CleanMachineDemo.CustomControls"
+                    xmlns:conv="clr-namespace:CleanMachineDemo.Converters">
 
     <SolidColorBrush x:Key="DefaultTransitionColor" Color="Black"/>
     <SolidColorBrush x:Key="FailureTransitionColor" Color="Red"/>
     <SolidColorBrush x:Key="SuccessTransitionColor" Color="Green"/>
     <SolidColorBrush x:Key="SelectedTransitionColor" Color="Green"/>
-    <local:SelectionToColorConverter x:Key="SelectionToLineColorConverter" Selected="{StaticResource SelectedTransitionColor}" Deselected="{StaticResource DefaultTransitionColor}"/>
+    <conv:SelectionToColorConverter x:Key="SelectionToLineColorConverter" Selected="{StaticResource SelectedTransitionColor}" Deselected="{StaticResource DefaultTransitionColor}"/>
 
     <Style TargetType="{x:Type local:TransitionSymbol}">
         <Setter Property="Template">

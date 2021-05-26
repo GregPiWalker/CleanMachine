@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Globalization;
 
-namespace CleanMachineDemo
+namespace CleanMachineDemo.Converters
 {
     public class InvertibleBooleanToVisibilityConverter : IValueConverter
     {

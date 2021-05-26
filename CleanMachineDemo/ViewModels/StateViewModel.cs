@@ -25,6 +25,8 @@ namespace CleanMachineDemo
             }
         }
 
+        public event EventHandler<string> Message;
+
         public IState Model { get; private set; }
 
         public override void LogDiagnostics()

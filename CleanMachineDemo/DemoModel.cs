@@ -38,7 +38,14 @@ namespace CleanMachineDemo
             CreateStateMachine();
         }
 
+        /// <summary>
+        /// Raised when a state macine trigger needs to be tripped.
+        /// </summary>
         public event EventHandler<DemoEventArgs> TriggerEvent;
+        /// <summary>
+        /// Raised when the model is reset.
+        /// </summary>
+        public event EventHandler<DemoEventArgs> ResetOccurred;
 
         public StateMachine<DemoState> StateMachine { get; private set; }
 
@@ -138,6 +145,7 @@ namespace CleanMachineDemo
             CollectionCount = 0;
             OnOff = false;
             Number = 0;
+            ResetOccurred?.Invoke(this, new DemoEventArgs());
         }
 
         private void StartChildren()

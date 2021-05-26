@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace CleanMachineDemo
+namespace CleanMachineDemo.Converters
 {
     public class SelectionToColorConverter : IValueConverter
     {

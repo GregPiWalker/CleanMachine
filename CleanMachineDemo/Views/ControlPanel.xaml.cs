@@ -1,7 +1,7 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace CleanMachineDemo
+namespace CleanMachineDemo.Views
 {
     /// <summary>
     /// Interaction logic for ControlPanel.xaml

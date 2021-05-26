@@ -11,6 +11,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Include="..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <PackageReference Include="NodaTime" Version="3.0.5" />
 	  <PackageReference Include="Unity" Version="5.11.10" />
 	</ItemGroup>
