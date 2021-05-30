@@ -15,7 +15,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void Signal_GivenPassiveTransitionExists_AndAutoAdvanceOn_TransitionTraversed()
+        public void Signal_GivenPassiveTransitionAndAutoAdvanceOn_TransitionTraversed()
         {
             var uut = StateMachineFactory.Create<DummyState>("Test StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
@@ -33,7 +33,7 @@ namespace CleanMachine.Tests
 
         [TestMethod]
         [TestCategory("Integration")]
-        public void Signal_GivenPassiveTransitionExists_AndAutoAdvanceOff_TransitionNotTraversed()
+        public void Signal_GivenPassiveTransitionAndAutoAdvanceOff_TransitionNotTraversed()
         {
             var uut = StateMachineFactory.Create<DummyState>("Test StateMachine", _logger);
             var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
@@ -47,6 +47,34 @@ namespace CleanMachine.Tests
             Assert.IsTrue(uut.Signal(new DataWaypoint(this, "Test method")), "Failed to signal the machine under test.");
             result = uut.FindState(DummyState.Two).Name.ToEnum<DummyState>();
             Assert.AreEqual(uut.CurrentState, result);
+        }
+
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void TryTransitionTo_GivenPassiveTransitionAndAutoAdvanceOff_WhenInitialStateOne_TransitionsToStateTwo()
+        {
+            var uut = StateMachineFactory.Create<DummyState>("Test StateMachine", _logger);
+            var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
+            TestBuilder.BuildOneWayPassiveMachine(harness.Machine);
+            uut.AutoAdvance = false;
+            uut.CompleteEdit();
+
+            uut.TryTransitionTo(DummyState.Two, this);
+            Assert.AreEqual(DummyState.Two, uut.CurrentState);
+        }
+
+        [TestMethod]
+        [TestCategory("Integration")]
+        public void TryTransition_GivenPassiveTransitionAndAutoAdvanceOff_WhenInitialStateOne_TransitionsToStateTwo()
+        {
+            var uut = StateMachineFactory.Create<DummyState>("Test StateMachine", _logger);
+            var harness = new StateMachineTestHarness<DummyState>(uut, DummyState.One.ToString());
+            TestBuilder.BuildOneWayPassiveMachine(harness.Machine);
+            uut.AutoAdvance = false;
+            uut.CompleteEdit();
+
+            uut.TryTransition(this);
+            Assert.AreEqual(DummyState.Two, uut.CurrentState);
         }
     }
 }

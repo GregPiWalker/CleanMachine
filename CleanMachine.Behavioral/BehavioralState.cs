@@ -142,7 +142,7 @@ namespace CleanMachine.Behavioral
         /// 
         /// </summary>
         /// <param name="tripArgs"></param>
-        internal override void Settle(TripEventArgs tripArgs)
+        internal protected override void Settle(TripEventArgs tripArgs)
         {
             if (_doBehaviors.Any())
             {

@@ -108,10 +108,8 @@ namespace CleanMachine
         {
             if (CanTrigger(originEventArgs))
             {
-                var trip = new TripEventArgs(visitorId);
                 // Add the trip source and its arguments to the route history.
-                trip.Waypoints.AddLast(new DataWaypoint(origin, originEventArgs));
-
+                var trip = new TripEventArgs(visitorId, new DataWaypoint(origin, originEventArgs));
                 OnTriggered(trip);
             }
         }

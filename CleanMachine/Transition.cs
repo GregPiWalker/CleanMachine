@@ -17,6 +17,7 @@ namespace CleanMachine
         protected IBehavior _effect;
         protected bool _enabled;
         private State _to;
+        private State _from;
 
         /// <summary>
         /// 
@@ -31,21 +32,27 @@ namespace CleanMachine
         }
 
         public Transition(string context, string stereotype, State fromState, State toState, ILog logger)
+            : this(context, stereotype, logger)
         {
             if (fromState == null)
             {
                 throw new ArgumentException($"{context} transition cannot have a null supplier (fromState).");
             }
-            //if (toState == null)
-            //{
-            //    throw new ArgumentException($"{context} transition cannot have a null consumer (toState).");
-            //}
 
+            if (toState == null)
+            {
+                throw new ArgumentException($"{context} transition cannot have a null consumer (toState).");
+            }
+
+            From = fromState;
+            To = toState;
+        }
+
+        protected Transition(string context, string stereotype, ILog logger)
+        {
             _context = context;
             _logger = logger;
             Stereotype = stereotype;
-            From = fromState;
-            To = toState;
         }
 
         /// <summary>
@@ -78,7 +85,15 @@ namespace CleanMachine
         /// </summary>
         public virtual bool IsPassive => !_triggers.Any();
 
-        internal protected State From { get; protected set; }
+        internal protected State From
+        {
+            get => _from;
+            protected set
+            {
+                _from = value;
+                SetName();
+            }
+        }
 
         internal protected State To
         {
@@ -86,11 +101,7 @@ namespace CleanMachine
             protected set
             {
                 _to = value;
-                if (_to != null)
-                {
-                    //TODO: this isn't unique enough
-                    Name = $"{From.Name}-->{To.Name}";
-                }
+                SetName();
             }
         }
 
@@ -128,7 +139,17 @@ namespace CleanMachine
 
         protected bool Editable { get; private set; }
 
-        internal protected IUnityContainer RuntimeContainer { get; internal set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        internal protected IUnityContainer RuntimeContainer { get; set; }
+
+        /// <summary>
+        /// This is used for all synchronization constructs internal to this machine.  When triggers are synchronous
+        /// they are not put on a serializing event queue, so they need some other mechanism for synchronization -
+        /// hence the synchronizer.
+        /// </summary>
+        internal protected object GlobalSynchronizer { get; set; }
 
         public override string ToString()
         {
@@ -235,7 +256,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="args">TripEventArgs related to the attempt to traverse.</param>
         /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
-        internal virtual bool AttemptTraverse(TripEventArgs args)
+        internal protected virtual bool AttemptTraverse(TripEventArgs args)
         {
             if (!ValidateAttempt(args))
             {
@@ -315,6 +336,15 @@ namespace CleanMachine
             return true;
         }
 
+        protected void SetName()
+        {
+            if (_to != null && _from != null)
+            {
+                //TODO: this isn't unique enough
+                Name = $"{_from.Name}-->{_to.Name}";
+            }
+        }
+
         /// <summary>
         /// Raise the mandatory internal TraversalSucceeded event, and the optional
         /// Succeeded event.
@@ -325,6 +355,7 @@ namespace CleanMachine
         {
             // This event is not optional, the StateMachine behavior depends on it.
             SucceededInternal?.Invoke(this, args);
+            _logger.Debug($"Transition {ToString()}: raising '{nameof(SucceededInternal)}' event.");
 
             try
             {
@@ -355,10 +386,19 @@ namespace CleanMachine
                 return;
             }
 
-            //OnRequested(args);
-            if (AttemptTraverse(args))
+            if (GlobalSynchronizer == null)
             {
-                _logger.Debug($"Transition {ToString()}: raising '{nameof(SucceededInternal)}' event.");
+                AttemptTraverse(args);
+            }
+            else
+            {
+                // This lock regulates all transition triggers associated to the given synchronization context.
+                // This means that only one of any number of transitions can successfully exit the current state,
+                // whether those transitions all exist in one state machine or are distributed across a set of machines.
+                lock (GlobalSynchronizer)
+                {
+                    AttemptTraverse(args);
+                }
             }
         }
     }

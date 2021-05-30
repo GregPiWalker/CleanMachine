@@ -276,6 +276,7 @@ namespace CleanMachine
             var transition = supplier.CreateTransitionTo(Name, consumer);
             transition.RuntimeContainer = RuntimeContainer;
             transition.SucceededInternal += HandleTransitionSucceededInternal;
+            transition.GlobalSynchronizer = _synchronizer;
             return transition;
         }
 
@@ -339,14 +340,6 @@ namespace CleanMachine
         protected abstract void OnStateChanged(TripEventArgs args);
 
         /// <summary>
-        /// Forward the State's Entered event through this Machine's StateEntered event.
-        /// Implementations of this method should be synchronous.  That is, they should avoid
-        /// calling methods or raising events asynchronously.
-        /// </summary>
-        /// <param name="args"></param>
-        //protected abstract void OnStateEntered(StateEnteredEventArgs args);
-
-        /// <summary>
         /// Perform state-exited work.
         /// Implementations of this method should be synchronous.  That is, they should avoid
         /// calling methods or raising events asynchronously.
@@ -390,11 +383,22 @@ namespace CleanMachine
         /// <returns>True if the signal caused a transition; false otherwise.</returns>
         public bool Signal(DataWaypoint signalSource)
         {
-            var tripArgs = new TripEventArgs(_currentState.VisitIdentifier);
-            tripArgs.Waypoints.AddLast(signalSource);
-
-            //TODO: FILL IN BLANK?
-            return Stimulate(tripArgs);
+            if (_synchronizer == null)
+            {
+                var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
+                return StimulateUnsafe(tripArgs);
+            }
+            else
+            {
+                // This lock regulates all transition triggers associated to the given synchronization context.
+                // This means that only one of any number of transitions can successfully exit the current state,
+                // whether those transitions all exist in one state machine or are distributed across a set of machines.
+                lock (_synchronizer)
+                {
+                    var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
+                    return StimulateUnsafe(tripArgs);
+                }
+            }
         }
 
         /// <summary>
@@ -405,7 +409,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="signalSource"></param>
         /// <returns>True if the signal caused a transition; false otherwise.</returns>
-        protected bool Stimulate(TripEventArgs tripArgs)
+        protected virtual bool StimulateUnsafe(TripEventArgs tripArgs)
         {
             var passiveTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
             foreach (var transition in passiveTransitions)
@@ -429,7 +433,7 @@ namespace CleanMachine
         {
             if (_synchronizer == null)
             {
-                return AttemptTransitionUnsafe(transition, args);
+                return transition.AttemptTraverse(args);
             }
             else
             {
@@ -438,7 +442,7 @@ namespace CleanMachine
                 // whether those transitions all exist in one state machine or are distributed across a set of machines.
                 lock (_synchronizer)
                 {
-                    return AttemptTransitionUnsafe(transition, args);
+                    return transition.AttemptTraverse(args);
                 }
             }
         }
@@ -476,9 +480,9 @@ namespace CleanMachine
                 //throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
             }
 
-            //TODO: build some event args here
-            var jumpArgs = new TripEventArgs(null);
-            jumpArgs.Waypoints.AddLast(new DataWaypoint(this, nameof(JumpToState)));
+            // Current state can be null because this might be entering the initial state.
+            var vid = _currentState == null ? null : _currentState.VisitIdentifier;
+            var jumpArgs = new TripEventArgs(vid, new DataWaypoint(this, nameof(JumpToState)));
             jumpTo.Enter(jumpArgs);
             _currentState = jumpTo;
             History = jumpArgs.Waypoints;
@@ -488,32 +492,11 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// The first successful transition will dispose of all other trigger handlers that were competing for action
-        /// by disposing of the state selection context associated to the triggers.
-        /// </summary>
-        /// <param name="transition">The Transition to try to traverse.</param>
-        /// <param name="args">The related TripEventArgs.</param>
-        /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
-        protected virtual bool AttemptTransitionUnsafe(Transition transition, TripEventArgs args)
-        {
-            if (transition != null && transition.AttemptTraverse(args))
-            {
-
-
-
-            }
-
-            // A transition attempt was made.
-            return true;
-        }
-
-        /// <summary>
-        /// Run any activities that occur once the entire transition process is finished
-        /// and the change is settled.
+        /// Run any activities that occur once the entire transition process is finished.
         /// </summary>
         /// <param name="state"></param>
         /// <param name="args"></param>
-        private void OnTransitionEnteredState(State state, TripEventArgs args)
+        protected virtual void OnTransitionCompleted(State state, TripEventArgs args)
         {
             if (!state.IsCurrentState)
             {
@@ -525,24 +508,8 @@ namespace CleanMachine
             // When a state is entered successfully, auto-advance may be appropriate.
             if (AutoAdvance)
             {
-                Stimulate(args);
+                StimulateUnsafe(args);
             }
-        }
-
-        /// <summary>
-        /// Update the current state in reponse to a successful transition that has entered
-        /// its consumer state.
-        /// </summary>
-        /// <param name="transition"></param>
-        /// <param name="args"></param>
-        private void OnStateEntryFinished(State state, TripEventArgs args)
-        {
-            _currentState = state;
-
-            // Once a trip results in a state change, hold onto the route history.
-            History = args.Waypoints;
-
-            OnStateChanged(args);
         }
 
         /// <summary>
@@ -567,20 +534,9 @@ namespace CleanMachine
             var transition = sender as Transition;
             var state = transition == null ? args.FindLastState() as State : transition.To;
 
-            if (_synchronizer == null)
-            {
-                OnTransitionEnteredState(state, args);
-            }
-            else
-            {
-                // This lock regulates all transition triggers associated to the given synchronization context.
-                // This means that only one of any number of transitions can successfully exit the current state,
-                // whether those transitions all exist in one state machine or are distributed across a set of machines.
-                lock (_synchronizer)
-                {
-                    OnTransitionEnteredState(state, args);
-                }
-            }
+            //TODO: SYNCHRONIZATION SHOULD ALREADY BE OBTAINED UP THE CALL STACK BY 
+            //      JumpToState() or AttemptTransition() or Signal() or Transition.HandleTrigger().  VERIFY THIS.
+            OnTransitionCompleted(state, args);
         }
 
         /// <summary>
@@ -593,20 +549,27 @@ namespace CleanMachine
         protected virtual void HandleStateEnteredInternal(object sender, TripEventArgs args)
         {
             var state = sender as State;
-            if (_synchronizer == null)
-            {
-                OnStateEntryFinished(state, args);
-            }
-            else
-            {
-                // This lock regulates all transition triggers associated to the given synchronization context.
-                // This means that only one of any number of transitions can successfully exit the current state,
-                // whether those transitions all exist in one state machine or are distributed across a set of machines.
-                lock (_synchronizer)
-                {
-                    OnStateEntryFinished(state, args);
-                }
-            }
+
+            //TODO: SYNCHRONIZATION SHOULD ALREADY BE OBTAINED UP THE CALL STACK BY 
+            //      JumpToState() or AttemptTransition() or Signal() or Transition.HandleTrigger().  VERIFY THIS.
+            OnStateEntryFinished(state, args);
+        }
+
+        /// <summary>
+        /// Update the current state in reponse to a successful transition that has entered
+        /// its consumer state.
+        /// </summary>
+        /// <param name="transition"></param>
+        /// <param name="args"></param>
+        private void OnStateEntryFinished(State state, TripEventArgs args)
+        {
+            _currentState = state;
+
+            // Once a trip results in a state change, hold onto the route history.
+            History = args.Waypoints;
+
+            OnPropertyChanged(nameof(CurrentState));
+            OnStateChanged(args);
         }
     }
 }

@@ -78,9 +78,7 @@ namespace CleanMachine.Generic
         /// <returns>The current state - a new state if a transition succeeded; the prior existing state if not.</returns>
         public virtual TState TryTransition(object sender = null, [CallerMemberName] string callerName = null)
         {
-            var tripArgs = new TripEventArgs(new BlankDisposable());
-            tripArgs.Waypoints.AddLast(new DataWaypoint(sender, callerName));
-
+            var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, new DataWaypoint(sender, callerName));
             TryTransitionTo(null, tripArgs);
             return CurrentState;
         }
@@ -96,9 +94,7 @@ namespace CleanMachine.Generic
         /// <returns>True if a transition was traversed; false otherwise.</returns>
         public virtual bool TryTransitionTo(TState toState, object sender = null, [CallerMemberName] string callerName = null)
         {
-            var tripArgs = new TripEventArgs(new BlankDisposable());
-            tripArgs.Waypoints.AddLast(new DataWaypoint(sender, callerName));
-
+            var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, new DataWaypoint(sender, callerName));
             return TryTransitionTo(toState.ToString(), tripArgs);
         }
 
@@ -143,18 +139,6 @@ namespace CleanMachine.Generic
             return CreateTransition(supplierState.ToString(), consumerState.ToString());
         }
 
-        protected override bool AttemptTransitionUnsafe(Transition transition, TripEventArgs args)
-        {
-            bool result = base.AttemptTransitionUnsafe(transition, args);
-            if (result)
-            {
-                //TODO: beware auto-advance stepping through multiple states
-                OnPropertyChanged(nameof(CurrentState));
-            }
-
-            return result;
-        }
-
         /// <summary>
         /// Raise the <see cref="StateChanged"/> event synchronously.
         /// </summary>
@@ -178,15 +162,6 @@ namespace CleanMachine.Generic
                 Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}' event from {Name} state machine.", ex);
             }
         }
-
-        /// <summary>
-        /// Forward the State's Entered event through this Machine's StateEntered event.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        //protected override void OnStateEntered(StateEnteredEventArgs args)
-        //{
-        //}
 
         /// <summary>
         /// Forward the State's Entered event through this Machine's StateEntered event.

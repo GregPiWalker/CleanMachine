@@ -6,9 +6,23 @@ namespace CleanMachine.Interfaces
 {
     public class TripEventArgs : EventArgs
     {
-        public TripEventArgs(IDisposable visitorId)
+        /// <summary>
+        /// Create a TripEventArgs for a Trigger or Signal origin,
+        /// with the given visitor identifier and origin info.
+        /// </summary>
+        /// <param name="visitorId"></param>
+        /// <param name="tripOrigin"></param>
+        public TripEventArgs(IDisposable visitorId, DataWaypoint tripOrigin)
         {
             VisitorIdentifier = visitorId;
+            Waypoints.AddLast(tripOrigin);
+        }
+
+        /// <summary>
+        /// Create a TripEventArgs for a Signal origin with the given origin info.
+        /// </summary>
+        public TripEventArgs()
+        {
         }
 
         /// <summary>
@@ -16,6 +30,13 @@ namespace CleanMachine.Interfaces
         /// </summary>
         public LinkedList<IWaypoint> Waypoints { get; private set; } = new LinkedList<IWaypoint>();
 
+        /// <summary>
+        /// The VisitorIdentifier is used to compare a state visitation (Instance of Entry)
+        /// against a later trigger/signal event.  It becomes useful when a state machine contains
+        /// a circular path - in that case, a state could be entered, exited, and re-entered, all 
+        /// while a trigger/signal instance is waiting in an event queue.  Using the VisitorIdentifier,
+        /// the trigger/signal instance can be correlated to an outdated state visit.
+        /// </summary>
         public IDisposable VisitorIdentifier { get; }
 
         public ITrigger FindTrigger()
@@ -85,6 +106,12 @@ namespace CleanMachine.Interfaces
         public DataWaypoint GetTripOrigin()
         {
             return (DataWaypoint)Waypoints.First.Value;
+        }
+
+        internal void Restart(DataWaypoint newOrigin)
+        {
+            Waypoints.Clear();
+            Waypoints.AddLast(newOrigin);
         }
     }
 

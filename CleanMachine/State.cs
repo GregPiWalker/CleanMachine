@@ -85,10 +85,11 @@ namespace CleanMachine
         public bool ValidateTrips { get; set; }
 
         /// <summary>
-        /// Gets the state's latest visit marker.  The visit marker tracks a unique visit (entry) to this
+        /// Gets the state's latest visit identifier.  The visit identifier tracks a unique visit (entry) to this
         /// state.  It can be used to distinguish different times the same state is entered.  For instance,
         /// a transition from this state to this state will result in the same current state, but will
-        /// give two different visit markers.
+        /// give two different visit identifiers.  This is useful for validating a signal/trigger that
+        /// requests a transition.
         /// </summary>
 
         internal protected BooleanDisposable VisitIdentifier { get; protected set; }
@@ -235,7 +236,7 @@ namespace CleanMachine
         /// Empty base implementation.
         /// </summary>
         /// <param name="tripArgs"></param>
-        internal virtual void Settle(TripEventArgs tripArgs)
+        internal protected virtual void Settle(TripEventArgs tripArgs)
         {
             // Empty base implementation.
         }
