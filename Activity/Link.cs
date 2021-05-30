@@ -1,5 +1,4 @@
 ﻿using CleanMachine;
-using CleanMachine.Behavioral;
 using log4net;
 using System;
 using System.Collections.Generic;
@@ -7,15 +6,17 @@ using System.Threading;
 
 namespace Activity
 {
-    public class Link : BehavioralTransition, IComparer<Link>
+    public class Link : Transition, IComparer<Link>
     {
         public Link(string context, string stereotype, ActionNode consumer, ILog logger, CancellationToken abortToken)
-            : base(context, stereotype, consumer, logger)
+            : base(context, stereotype, logger)
         {
+            To = consumer;
             AbortToken = abortToken;
         }
 
         public CancellationToken AbortToken { get; }
+
         /// <summary>
         /// Sort Links in order of their Stereotype.
         /// ( Abort > Exit > Finish > Continue )

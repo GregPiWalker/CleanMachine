@@ -2,12 +2,13 @@
 using CleanMachine.Behavioral;
 using CleanMachine.Interfaces;
 using log4net;
+using Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Threading;
-using Unity;
+using System.Reflection;
 
 namespace Activity
 {
@@ -21,36 +22,28 @@ namespace Activity
     //    protected ActivityChain UnderConstruction { get; set; }
     //}
 
-    public class ActivitySequence : IDisposable
+    public class ActivitySequence : StateMachineBase, IDisposable
     {
         protected const string InitialNodeName = "Initial";
         protected const string NoopNodeName = "NoOp";
         protected const string FinalNodeName = "Final";
         protected readonly object _runLock = new object();
-        protected readonly IScheduler _signalScheduler;
-        protected readonly IScheduler _invocationScheduler;
         protected readonly CancellationTokenSource _abortTokenSource = new CancellationTokenSource();
         protected readonly Func<bool> _abortCondition;
         protected ActionNode _lastAttachedNode;
         protected ActionNode _detachedNode;
-        protected ILog _logger;
+        private readonly TripEventArgs signalArgs = new TripEventArgs();
         private bool _isDisposed;
 
-        public ActivitySequence(string name, IScheduler signalScheduler, IScheduler invocationScheduler)
+        public ActivitySequence(string name, IUnityContainer runtimeContainer, ILog logger)
+            : base(name, runtimeContainer, logger)
         {
-            Name = name;
-            _signalScheduler = signalScheduler;
-            _invocationScheduler = invocationScheduler;
-
+            AutoAdvance = true;
             BuildPhase = Phase.Mutable;
             _abortCondition = () => _abortTokenSource.Token.IsCancellationRequested;
         }
 
         public Phase BuildPhase { get; protected set; }
-
-        public string Name { get; protected set; }
-
-        public IUnityContainer RuntimeContainer { get; } = new UnityContainer();
 
         public ActionNode InitialNode { get; protected set; }
 
@@ -102,33 +95,45 @@ namespace Activity
 
         public void Resume()
         {
-            //todo: locking
-            if (State != SequenceState.Paused)
-            {
-                return;
-            }
-
-            Proceed();
-        }
-
-        protected void Proceed()
-        {
             lock (_runLock)
             {
-                if (State != SequenceState.Running)
+                if (State != SequenceState.Paused)
                 {
                     return;
                 }
 
-                if (TryAbort())
+                var resumeArgs = new TripEventArgs(new BlankDisposable(), new DataWaypoint(_currentState.VisitIdentifier, nameof(Resume)));
+                StimulateUnsafe(resumeArgs);
+            }
+        }
+
+        /// <summary>
+        /// Stimulate the currently enabled passive transitions to attempt to exit the current state.
+        /// 
+        /// TODO: Change this? Only passive transitions are stimulated because presence of a trigger is
+        /// taken to indicate that only the trigger should be able to stimulate the transition.
+        /// </summary>
+        /// <param name="signalSource"></param>
+        /// <returns>True if the signal caused a transition; false otherwise.</returns>
+        protected override bool StimulateUnsafe(TripEventArgs tripArgs)
+        {
+            bool result;
+            lock (_runLock)
+            {
+                if (State != SequenceState.Running)
+                {
+                    return false;
+                }
+
+                if (result = TryAbort(tripArgs))
                 {
 
                 }
-                else if (TryExit())
+                else if (result = TryExit(tripArgs))
                 {
 
                 }
-                else if (TryContinue())
+                else if (result = TryContinue(tripArgs))
                 {
 
                 }
@@ -137,30 +142,33 @@ namespace Activity
                     // CurrentNode is end of the sequence.  Try to finish.
                 }
             }
+
+            //TODO LOG IT?
+            return result;
         }
 
-        protected bool TryContinue()
+        protected bool TryAbort(TripEventArgs tripArgs)
         {
-            foreach (var continuation in CurrentNode.ContinueLinks)
+            return CurrentNode.AbortLink.AttemptTraverse(tripArgs);
+        }
+
+        protected bool TryExit(TripEventArgs tripArgs)
+        {
+            return CurrentNode.ExitLink.AttemptTraverse(tripArgs);
+        }
+
+        protected bool TryContinue(TripEventArgs tripArgs)
+        {
+            var continuations = CurrentNode.ContinueLinks;
+            foreach (var continuation in continuations)
             {
-                if (continuation.AttemptTransition())
+                if (continuation.AttemptTraverse(tripArgs))
                 {
                     return true;
                 }
             }
 
-            //TODO LOG IT
             return false;
-        }
-
-        protected bool TryAbort()
-        {
-            return CurrentNode.AbortLink.AttemptTransition();
-        }
-
-        protected bool TryExit()
-        {
-            return CurrentNode.ExitLink.AttemptTransition();
         }
 
         protected void OnFinished(IUnityContainer container)
@@ -221,7 +229,7 @@ namespace Activity
 
         internal protected ActivitySequence StartWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
         {
-            return StartWithConstraint(new Constraint(conditionName, condition, _logger), triggers);
+            return StartWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
         }
 
         public ActivitySequence EditWithConstraint(IConstraint constraint, IEnumerable<TriggerBase> triggers = null)
@@ -243,15 +251,17 @@ namespace Activity
 
             PopulateDetachedNode(string.Empty);
             _detachedNode.Stereotype = $"[{constraint.Name}]{_detachedNode.Stereotype}";
-            _detachedNode.AddEntryLink(constraint, triggers)
-                .TraversalRequested += HandleLinkTransitionRequested;
+            var link = _detachedNode.AddEntryLink(constraint, triggers);
+            link.RuntimeContainer = RuntimeContainer;
+            link.SucceededInternal += HandleLinkSucceededInternal;
+            link.GlobalSynchronizer = _synchronizer;
 
             return this;
         }
 
         internal protected ActivitySequence EditWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
         {
-            return EditWithConstraint(new Constraint(conditionName, condition, _logger), triggers);
+            return EditWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
         }
 
         internal protected ActivitySequence FinishEditWithBehavior(IBehavior behavior)
@@ -351,7 +361,7 @@ namespace Activity
         {
             if (_detachedNode == null)
             {
-                _detachedNode = new ActionNode(nodeName, Name, _logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
+                _detachedNode = new ActionNode(nodeName, Name, Logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
             }
             else if (string.IsNullOrEmpty(_detachedNode.Name))
             {
@@ -406,8 +416,8 @@ namespace Activity
             }
 
             // Add an initial node that has no action to perform. NOTE: no inbound links here.
-            InitialNode = new ActionNode(InitialNodeName, Name, _logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
-            FinalNode = new ActionNode(FinalNodeName, Name, _logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
+            InitialNode = new ActionNode(InitialNodeName, Name, Logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
+            FinalNode = new ActionNode(FinalNodeName, Name, Logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
             FinalNode.SetEntryBehavior(new Behavior(nameof(OnFinished), (c) => OnFinished(c)));
             SetFinalLinks(InitialNode);
         }
@@ -415,7 +425,7 @@ namespace Activity
         protected void SetFinalLinks(ActionNode node)
         {
             var abort = node.CreateLinkTo(Name, Stereotypes.Abort.ToString(), FinalNode);
-            abort.Guard = new Constraint(Stereotypes.Abort.ToString(), _abortCondition, _logger);
+            abort.Guard = new Constraint(Stereotypes.Abort.ToString(), _abortCondition, Logger);
 
             if (node != InitialNode)
             {
@@ -447,10 +457,54 @@ namespace Activity
         //     Dispose(disposing: false);
         // }
 
-        private void HandleLinkTransitionRequested(object sender, CleanMachine.SignalEventArgs e)
+        /// <summary>
+        /// </summary>
+        /// <param name="state"></param>
+        /// <param name="args"></param>
+        protected override void OnTransitionCompleted(State state, TripEventArgs args)
+        {
+            if (!state.IsCurrentState)
+            {
+                //TODO: log
+            }
+
+            if (_abortCondition())
+            {
+                //jump to final state.
+                // set aborted state.
+                // raise aborted event.
+            }
+            else
+            {
+                state.Settle(args);
+                StimulateUnsafe(args);
+            }
+        }
+
+        private void HandleLinkSucceededInternal(object sender, TripEventArgs args)
         {
             throw new NotImplementedException("Lookie here!");
-            Proceed();
+            //Proceed();
+        }
+
+        protected override void CreateStates(IEnumerable<string> stateNames)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void OnStateChanged(TripEventArgs args)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void HandleStateExited(object sender, StateExitedEventArgs args)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void HandleStateEntered(object sender, StateEnteredEventArgs args)
+        {
+            throw new NotImplementedException();
         }
     }
 }

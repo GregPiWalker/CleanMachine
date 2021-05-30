@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
-using System.Reactive.Disposables;using System.Threading;
+using System.Reactive.Disposables;
+using System.Threading;
+using System.Linq;
 using log4net;
 using CleanMachine;
 using CleanMachine.Interfaces;
 using CleanMachine.Behavioral;
-using System.Linq;
 using Unity;
 
 namespace Activity
@@ -16,8 +17,8 @@ namespace Activity
         protected string _context;
         private static readonly LinkComparer Comparer = new LinkComparer();
 
-        public ActionNode(string name, string context, ILog logger, IUnityContainer runtimeContainer, IScheduler doScheduler, CancellationToken abortToken)
-            : base(name, logger, runtimeContainer, doScheduler)
+        public ActionNode(string name, string context, ILog logger, IUnityContainer runtimeContainer, CancellationToken abortToken)
+            : base(name, runtimeContainer, logger)
         {
             _context = context;
             AbortToken = abortToken;
@@ -112,6 +113,16 @@ namespace Activity
             AddTransition(link);
 
             return link;
+        }
+
+        protected override void Settle(TripEventArgs tripArgs)
+        {
+            if (AbortToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            base.Settle(tripArgs);
         }
     }
 
