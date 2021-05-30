@@ -379,6 +379,10 @@ namespace CleanMachine
         /// Signal this machine to stimulate its currently active transitions
         /// in case one of them is traversable.
         /// </summary>
+        /// <remarks>
+        /// This implements a critical section because it is one of the ways that internal
+        /// transitions are executed.
+        /// </remarks>
         /// <param name="signalSource"></param>
         /// <returns>True if the signal caused a transition; false otherwise.</returns>
         public bool Signal(DataWaypoint signalSource)
@@ -426,6 +430,10 @@ namespace CleanMachine
         /// <summary>
         /// Try to traverse the given transition.
         /// </summary>
+        /// <remarks>
+        /// This implements a critical section because it is one of the ways that internal
+        /// transitions are executed.
+        /// </remarks>
         /// <param name="transition">The Transition to try to traverse.</param>
         /// <param name="args">The related TripEventArgs.</param>
         /// <returns>True if a transition attempt was made; false or null otherwise.  NOT an indicator for transition success.</returns>
@@ -450,6 +458,10 @@ namespace CleanMachine
         /// <summary>
         /// Jump into a specified state, circumventing the normal StateMachine operation.
         /// </summary>
+        /// <remarks>
+        /// This implements a critical section because it is one of the ways that internal
+        /// transitions are executed.
+        /// </remarks>
         /// <param name="jumpTo"></param>
         internal virtual void JumpToState(State jumpTo)
         {

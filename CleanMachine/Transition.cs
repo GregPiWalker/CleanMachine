@@ -379,6 +379,15 @@ namespace CleanMachine
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <remarks>
+        /// This implements a critical section because it is one of the ways that internal
+        /// transitions are executed.
+        /// </remarks>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
         private void HandleTrigger(object sender, TripEventArgs args)
         {
             if (!_enabled)
