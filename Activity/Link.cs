@@ -15,6 +15,12 @@ namespace Activity
             AbortToken = abortToken;
         }
 
+        public Link(string context, string stereotype, ILog logger, CancellationToken abortToken)
+            : base(context, stereotype, logger)
+        {
+            AbortToken = abortToken;
+        }
+
         public CancellationToken AbortToken { get; }
 
         /// <summary>

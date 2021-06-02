@@ -4,16 +4,18 @@ using CleanMachine.Generic;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading;
 using System.Reactive.Concurrency;
 using Unity;
 using log4net;
-using System.Threading;
 
 namespace Activity
 {
     public abstract class ActivityBuilderBase
     {
         protected readonly ILog _logger;
+        protected List<Binder> _linkBinders = new List<Binder>();
+        protected Dictionary<Guid, ActionNode> _nodes = new Dictionary<Guid, ActionNode>();
 
         protected ActivityBuilderBase(ILog logger)
         {

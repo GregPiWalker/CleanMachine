@@ -23,7 +23,10 @@ namespace Activity
             _context = context;
             AbortToken = abortToken;
             ValidateTrips = false;
+            Uid = Guid.NewGuid();
         }
+
+        public Guid Uid { get; }
 
         public IConstraint ExitConstraint { get; protected set; }
 

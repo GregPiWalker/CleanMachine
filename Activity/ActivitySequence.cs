@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Threading;
 using System.Reflection;
+using CleanMachine.Behavioral.Behaviors;
 
 namespace Activity
 {
@@ -62,35 +63,40 @@ namespace Activity
 
         public void Run()
         {
-            //todo: locking
-            if (State != SequenceState.Assembling)
+            lock (_runLock)
             {
-                //TODO: log or throw exception
-                return;
+                if (State != SequenceState.Assembling)
+                {
+                    //TODO: log or throw exception
+                    return;
+                }
+
+                if (BuildPhase != Phase.Mutable)
+                {
+                    //TODO: log or throw exception
+                    return;
+                }
+
+                CompleteAssembly();
+
+                CurrentNode = InitialNode;
+                State = SequenceState.Running;
+                Signal(new DataWaypoint(this, nameof(Run)));
             }
-
-            if (BuildPhase != Phase.Mutable)
-            {
-                //TODO: log or throw exception
-                return;
-            }
-
-            CompleteAssembly();
-
-            CurrentNode = InitialNode;
-            State = SequenceState.Running;
-
         }
 
         public void Pause()
         {
-            //todo: locking
-            if (State != SequenceState.Running)
+            //todo: lock on a state object instead?
+            lock (_runLock)
             {
-                return;
-            }
+                if (State != SequenceState.Running)
+                {
+                    return;
+                }
 
-            State = SequenceState.Paused;
+                State = SequenceState.Paused;
+            }
         }
 
         public void Resume()
@@ -102,7 +108,7 @@ namespace Activity
                     return;
                 }
 
-                var resumeArgs = new TripEventArgs(new BlankDisposable(), new DataWaypoint(_currentState.VisitIdentifier, nameof(Resume)));
+                var resumeArgs = new TripEventArgs(_currentState.VisitIdentifier, new DataWaypoint(this, nameof(Resume)));
                 StimulateUnsafe(resumeArgs);
             }
         }
@@ -118,29 +124,26 @@ namespace Activity
         protected override bool StimulateUnsafe(TripEventArgs tripArgs)
         {
             bool result;
-            lock (_runLock)
+            if (State != SequenceState.Running)
             {
-                if (State != SequenceState.Running)
-                {
-                    return false;
-                }
+                return false;
+            }
 
-                if (result = TryAbort(tripArgs))
-                {
+            if (result = TryAbort(tripArgs))
+            {
 
-                }
-                else if (result = TryExit(tripArgs))
-                {
+            }
+            else if (result = TryExit(tripArgs))
+            {
 
-                }
-                else if (result = TryContinue(tripArgs))
-                {
+            }
+            else if (result = TryContinue(tripArgs))
+            {
 
-                }
-                else
-                {
-                    // CurrentNode is end of the sequence.  Try to finish.
-                }
+            }
+            else
+            {
+                // CurrentNode is end of the sequence.  Try to finish.
             }
 
             //TODO LOG IT?
@@ -361,7 +364,7 @@ namespace Activity
         {
             if (_detachedNode == null)
             {
-                _detachedNode = new ActionNode(nodeName, Name, Logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
+                _detachedNode = new ActionNode(nodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
             }
             else if (string.IsNullOrEmpty(_detachedNode.Name))
             {
@@ -416,8 +419,8 @@ namespace Activity
             }
 
             // Add an initial node that has no action to perform. NOTE: no inbound links here.
-            InitialNode = new ActionNode(InitialNodeName, Name, Logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
-            FinalNode = new ActionNode(FinalNodeName, Name, Logger, RuntimeContainer, _invocationScheduler, _abortTokenSource.Token);
+            InitialNode = new ActionNode(InitialNodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
+            FinalNode = new ActionNode(FinalNodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
             FinalNode.SetEntryBehavior(new Behavior(nameof(OnFinished), (c) => OnFinished(c)));
             SetFinalLinks(InitialNode);
         }
