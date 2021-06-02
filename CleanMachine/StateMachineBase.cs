@@ -281,6 +281,36 @@ namespace CleanMachine
         }
 
         /// <summary>
+        /// Signal this machine to stimulate its currently active transitions
+        /// in case one of them is traversable.
+        /// </summary>
+        /// <remarks>
+        /// This implements a critical section because it is one of the ways that internal
+        /// transitions are executed.
+        /// </remarks>
+        /// <param name="signalSource"></param>
+        /// <returns>True if the signal caused a transition; false otherwise.</returns>
+        public bool Signal(DataWaypoint signalSource)
+        {
+            if (_synchronizer == null)
+            {
+                var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
+                return StimulateUnsafe(tripArgs);
+            }
+            else
+            {
+                // This lock regulates all transition triggers associated to the given synchronization context.
+                // This means that only one of any number of transitions can successfully exit the current state,
+                // whether those transitions all exist in one state machine or are distributed across a set of machines.
+                lock (_synchronizer)
+                {
+                    var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
+                    return StimulateUnsafe(tripArgs);
+                }
+            }
+        }
+
+        /// <summary>
         /// Try to traverse exactly one outgoing transition from the current state
         /// that leads to the given desired state,
         /// looking for the first available transition whose guard condition succeeds.
@@ -312,50 +342,6 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="stateName"></param>
-        /// <returns></returns>
-        protected State FindState(string stateName)
-        {
-            return _states.FirstOrDefault(s => s.Name == stateName);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="stateName"></param>
-        /// <returns></returns>
-        protected bool ContainsState(string stateName)
-        {
-            return _states.Any(s => s.Name == stateName);
-        }
-
-        /// <summary>
-        /// Perform state-changed work.
-        /// Implementations of this method should be synchronous.  That is, they should avoid
-        /// calling methods or raising events asynchronously.
-        /// </summary>
-        /// <param name="args"></param>
-        protected abstract void OnStateChanged(TripEventArgs args);
-
-        /// <summary>
-        /// Perform state-exited work.
-        /// Implementations of this method should be synchronous.  That is, they should avoid
-        /// calling methods or raising events asynchronously.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        protected abstract void HandleStateExited(object sender, StateExitedEventArgs args);
-
-        /// <summary>
-        /// Perform state-entered work.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        protected abstract void HandleStateEntered(object sender, StateEnteredEventArgs args);
-
-        /// <summary>
         /// Enter the Initial state and mark it as the current state.  Also, try
         /// to run to completion from the InitialNode.
         /// </summary>
@@ -373,58 +359,6 @@ namespace CleanMachine
 
             Logger.Info($"{Name}:  entering initial state {_initialState.Name}.");
             JumpToState(_initialState);
-        }
-
-        /// <summary>
-        /// Signal this machine to stimulate its currently active transitions
-        /// in case one of them is traversable.
-        /// </summary>
-        /// <remarks>
-        /// This implements a critical section because it is one of the ways that internal
-        /// transitions are executed.
-        /// </remarks>
-        /// <param name="signalSource"></param>
-        /// <returns>True if the signal caused a transition; false otherwise.</returns>
-        public bool Signal(DataWaypoint signalSource)
-        {
-            if (_synchronizer == null)
-            {
-                var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
-                return StimulateUnsafe(tripArgs);
-            }
-            else
-            {
-                // This lock regulates all transition triggers associated to the given synchronization context.
-                // This means that only one of any number of transitions can successfully exit the current state,
-                // whether those transitions all exist in one state machine or are distributed across a set of machines.
-                lock (_synchronizer)
-                {
-                    var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
-                    return StimulateUnsafe(tripArgs);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Stimulate the currently enabled passive transitions to attempt to exit the current state.
-        /// 
-        /// TODO: Change this? Only passive transitions are stimulated because presence of a trigger is
-        /// taken to indicate that only the trigger should be able to stimulate the transition.
-        /// </summary>
-        /// <param name="signalSource"></param>
-        /// <returns>True if the signal caused a transition; false otherwise.</returns>
-        protected virtual bool StimulateUnsafe(TripEventArgs tripArgs)
-        {
-            var passiveTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
-            foreach (var transition in passiveTransitions)
-            {
-                if (transition.AttemptTraverse(tripArgs))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -481,6 +415,72 @@ namespace CleanMachine
                     JumpToStateUnsafe(jumpTo);
                 }
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stateName"></param>
+        /// <returns></returns>
+        protected State FindState(string stateName)
+        {
+            return _states.FirstOrDefault(s => s.Name == stateName);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="stateName"></param>
+        /// <returns></returns>
+        protected bool ContainsState(string stateName)
+        {
+            return _states.Any(s => s.Name == stateName);
+        }
+
+        /// <summary>
+        /// Perform state-changed work.
+        /// Implementations of this method should be synchronous.  That is, they should avoid
+        /// calling methods or raising events asynchronously.
+        /// </summary>
+        /// <param name="args"></param>
+        protected abstract void OnStateChanged(TripEventArgs args);
+
+        /// <summary>
+        /// Perform state-exited work.
+        /// Implementations of this method should be synchronous.  That is, they should avoid
+        /// calling methods or raising events asynchronously.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        protected abstract void HandleStateExited(object sender, StateExitedEventArgs args);
+
+        /// <summary>
+        /// Perform state-entered work.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        protected abstract void HandleStateEntered(object sender, StateEnteredEventArgs args);
+
+        /// <summary>
+        /// Stimulate the currently enabled passive transitions to attempt to exit the current state.
+        /// 
+        /// TODO: Change this? Only passive transitions are stimulated because presence of a trigger is
+        /// taken to indicate that only the trigger should be able to stimulate the transition.
+        /// </summary>
+        /// <param name="signalSource"></param>
+        /// <returns>True if the signal caused a transition; false otherwise.</returns>
+        protected virtual bool StimulateUnsafe(TripEventArgs tripArgs)
+        {
+            var passiveTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
+            foreach (var transition in passiveTransitions)
+            {
+                if (transition.AttemptTraverse(tripArgs))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         protected void JumpToStateUnsafe(State jumpTo)
