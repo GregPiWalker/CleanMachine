@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-    <AssemblyName>Activity</AssemblyName>
+    <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
+    <AssemblyName>Sequentials</AssemblyName>
     <Product></Product>
     <Description></Description>
     <LangVersion>8.0</LangVersion>

@@ -11,7 +11,7 @@ using System.Threading;
 using System.Reflection;
 using CleanMachine.Behavioral.Behaviors;
 
-namespace Activity
+namespace Sequentials
 {
     //public class ActivityChainBuilder
     //{
@@ -23,7 +23,7 @@ namespace Activity
     //    protected ActivityChain UnderConstruction { get; set; }
     //}
 
-    public class ActivitySequence : StateMachineBase, IDisposable
+    public class Sequence : StateMachineBase, IDisposable
     {
         protected const string InitialNodeName = "Initial";
         protected const string NoopNodeName = "NoOp";
@@ -36,7 +36,7 @@ namespace Activity
         private readonly TripEventArgs signalArgs = new TripEventArgs();
         private bool _isDisposed;
 
-        public ActivitySequence(string name, IUnityContainer runtimeContainer, ILog logger)
+        public Sequence(string name, IUnityContainer runtimeContainer, ILog logger)
             : base(name, runtimeContainer, logger)
         {
             AutoAdvance = true;
@@ -202,72 +202,72 @@ namespace Activity
             }
         }
 
-        internal protected ActivitySequence StartWithBehavior(IBehavior behavior)
-        {
-            Initialize();
+        //internal protected ActivitySequence StartWithBehavior(IBehavior behavior)
+        //{
+        //    Initialize();
 
-            AddAction(behavior);
+        //    AddAction(behavior);
 
-            return this;
-        }
+        //    return this;
+        //}
 
-        internal protected ActivitySequence StartWithBehavior(string actionName, Action<IUnityContainer> action)
-        {
-            Initialize();
+        //internal protected ActivitySequence StartWithBehavior(string actionName, Action<IUnityContainer> action)
+        //{
+        //    Initialize();
 
-            AddAction(actionName, action);
+        //    AddAction(actionName, action);
 
-            return this;
-        }
+        //    return this;
+        //}
 
-        internal protected ActivitySequence StartWithConstraint(IConstraint constraint, IEnumerable<TriggerBase> triggers = null)
-        {
-            Initialize();
+        //internal protected ActivitySequence StartWithConstraint(IConstraint constraint, IEnumerable<TriggerBase> triggers = null)
+        //{
+        //    Initialize();
 
-            // Create a detached node that will consume the continue links.
-            EditWithConstraint(constraint, triggers);
+        //    // Create a detached node that will consume the continue links.
+        //    EditWithConstraint(constraint, triggers);
 
-            return this;
-        }
+        //    return this;
+        //}
 
-        internal protected ActivitySequence StartWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
-        {
-            return StartWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
-        }
+        //internal protected ActivitySequence StartWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
+        //{
+        //    return StartWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
+        //}
 
-        public ActivitySequence EditWithConstraint(IConstraint constraint, IEnumerable<TriggerBase> triggers = null)
-        {
-            if (BuildPhase != Phase.Mutable)
-            {
-                throw new InvalidOperationException("Sequential edit phase is already complete.");
-            }
+        //public ActivitySequence EditWithConstraint(IConstraint constraint, IEnumerable<TriggerBase> triggers = null)
+        //{
+        //    if (BuildPhase != Phase.Mutable)
+        //    {
+        //        throw new InvalidOperationException("Sequential edit phase is already complete.");
+        //    }
 
-            if (constraint == null)
-            {
-                throw new ArgumentNullException(nameof(constraint));
-            }
+        //    if (constraint == null)
+        //    {
+        //        throw new ArgumentNullException(nameof(constraint));
+        //    }
 
-            if (InitialNode == null)
-            {
-                throw new InvalidOperationException("No initial action exists for this activity.");
-            }
+        //    if (InitialNode == null)
+        //    {
+        //        throw new InvalidOperationException("No initial action exists for this activity.");
+        //    }
 
-            PopulateDetachedNode(string.Empty);
-            _detachedNode.Stereotype = $"[{constraint.Name}]{_detachedNode.Stereotype}";
-            var link = _detachedNode.AddEntryLink(constraint, triggers);
-            link.RuntimeContainer = RuntimeContainer;
-            link.SucceededInternal += HandleLinkSucceededInternal;
-            link.GlobalSynchronizer = _synchronizer;
+        //    PopulateDetachedNode(string.Empty);
+        //    _detachedNode.Stereotype = $"[{constraint.Name}]{_detachedNode.Stereotype}";
+        //    var link = _detachedNode.AddEntryLink(constraint, triggers);
+        //    link.RuntimeContainer = RuntimeContainer;
+        //    link.SucceededInternal += HandleLinkSucceededInternal;
+        //    link.GlobalSynchronizer = _synchronizer;
 
-            return this;
-        }
+        //    return this;
+        //}
 
-        internal protected ActivitySequence EditWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
-        {
-            return EditWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
-        }
+        //internal protected ActivitySequence EditWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
+        //{
+        //    return EditWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
+        //}
 
-        internal protected ActivitySequence FinishEditWithBehavior(IBehavior behavior)
+        internal protected Sequence FinishEditWithBehavior(IBehavior behavior)
         {
             if (BuildPhase != Phase.Mutable)
             {
@@ -294,7 +294,7 @@ namespace Activity
             return this;
         }
 
-        internal protected ActivitySequence FinishEditWithBehavior(string actionName, Action<IUnityContainer> action)
+        internal protected Sequence FinishEditWithBehavior(string actionName, Action<IUnityContainer> action)
         {
             return FinishEditWithBehavior(new Behavior(actionName, action));
         }
@@ -304,7 +304,7 @@ namespace Activity
         /// Complete all sequence editing and set immutable phase.
         /// </summary>
         /// <returns></returns>
-        internal protected ActivitySequence CompleteAssembly()
+        internal protected Sequence CompleteAssembly()
         {
             if (BuildPhase != Phase.Mutable)
             {
@@ -355,48 +355,48 @@ namespace Activity
             _lastAttachedNode = node;
         }
 
-        /// <summary>
-        /// Ensure that the <see cref="_detachedNode"/> field has a value
-        /// with the supplied name.
-        /// </summary>
-        /// <param name="nodeName"></param>
-        protected void PopulateDetachedNode(string nodeName)
-        {
-            if (_detachedNode == null)
-            {
-                _detachedNode = new ActionNode(nodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
-            }
-            else if (string.IsNullOrEmpty(_detachedNode.Name))
-            {
-                _detachedNode.Name = nodeName;
-            }
-        }
+        ///// <summary>
+        ///// Ensure that the <see cref="_detachedNode"/> field has a value
+        ///// with the supplied name.
+        ///// </summary>
+        ///// <param name="nodeName"></param>
+        //protected void PopulateDetachedNode(string nodeName)
+        //{
+        //    if (_detachedNode == null)
+        //    {
+        //        _detachedNode = new ActionNode(nodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
+        //    }
+        //    else if (string.IsNullOrEmpty(_detachedNode.Name))
+        //    {
+        //        _detachedNode.Name = nodeName;
+        //    }
+        //}
 
-        /// <summary>
-        /// Ensures that a detached node exists and adds the supplied behavior to it.
-        /// </summary>
-        /// <param name="behavior"></param>
-        /// <returns></returns>
-        protected ActivitySequence AddAction(IBehavior behavior)
-        {
-            PopulateDetachedNode(behavior.Name);
-            _detachedNode.AddDoBehavior(behavior);
+        ///// <summary>
+        ///// Ensures that a detached node exists and adds the supplied behavior to it.
+        ///// </summary>
+        ///// <param name="behavior"></param>
+        ///// <returns></returns>
+        //protected ActivitySequence AddAction(IBehavior behavior)
+        //{
+        //    PopulateDetachedNode(behavior.Name);
+        //    _detachedNode.AddDoBehavior(behavior);
 
-            return this;
-        }
+        //    return this;
+        //}
 
-        /// <summary>
-        /// Ensures that a detached node exists and adds the supplied behavior to it.
-        /// </summary>
-        /// <param name="actionName"></param>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        protected ActivitySequence AddAction(string actionName, Action<IUnityContainer> action)
-        {
-            var behavior = new Behavior(actionName, action);
-            AddAction(behavior);
-            return this;
-        }
+        ///// <summary>
+        ///// Ensures that a detached node exists and adds the supplied behavior to it.
+        ///// </summary>
+        ///// <param name="actionName"></param>
+        ///// <param name="action"></param>
+        ///// <returns></returns>
+        //protected ActivitySequence AddAction(string actionName, Action<IUnityContainer> action)
+        //{
+        //    var behavior = new Behavior(actionName, action);
+        //    AddAction(behavior);
+        //    return this;
+        //}
 
         /// <summary>
         /// Create the Initial and Final nodes.

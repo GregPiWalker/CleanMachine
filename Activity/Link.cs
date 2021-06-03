@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Activity
+namespace Sequentials
 {
     public class Link : Transition, IComparer<Link>
     {

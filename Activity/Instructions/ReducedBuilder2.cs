@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using CleanMachine;
 using CleanMachine.Behavioral.Behaviors;
 using CleanMachine.Interfaces;
-using Activity;
 using Unity;
 using log4net;
 
@@ -22,7 +21,7 @@ namespace Sequentials.Instructions
             TakeFrom(other);
         }
 
-        public ReducedBuilder2 BranchIf(string branchDestName, string ifName, Func<bool> ifCondition, params string[] reflexKeys)
+        public ReducedBuilder2 JumpIf(string branchDestName, string ifName, Func<bool> ifCondition, params string[] reflexKeys)
         {
             AddBranchIf(branchDestName, ifName, ifCondition, reflexKeys);
             return this;
@@ -52,12 +51,12 @@ namespace Sequentials.Instructions
             return new ReducedBuilder1(this);
         }
 
-        public ActivitySequence Finish()
+        public Sequence Finish()
         {
             return AddFinish();
         }
 
-        public ActivitySequence Finish(string finishName, Func<bool> finishCondition, params string[] reflexKeys)
+        public Sequence FinishWhen(string finishName, Func<bool> finishCondition, params string[] reflexKeys)
         {
             return AddFinish(finishName, finishCondition, reflexKeys);
         }

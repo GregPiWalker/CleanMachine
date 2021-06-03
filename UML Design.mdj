@@ -32720,7 +32720,7 @@
 									"_parent": {
 										"$ref": "AAAAAAF5wLx3fY0rOjE="
 									},
-									"name": "Branch-If",
+									"name": "Jump-If",
 									"ownedElements": [
 										{
 											"_type": "UMLStatechartDiagram",
@@ -32728,7 +32728,7 @@
 											"_parent": {
 												"$ref": "AAAAAAF5wM1TX4/18OQ="
 											},
-											"name": "BranchIfDiagram",
+											"name": "JumpIfDiagram",
 											"ownedViews": [
 												{
 													"_type": "RectangleView",
@@ -32953,7 +32953,7 @@
 																	"top": 279,
 																	"width": 58,
 																	"height": 13,
-																	"text": "Branch"
+																	"text": "Jump"
 																},
 																{
 																	"_type": "LabelView",
@@ -34075,8 +34075,8 @@
 													"left": 272,
 													"top": 368,
 													"width": 169,
-													"height": 73,
-													"text": "Create a NoOp node so that the binder knows what the consumer node is at build time."
+													"height": 90,
+													"text": "Create a NoOp node so that the binder knows what the consumer node is at build time without depending on further binders."
 												}
 											]
 										}
@@ -34103,7 +34103,7 @@
 													"_parent": {
 														"$ref": "AAAAAAF5wM1TX4/2otM="
 													},
-													"name": "Branch"
+													"name": "Jump"
 												},
 												{
 													"_type": "UMLState",
@@ -36631,7 +36631,7 @@
 																	"top": 271,
 																	"width": 50,
 																	"height": 13,
-																	"text": "When"
+																	"text": "NoOp"
 																},
 																{
 																	"_type": "LabelView",
@@ -37333,7 +37333,7 @@
 													"_parent": {
 														"$ref": "AAAAAAF5zNnPIJaMG8I="
 													},
-													"name": "When"
+													"name": "NoOp"
 												},
 												{
 													"_type": "UMLState",

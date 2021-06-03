@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reactive.Concurrency;
-using System.Reactive.Disposables;
 using System.Threading;
 using System.Linq;
 using log4net;
@@ -10,7 +8,7 @@ using CleanMachine.Interfaces;
 using CleanMachine.Behavioral;
 using Unity;
 
-namespace Activity
+namespace Sequentials
 {
     public class ActionNode : BehavioralState
     {
@@ -152,21 +150,21 @@ namespace Activity
             {
                 case Stereotypes.Abort:
                     return 1;
-                    
+
                 case Stereotypes.Exit:
                     if (stereotypeY == Stereotypes.Abort)
                     {
                         return -1;
                     }
                     return 1;
-                    
+
                 case Stereotypes.Finish:
                     if (stereotypeY == Stereotypes.Continue)
                     {
                         return 1;
                     }
                     return -1;
-                    
+
                 case Stereotypes.Continue:
                     return -1;
 

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using CleanMachine;
 using CleanMachine.Behavioral.Behaviors;
 using CleanMachine.Interfaces;
-using Activity;
 using Unity;
 using log4net;
 
@@ -58,12 +57,12 @@ namespace Sequentials.Instructions
             return this;
         }
 
-        public ActivitySequence Finish()
+        public Sequence Finish()
         {
             return AddFinish();
         }
 
-        public ActivitySequence Finish(string finishName, Func<bool> finishCondition, params string[] reflexKeys)
+        public Sequence FinishWhen(string finishName, Func<bool> finishCondition, params string[] reflexKeys)
         {
             return AddFinish(finishName, finishCondition, reflexKeys);
         }

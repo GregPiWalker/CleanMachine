@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using CleanMachine;
 using CleanMachine.Behavioral.Behaviors;
 using CleanMachine.Interfaces;
-using Activity;
 using Unity;
 using log4net;
 
@@ -13,11 +12,6 @@ namespace Sequentials.Instructions
 {
     public class InstructionBuilder : InstructionBuilderBase
     {
-        public InstructionBuilder(ActivitySequence sequence, ILog logger)
-        {
-            Initialize(sequence, logger);
-        }
-
         public ReducedBuilder1 Start(string actionName, Action<IUnityContainer> action)
         {
             AddStart(actionName, action);

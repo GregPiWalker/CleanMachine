@@ -2,22 +2,18 @@
 using System.Linq;
 using System.Threading;
 using System.Collections.Generic;
+using System.Reactive.Concurrency;
 using CleanMachine;
+using CleanMachine.Generic;
 using CleanMachine.Behavioral.Behaviors;
 using CleanMachine.Interfaces;
-using Activity;
 using Unity;
 using log4net;
 
 namespace Sequentials.Instructions
 {
-    public class InstructionBuilderBase
+    public abstract class InstructionBuilderBase
     {
-        /// <summary>
-        /// Using a static field so that all instances of <see cref="TestActivity"/> can share
-        /// </summary>
-        protected static readonly Dictionary<string, Func<TriggerBase>> _stimuli = new Dictionary<string, Func<TriggerBase>>();
-
         protected ILog _logger;
         protected List<Binder> _linkBinders;
         protected Dictionary<Guid, ActionNode> _nodes;
@@ -26,9 +22,13 @@ namespace Sequentials.Instructions
         protected Func<bool> _finishCondition;
         protected string[] _finishReflexKeys;
 
-        protected Dictionary<string, Func<TriggerBase>> Stimuli => _stimuli;
+        /// <summary>
+        /// Gets the available Stimuli, which are templates for creating Triggers.
+        /// This is virtual so that derived types can have a static set of constructors scoped to them specifically.
+        /// </summary>
+        protected virtual Dictionary<string, Func<TriggerBase>> Stimuli { get; }
 
-        protected ActivitySequence Sequence { get; set; }
+        protected Sequence Sequence { get; set; }
 
         protected ActionNode PreviousSupplier { get; set; }
 
@@ -36,13 +36,53 @@ namespace Sequentials.Instructions
 
         protected ActionNode Consumer { get; set; }
 
-        protected void Initialize(ActivitySequence sequence, ILog logger)
+        //public virtual ActivitySequence CreateSequence(string name, IUnityContainer runtimeContainer)
+        //{
+        //    Sequence = new ActivitySequence(name, runtimeContainer, null);
+        //    return Sequence;
+        //}
+
+        protected virtual void ConfigureStimuli()
+        {
+            // Intentionally blank
+        }
+
+        protected void BeginBuilding(Sequence sequence)
         {
             Sequence = sequence;
-            _logger = logger;
-            _linkBinders = new List<Binder>();
-            _nodes = new Dictionary<Guid, ActionNode>();
-            _namedNodes = new Dictionary<string, ActionNode>();
+            _logger = sequence.Logger;
+
+            if (_linkBinders == null)
+            {
+                _linkBinders = new List<Binder>();
+            }
+            else
+            {
+                _linkBinders.Clear();
+            }
+
+            if (_nodes == null)
+            {
+                _nodes = new Dictionary<Guid, ActionNode>();
+            }
+            else
+            {
+                _nodes.Clear();
+            }
+
+            if (_namedNodes == null)
+            {
+                _namedNodes = new Dictionary<string, ActionNode>();
+            }
+            else
+            {
+                _namedNodes.Clear();
+            }
+        }
+
+        protected void CompleteBuild()
+        {
+            //TODO: do all the link-up here.
         }
 
         protected void TakeFrom(InstructionBuilderBase other)
@@ -96,7 +136,7 @@ namespace Sequentials.Instructions
         {
             var previous = PreviousSupplier;
             // Add the consumer no-op node and a link to it from the previous node.
-            Link(Supplier, Consumer, conditionName, condition, reflexKeys);
+            InsertLink(Supplier, Consumer, conditionName, condition, reflexKeys);
 
             return this;
         }
@@ -108,7 +148,7 @@ namespace Sequentials.Instructions
 
             // Add the branching link to a branch target.
             var destination = _namedNodes[branchDestName];
-            Link(Supplier, destination, ifName, ifCondition, reflexKeys);
+            InsertLink(Supplier, destination, ifName, ifCondition, reflexKeys);
 
             // Add a no-op node to consume the conditional continuation link.
             // The opposite condition needs the same triggers.
@@ -125,7 +165,7 @@ namespace Sequentials.Instructions
             AppendNoOpNode("NoOp");
 
             // Add the by-pass link to skip over the THEN action.
-            Link(PreviousSupplier, Consumer, "Not " + ifName, () => !ifCondition(), reflexKeys);
+            InsertLink(PreviousSupplier, Consumer, "Not " + ifName, () => !ifCondition(), reflexKeys);
 
             return this;
         }
@@ -142,7 +182,7 @@ namespace Sequentials.Instructions
             AppendConditionalActionNode(elseName, elseBehavior, "Not " + ifName, () => !ifCondition(), reflexKeys);
 
             // Now add a link from the ELSE node to the no-op terminal node.
-            Link(Consumer, noOp);
+            InsertLink(Consumer, noOp);
 
             // Finally, fix the reference.
             Consumer = noOp;
@@ -150,12 +190,15 @@ namespace Sequentials.Instructions
             return this;
         }
 
-        protected ActivitySequence AddFinish()
-        {
-            return Sequence;
-        }
-
-        protected ActivitySequence AddFinish(string finishName, Func<bool> finishCondition, params string[] reflexKeys)
+        /// <summary>
+        /// Finish at any time when the supplied finish condition is met.  If no finish condition is given,
+        /// the sequence will only finish at its end.
+        /// </summary>
+        /// <param name="finishName"></param>
+        /// <param name="finishCondition"></param>
+        /// <param name="reflexKeys"></param>
+        /// <returns></returns>
+        protected Sequence AddFinish(string finishName = null, Func<bool> finishCondition = null, params string[] reflexKeys)
         {
             _finishName = finishName;
             _finishCondition = finishCondition;
@@ -200,7 +243,7 @@ namespace Sequentials.Instructions
             _nodes.Add(Consumer.Uid, Consumer);
             _namedNodes.Add(Consumer.Name, Consumer);
 
-            Link(Supplier, Consumer);
+            InsertLink(Supplier, Consumer);
 
             return Consumer;
         }
@@ -213,7 +256,7 @@ namespace Sequentials.Instructions
             _nodes.Add(Consumer.Uid, Consumer);
             _namedNodes.Add(Consumer.Name, Consumer);
 
-            Link(Supplier, Consumer, conditionName, condition, reflexKeys);
+            InsertLink(Supplier, Consumer, conditionName, condition, reflexKeys);
 
             return Consumer;
         }
@@ -226,12 +269,12 @@ namespace Sequentials.Instructions
             Consumer = CreateNode(nodeName);
             _nodes.Add(Consumer.Uid, Consumer);
 
-            Link(Supplier, Consumer, conditionName, condition, reflexKeys);
+            InsertLink(Supplier, Consumer, conditionName, condition, reflexKeys);
 
             return Consumer;
         }
 
-        internal void Link(State fromState, State toState, string conditionName = null, Func<bool> condition = null, params string[] reflexKeys)
+        internal void InsertLink(State fromState, State toState, string conditionName = null, Func<bool> condition = null, params string[] reflexKeys)
         {
             Link link = null;
             if (condition == null)
@@ -250,6 +293,40 @@ namespace Sequentials.Instructions
 
             var binder = new Binder(link) { FromState = fromState, ToState = toState, ReflexKeys = reflexKeys };
             _linkBinders.Add(binder);
+        }
+
+        protected static void AddStimulus<TSource, TEventArgs>(Dictionary<string, Func<TriggerBase>> creators, string key, TSource evSource, string evName, ILog logger, IScheduler scheduler = null, Func<TEventArgs, bool> filter = null, string filterName = null) //where TEventArgs : EventArgs
+        {
+            if (creators.ContainsKey(key))
+            {
+                return;
+            }
+
+            if (filter == null)
+            {
+                creators[key] = () => new Trigger<TSource, TEventArgs>(evSource, evName, null, scheduler, logger);
+            }
+            else
+            {
+                creators[key] = () => new Trigger<TSource, TEventArgs>(evSource, evName, new Constraint<TEventArgs>(filterName, filter, logger), scheduler, logger);
+            }
+        }
+
+        protected static void AddDelegateStimulus<TSource, TDelegate, TEventArgs>(Dictionary<string, Func<TriggerBase>> creators, string key, TSource evSource, string evName, Func<TEventArgs, bool> filter = null, string filterName = null) //where TEventArgs : EventArgs
+        {
+            if (creators.ContainsKey(key))
+            {
+                return;
+            }
+
+            if (filter == null)
+            {
+                creators[key] = () => new DelegateTrigger<TSource, TDelegate, TEventArgs>(evSource, evName, null);
+            }
+            else
+            {
+                creators[key] = () => new DelegateTrigger<TSource, TDelegate, TEventArgs>(evSource, evName, new Constraint<TEventArgs>(filterName, filter, null), null);
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Activity
+namespace Sequentials
 {
     public enum Stereotypes
     {
