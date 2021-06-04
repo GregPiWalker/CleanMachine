@@ -80,7 +80,7 @@ namespace CleanMachine
                 }
             }
 
-            _synchronizer = RuntimeContainer.TryGetTypeRegistration<object>(GlobalSynchronizerKey);
+            _synchronizer = RuntimeContainer.TryGetInstance<object>(GlobalSynchronizerKey);
 
             try
             {

@@ -11,4 +11,4 @@ using System.Runtime.CompilerServices;
 // Let the behavioral assembly be a friend
 [assembly: InternalsVisibleTo("CleanMachine.Tests")]
 [assembly: InternalsVisibleTo("CleanMachine.Behavioral")]
-[assembly: InternalsVisibleTo("Activity")]
+[assembly: InternalsVisibleTo("Sequentials")]

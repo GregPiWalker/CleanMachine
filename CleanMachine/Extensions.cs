@@ -259,11 +259,23 @@ namespace CleanMachine
             return true;
         }
 
-        public static TReg TryGetTypeRegistration<TReg>(this IUnityContainer container, string key) where TReg : class
+        public static TReg TryGetInstance<TReg>(this IUnityContainer container, string instanceName) where TReg : class
         {
             try
             {
-                return container.Resolve<TReg>(key);
+                return container.Resolve<TReg>(instanceName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static TReg TryGetTypeRegistration<TReg>(this IUnityContainer container) where TReg : class
+        {
+            try
+            {
+                return container.Resolve<TReg>();
             }
             catch
             {
