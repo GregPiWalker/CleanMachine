@@ -8,20 +8,16 @@ namespace Sequentials
 {
     public class Link : Transition, IComparer<Link>
     {
-        public Link(string context, string stereotype, ActionNode consumer, ILog logger, CancellationToken abortToken)
+        public Link(string context, string stereotype, ActionNode consumer, ILog logger)
             : base(context, stereotype, logger)
         {
             To = consumer;
-            AbortToken = abortToken;
         }
 
-        public Link(string context, string stereotype, ILog logger, CancellationToken abortToken)
+        public Link(string context, string stereotype, ILog logger)
             : base(context, stereotype, logger)
         {
-            AbortToken = abortToken;
         }
-
-        public CancellationToken AbortToken { get; }
 
         /// <summary>
         /// Sort Links in order of their Stereotype.
@@ -67,9 +63,12 @@ namespace Sequentials
             }
         }
 
-        internal void AttachSupplier(ActionNode supplier)
+        internal void Connect(ActionNode supplier, ActionNode consumer)
         {
             From = supplier;
+            To = consumer;
+
+            From.AddTransition(this);
         }
     }
 }

@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Collections.Generic;
-using CleanMachine;
-using CleanMachine.Behavioral.Behaviors;
-using CleanMachine.Interfaces;
 using Unity;
-using log4net;
 
-namespace Sequentials.Instructions
+namespace Sequentials.Builders
 {
     public class ReducedBuilder1 : InstructionBuilderBase
     {
@@ -21,9 +14,9 @@ namespace Sequentials.Instructions
             TakeFrom(other);
         }
 
-        public ReducedBuilder2 BranchIf(string branchDestName, string ifName, Func<bool> ifCondition, params string[] reflexKeys)
+        public ReducedBuilder2 JumpIf(string jumpDestName, string ifName, Func<bool> ifCondition, params string[] reflexKeys)
         {
-            AddBranchIf(branchDestName, ifName, ifCondition, reflexKeys);
+            AddJumpIf(jumpDestName, ifName, ifCondition, reflexKeys);
             return new ReducedBuilder2(this);
         }
 
@@ -57,14 +50,16 @@ namespace Sequentials.Instructions
             return this;
         }
 
-        public Sequence Finish()
+        public ReducedBuilder3 Finish()
         {
-            return AddFinish();
+            AddFinish();
+            return new ReducedBuilder3(this);
         }
 
-        public Sequence FinishWhen(string finishName, Func<bool> finishCondition, params string[] reflexKeys)
+        public ReducedBuilder3 FinishWhen(string finishName, Func<bool> finishCondition, params string[] reflexKeys)
         {
-            return AddFinish(finishName, finishCondition, reflexKeys);
+            AddFinish(finishName, finishCondition, reflexKeys);
+            return new ReducedBuilder3(this);
         }
     }
 }

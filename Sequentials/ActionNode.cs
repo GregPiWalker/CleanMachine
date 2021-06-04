@@ -101,7 +101,7 @@ namespace Sequentials
 
         internal virtual Link CreateLinkTo(string context, string stereotype, ActionNode consumer)
         {
-            var link = new Link(context, stereotype, consumer, _logger, AbortToken);
+            var link = new Link(context, stereotype, consumer, _logger);
             if (Stereotypes.Abort.ToString().Equals(stereotype))
             {
                 AbortLink = link;

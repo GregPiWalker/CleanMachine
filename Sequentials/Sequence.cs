@@ -54,6 +54,8 @@ namespace Sequentials
 
         public SequenceState State { get; protected set; }
 
+        internal protected Dictionary<Guid, ActionNode> Nodes { get; } = new Dictionary<Guid, ActionNode>();
+
         public void Dispose()
         {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
@@ -202,211 +204,15 @@ namespace Sequentials
             }
         }
 
-        //internal protected ActivitySequence StartWithBehavior(IBehavior behavior)
-        //{
-        //    Initialize();
-
-        //    AddAction(behavior);
-
-        //    return this;
-        //}
-
-        //internal protected ActivitySequence StartWithBehavior(string actionName, Action<IUnityContainer> action)
-        //{
-        //    Initialize();
-
-        //    AddAction(actionName, action);
-
-        //    return this;
-        //}
-
-        //internal protected ActivitySequence StartWithConstraint(IConstraint constraint, IEnumerable<TriggerBase> triggers = null)
-        //{
-        //    Initialize();
-
-        //    // Create a detached node that will consume the continue links.
-        //    EditWithConstraint(constraint, triggers);
-
-        //    return this;
-        //}
-
-        //internal protected ActivitySequence StartWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
-        //{
-        //    return StartWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
-        //}
-
-        //public ActivitySequence EditWithConstraint(IConstraint constraint, IEnumerable<TriggerBase> triggers = null)
-        //{
-        //    if (BuildPhase != Phase.Mutable)
-        //    {
-        //        throw new InvalidOperationException("Sequential edit phase is already complete.");
-        //    }
-
-        //    if (constraint == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(constraint));
-        //    }
-
-        //    if (InitialNode == null)
-        //    {
-        //        throw new InvalidOperationException("No initial action exists for this activity.");
-        //    }
-
-        //    PopulateDetachedNode(string.Empty);
-        //    _detachedNode.Stereotype = $"[{constraint.Name}]{_detachedNode.Stereotype}";
-        //    var link = _detachedNode.AddEntryLink(constraint, triggers);
-        //    link.RuntimeContainer = RuntimeContainer;
-        //    link.SucceededInternal += HandleLinkSucceededInternal;
-        //    link.GlobalSynchronizer = _synchronizer;
-
-        //    return this;
-        //}
-
-        //internal protected ActivitySequence EditWithConstraint(string conditionName, Func<bool> condition, IEnumerable<TriggerBase> triggers = null)
-        //{
-        //    return EditWithConstraint(new Constraint(conditionName, condition, Logger), triggers);
-        //}
-
-        internal protected Sequence FinishEditWithBehavior(IBehavior behavior)
-        {
-            if (BuildPhase != Phase.Mutable)
-            {
-                throw new InvalidOperationException("Sequential edit phase is already complete.");
-            }
-
-            if (InitialNode == null)
-            {
-                throw new InvalidOperationException("No initial action exists for this activity.");
-            }
-
-            AddAction(behavior);
-
-            // Only add an unguarded Continue Link if no other Continue Links exist.
-            if (!_detachedNode.ContinueLinks.Any())
-            {
-                // No transition request handler required here, since the Link does not have a Guard.
-                _detachedNode.AddEntryLink(null, null);
-            }
-
-            AttachNode(_detachedNode);
-            _detachedNode = null;
-
-            return this;
-        }
-
-        internal protected Sequence FinishEditWithBehavior(string actionName, Action<IUnityContainer> action)
-        {
-            return FinishEditWithBehavior(new Behavior(actionName, action));
-        }
-
-        //TODO: CALL THIS FROM SOMEWHERE???
-        /// <summary>
-        /// Complete all sequence editing and set immutable phase.
-        /// </summary>
-        /// <returns></returns>
-        internal protected Sequence CompleteAssembly()
-        {
-            if (BuildPhase != Phase.Mutable)
-            {
-                throw new InvalidOperationException("Sequential edit phase is already complete.");
-            }
-
-            if (InitialNode == null)
-            {
-                throw new InvalidOperationException("No initial action exists for this sequential.");
-            }
-
-            if (FinalNode != null)
-            {
-                throw new InvalidOperationException("This sequential is already immutable.");
-            }
-
-            if (_detachedNode == null)
-            {
-                throw new InvalidOperationException("Cannot finish a sequential when no detached node exists.");
-            }
-
-            AttachNode(_detachedNode);
-            _detachedNode = null;
-
-            BuildPhase = Phase.Immutable;
-            State = SequenceState.Ready;
-
-            return this;
-        }
-
-        protected void AttachNode(ActionNode node)
-        {
-            if (node == null)
-            {
-                return;
-            }
-
-            // Attach all the incoming Continue links from the existing detached node to the last attached node.
-            foreach (var inbound in node.InboundLinks)
-            {
-                inbound.AttachSupplier(_lastAttachedNode);
-                _lastAttachedNode.AddTransition(inbound);
-            }
-
-            // Link the detached node to the final node with Finish and Abort links.
-            SetFinalLinks(node);
-
-            _lastAttachedNode = node;
-        }
-
-        ///// <summary>
-        ///// Ensure that the <see cref="_detachedNode"/> field has a value
-        ///// with the supplied name.
-        ///// </summary>
-        ///// <param name="nodeName"></param>
-        //protected void PopulateDetachedNode(string nodeName)
-        //{
-        //    if (_detachedNode == null)
-        //    {
-        //        _detachedNode = new ActionNode(nodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
-        //    }
-        //    else if (string.IsNullOrEmpty(_detachedNode.Name))
-        //    {
-        //        _detachedNode.Name = nodeName;
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Ensures that a detached node exists and adds the supplied behavior to it.
-        ///// </summary>
-        ///// <param name="behavior"></param>
-        ///// <returns></returns>
-        //protected ActivitySequence AddAction(IBehavior behavior)
-        //{
-        //    PopulateDetachedNode(behavior.Name);
-        //    _detachedNode.AddDoBehavior(behavior);
-
-        //    return this;
-        //}
-
-        ///// <summary>
-        ///// Ensures that a detached node exists and adds the supplied behavior to it.
-        ///// </summary>
-        ///// <param name="actionName"></param>
-        ///// <param name="action"></param>
-        ///// <returns></returns>
-        //protected ActivitySequence AddAction(string actionName, Action<IUnityContainer> action)
-        //{
-        //    var behavior = new Behavior(actionName, action);
-        //    AddAction(behavior);
-        //    return this;
-        //}
-
         /// <summary>
         /// Create the Initial and Final nodes.
         /// </summary>
-        protected void Initialize()
+        internal protected void Initialize(string finishName = null, Func<bool> finishCondition = null, IEnumerable<Func<IUnityContainer, TriggerBase>> finishStimuli = null)
         {
-            if (BuildPhase != Phase.Mutable)
-            {
-                throw new InvalidOperationException("Sequential edit phase is already complete.");
-            }
+            //if (BuildPhase != Phase.Mutable)
+            //{
+            //    throw new InvalidOperationException("Sequential edit phase is already complete.");
+            //}
 
             if (InitialNode != null)
             {
@@ -420,22 +226,96 @@ namespace Sequentials
 
             // Add an initial node that has no action to perform. NOTE: no inbound links here.
             InitialNode = new ActionNode(InitialNodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
+            Nodes.Add(InitialNode.Uid, InitialNode);
+            
             FinalNode = new ActionNode(FinalNodeName, Name, Logger, RuntimeContainer, _abortTokenSource.Token);
+            Nodes.Add(FinalNode.Uid, FinalNode);
             FinalNode.SetEntryBehavior(new Behavior(nameof(OnFinished), (c) => OnFinished(c)));
-            SetFinalLinks(InitialNode);
         }
 
-        protected void SetFinalLinks(ActionNode node)
+        /// <summary>
+        /// Apply common required links from the given node to the Final node.
+        /// Every non-final node gets an Abort link, and non-bookend nodes get an Exit link.
+        /// </summary>
+        /// <param name="node"></param>
+        internal protected void SetRequiredLinks(ActionNode node)
         {
+            if (node == FinalNode)
+            {
+                return;
+            }
+
             var abort = node.CreateLinkTo(Name, Stereotypes.Abort.ToString(), FinalNode);
+            abort.RuntimeContainer = RuntimeContainer;
+            abort.GlobalSynchronizer = _synchronizer;
             abort.Guard = new Constraint(Stereotypes.Abort.ToString(), _abortCondition, Logger);
 
-            if (node != InitialNode)
+            abort.SucceededInternal += HandleLinkSucceededInternal;
+        }
+
+        internal protected void SetRequiredLinks(ActionNode node, IConstraint exitGuard, IEnumerable<Func<IUnityContainer, TriggerBase>> exitStimuli)
+        {
+            SetRequiredLinks(node);
+
+            // Do not create an exit link if there is no exit guard.
+            if (exitGuard == null || node == InitialNode || node == FinalNode)
             {
-                //var exit = node.CreateLinkTo(Name, Stereotypes.Exit.ToString(), FinalNode);
-                //TODO: what is Exit condition?
-                //exit.Guard = new Constraint(Stereotypes.Exit.ToString(), _exitCondition, _logger);
+                return;
             }
+
+            var exit = node.CreateLinkTo(Name, Stereotypes.Exit.ToString(), FinalNode);
+            exit.RuntimeContainer = RuntimeContainer;
+            exit.GlobalSynchronizer = _synchronizer;
+            exit.Guard = exitGuard;
+
+            foreach (var stim in exitStimuli)
+            {
+                exit.AddTrigger(stim.Invoke(RuntimeContainer));
+            }
+
+            exit.SucceededInternal += HandleLinkSucceededInternal;
+        }
+
+        internal protected void SetTerminalLink(ActionNode node, IConstraint finishGuard, IEnumerable<Func<IUnityContainer, TriggerBase>> finishStimuli)
+        {
+            if (node == InitialNode || node == FinalNode)
+            {
+                return;
+            }
+
+            var finish = node.CreateLinkTo(Name, Stereotypes.Finish.ToString(), FinalNode);
+            finish.RuntimeContainer = RuntimeContainer;
+            finish.GlobalSynchronizer = _synchronizer;
+            finish.Guard = finishGuard;
+
+            foreach (var stim in finishStimuli)
+            {
+                finish.AddTrigger(stim.Invoke(RuntimeContainer));
+            }
+
+            finish.SucceededInternal += HandleLinkSucceededInternal;
+        }
+
+        internal protected void SetContinueLink(ActionNode fromNode, ActionNode toNode, IConstraint continueGuard, IEnumerable<Func<IUnityContainer, TriggerBase>> stimuli)
+        {
+            var @continue = new Link(Name, Stereotypes.Continue.ToString(), Logger);
+            @continue.RuntimeContainer = RuntimeContainer;
+            @continue.GlobalSynchronizer = _synchronizer;
+            @continue.Guard = continueGuard;
+
+            @continue.Connect(fromNode, toNode);
+
+            if (continueGuard != null)
+            {
+                toNode.Stereotype = $"[{continueGuard.Name}]{toNode.Stereotype}";
+            }
+
+            foreach (var stim in stimuli)
+            {
+                @continue.AddTrigger(stim.Invoke(RuntimeContainer));
+            }
+
+            @continue.SucceededInternal += HandleLinkSucceededInternal;
         }
 
         protected virtual void Dispose(bool disposing)
@@ -487,6 +367,7 @@ namespace Sequentials
         private void HandleLinkSucceededInternal(object sender, TripEventArgs args)
         {
             throw new NotImplementedException("Lookie here!");
+
             //Proceed();
         }
 

@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Collections.Generic;
-using CleanMachine;
-using CleanMachine.Behavioral.Behaviors;
-using CleanMachine.Interfaces;
 using Unity;
-using log4net;
 
-namespace Sequentials.Instructions
+namespace Sequentials.Builders
 {
     public class InstructionBuilder : InstructionBuilderBase
     {
