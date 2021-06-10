@@ -282,8 +282,8 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Signal this machine to stimulate its currently active transitions
-        /// in case one of them is traversable.
+        /// Signal this machine to stimulate any passive transitions that exit the current state.
+        /// Passive transitions do not have a Trigger.
         /// </summary>
         /// <remarks>
         /// This implements a critical section because it is one of the ways that internal
@@ -312,7 +312,8 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// 
+        /// Asynchronously signal this machine to stimulate any passive transitions that exit the current state.
+        /// Passive transitions do not have a Trigger.
         /// </summary>
         /// <param name="signalSource"></param>
         /// <returns></returns>
@@ -320,7 +321,7 @@ namespace CleanMachine
         {
             if (TriggerScheduler == null)
             {
-                return Task.FromResult(Signal(signalSource)).Result;
+                return Task.Run(() => Signal(signalSource)).Result;
             }
             else
             {

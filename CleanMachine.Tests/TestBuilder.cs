@@ -1,5 +1,7 @@
 ﻿using CleanMachine.Behavioral;
+using CleanMachine.Behavioral.Behaviors;
 using CleanMachine.Generic;
+using CleanMachine.Interfaces;
 using System;
 using System.Linq;
 using Unity;
@@ -77,6 +79,18 @@ namespace CleanMachine.Tests
             foreach (BehavioralState state in states)
             {
                 state.AddDoBehavior(action);
+            }
+        }
+
+        public static void AddEffectToAll<TState>(StateMachine<TState> machine, string effectName, Action<IUnityContainer> effect) where TState : struct
+        {
+            var states = machine.States.OfType<State>().ToList();
+            foreach (IState state in machine.States)
+            {
+                foreach (Transition t in state.Transitions.OfType<Transition>())
+                {
+                    t.Effect = new Behavior(effectName, effect);
+                }
             }
         }
     }

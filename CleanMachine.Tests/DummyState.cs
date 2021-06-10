@@ -5,6 +5,7 @@ namespace CleanMachine.Tests
     {
         Unknown,
         One,
-        Two
+        Two,
+        Three
     }
 }

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace CleanMachine.Tests
 {
@@ -100,6 +101,23 @@ namespace CleanMachine.Tests
             {
                 return WaitUntilPartialAsyncDoBehavior(waitTime);
             }
+        }
+
+        public int GetTriggerSchedulerThreadId()
+        {
+            if (Machine.TriggerScheduler == null)
+            {
+                return -1;
+            }
+
+            TaskCompletionSource<int> tcs = new TaskCompletionSource<int>();
+            Machine.TriggerScheduler.Schedule(new object(), (_, t) =>
+            {
+                tcs.SetResult(Thread.CurrentThread.ManagedThreadId);
+                return new BlankDisposable();
+            });
+
+            return tcs.Task.Result;
         }
 
         /// <summary>
