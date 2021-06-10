@@ -31,6 +31,12 @@ namespace CleanMachine
             return this;
         }
 
+        public TransitionEditor GuardWith<TConstraint>(Func<TConstraint, bool> condition, string name)
+        {
+            _transition.Guard = new Constraint<TConstraint>(name, condition, _logger);
+            return this;
+        }
+
         public TransitionEditor EffectOnSuccess(EventHandler<TransitionEventArgs> successEffect)
         {
             _transition.Succeeded += successEffect;
@@ -38,14 +44,28 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Set the Guard to a condition that the incoming signal matches the desiredSignal.
+        /// Set the Guard to a condition that the incoming signal matches the desired signal.
         /// </summary>
-        /// <param name="desiredSignal"></param>
-        /// <param name="guardName"></param>
+        /// <param name="desiredSignal">An object that indicates the desired signal message.</param>
+        /// <param name="guardName">A friendly name for the Guard conditiion.</param>
         /// <returns></returns>
-        public TransitionEditor GuardWithSignalCondition(string desiredSignal, string guardName)
+        public TransitionEditor GuardWithSignalCondition(object desiredSignal, string guardName)
         {
-            _transition.Guard = new Constraint<TripEventArgs>(guardName, (s) => s.GetTripOrigin().Signal == desiredSignal, _logger);
+            _transition.Guard = new Constraint<TripEventArgs>(guardName, (s) => s.GetTripOrigin().Signal.Equals(desiredSignal), _logger);
+            return this;
+        }
+
+        /// <summary>
+        /// Set the Guard to a condition that the incoming signal matches the desired signal and source.
+        /// </summary>
+        /// <param name="signalSource">An object that indicates the desired signal source.</param>
+        /// <param name="desiredSignal">An object that indicates the desired signal message.</param>
+        /// <param name="guardName">A friendly name for the Guard conditiion.</param>
+        /// <returns></returns>
+        public TransitionEditor GuardWithSignalCondition(object signalSource, object desiredSignal, string guardName)
+        {
+            var signal = new DataWaypoint(signalSource, desiredSignal);
+            _transition.Guard = new Constraint<TripEventArgs>(guardName, (s) => s.GetTripOrigin().Equals(signal), _logger);
             return this;
         }
 

@@ -37,5 +37,26 @@ namespace CleanMachine.Interfaces
         public object Juncture { get; set; }
 
         public object Signal { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            DataWaypoint? other = obj as DataWaypoint?;
+            if (other == null)
+            {
+                return false;
+            }
+
+            return Equals(other);
+        }
+
+        public bool Equals(DataWaypoint? other)
+        {
+            if (!other.HasValue)
+            {
+                return false;
+            }
+
+            return Juncture.Equals(other.Value.Juncture) && Signal.Equals(other.Value.Signal);
+        }
     }
 }

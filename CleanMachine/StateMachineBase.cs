@@ -8,6 +8,7 @@ using CleanMachine.Interfaces;
 using log4net;
 using Unity;
 using NodaTime;
+using System.Threading.Tasks;
 
 namespace CleanMachine
 {
@@ -307,6 +308,30 @@ namespace CleanMachine
                     var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
                     return StimulateUnsafe(tripArgs);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="signalSource"></param>
+        /// <returns></returns>
+        public async Task<bool> SignalAsync(DataWaypoint signalSource)
+        {
+            if (TriggerScheduler == null)
+            {
+                return Task.FromResult(Signal(signalSource)).Result;
+            }
+            else
+            {
+                TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
+                TriggerScheduler.Schedule(signalSource, (_, t) => 
+                {
+                    tcs.SetResult(Signal(t));
+                    return new BlankDisposable();
+                });
+
+                return tcs.Task.Result;
             }
         }
 

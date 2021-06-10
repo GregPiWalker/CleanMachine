@@ -78,5 +78,21 @@ namespace CleanMachine.Behavioral
 
             behavioralState.AddDoBehavior(behavior);
         }
+
+        public static void AddDoBehavior<TState>(this StateEditor<TState> editor, string behaviorName, Action<IUnityContainer> behavior) where TState : struct
+        {
+            if (!editor.Machine.Editable)
+            {
+                throw new InvalidOperationException($"StateMachine {editor.Machine.Name} must be in editable in order to modify a state.");
+            }
+
+            var behavioralState = editor.Machine[editor.State] as BehavioralState;
+            if (behavioralState == null)
+            {
+                throw new InvalidOperationException($"A Do behavior can only be added to a BehavioralState.");
+            }
+
+            behavioralState.AddDoBehavior(behaviorName, behavior);
+        }
     }
 }

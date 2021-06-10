@@ -68,10 +68,15 @@ namespace CleanMachine.Behavioral
             _doBehaviors.Add(behavior);
         }
 
+        public void AddDoBehavior(string name, Action<IUnityContainer> action)
+        {
+            AddDoBehavior(CreateBehavior(name, action));
+        }
+
         public void AddDoBehavior(Action<IUnityContainer> action)
         {
             var name = $"{DoBehaviorName} {_doBehaviors.Count + 1}";
-            AddDoBehavior(CreateBehavior(name, action));
+            AddDoBehavior(name, action);
         }
 
         public void SetExitBehavior(IBehavior behavior)

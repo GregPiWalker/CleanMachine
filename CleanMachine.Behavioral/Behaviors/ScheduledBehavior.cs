@@ -23,16 +23,17 @@ namespace CleanMachine.Behavioral.Behaviors
         {
             _scheduler.Schedule(runtimeContainer, (_, t) =>
             {
-                var clock = runtimeContainer.Resolve<IClock>();
+                IClock clock = null;
                 try
                 {
+                    clock = runtimeContainer.Resolve<IClock>();
                     _action(runtimeContainer);
                     OnExecutableFinished(clock);
                 }
                 catch (Exception ex)
                 {
                     Fault = ex;
-                    OnExecutableFaulted(ex, clock);
+                    OnExecutableFaulted(ex, clock ?? SystemClock.Instance);
                 }
             });
         }

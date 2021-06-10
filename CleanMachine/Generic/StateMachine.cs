@@ -108,6 +108,21 @@ namespace CleanMachine.Generic
             SetInitialState(initialState.ToString());
         }
 
+        internal State FindState(TState state)
+        {
+            return FindState(state.ToString());
+        }
+
+        internal Transition CreateTransition(TState supplierState, TState consumerState)
+        {
+            return CreateTransition(supplierState.ToString(), consumerState.ToString());
+        }
+
+        public /*internal*/ void JumpToState(TState jumpTo)
+        {
+            JumpToState(FindState(jumpTo));
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -127,16 +142,6 @@ namespace CleanMachine.Generic
                 state.Entered += HandleStateEntered;
                 state.Exited += HandleStateExited;
             }
-        }
-
-        internal State FindState(TState state)
-        {
-            return FindState(state.ToString());
-        }
-
-        internal Transition CreateTransition(TState supplierState, TState consumerState)
-        {
-            return CreateTransition(supplierState.ToString(), consumerState.ToString());
         }
 
         /// <summary>

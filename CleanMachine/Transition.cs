@@ -193,6 +193,7 @@ namespace CleanMachine
                 return true;
             }
 
+            // If the Guard has a generic parameter, then feed the supplied arguments into it.
             var constraint = Guard as Interfaces.Generic.IConstraint;
             if (constraint != null)
             {
