@@ -287,7 +287,6 @@ namespace CleanMachine
 
             if (Effect != null)
             {
-                //TODO: RUN EFFECT ON BEHAVIOR SCHEDULER
                 _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: running EFFECT.");
                 Effect?.Invoke(RuntimeContainer);
             }
