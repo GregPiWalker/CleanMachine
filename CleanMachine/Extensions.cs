@@ -1,4 +1,5 @@
-﻿using CleanMachine.Interfaces;
+﻿using CleanMachine.Generic;
+using CleanMachine.Interfaces;
 using System;
 using System.Reflection;
 using Unity;

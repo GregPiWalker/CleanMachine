@@ -1,5 +1,4 @@
 ﻿using log4net;
-using CleanMachine.Generic;
 using System.Reactive.Concurrency;
 using System.Threading;
 using Unity.Lifetime;
@@ -17,17 +16,17 @@ namespace CleanMachine.Behavioral
         /// operate asynchronously with respect to each other, as well as with respect to incoming trigger invocations.
         /// </summary>
         /// <typeparam name="TState"></typeparam>
-        /// <param name="name"></param>
+        /// <param name="machineName"></param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static BehavioralStateMachine<TState> CreateAsync<TState>(string name, ILog logger) where TState : struct
+        public static BehavioralStateMachine<TState> CreateAsync<TState>(string machineName, ILog logger) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
-            var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Trigger Scheduler", IsBackground = true }; });
+            var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{machineName} Trigger Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.TriggerSchedulerKey, triggerScheduler, new ContainerControlledLifetimeManager());
-            var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Behavior Scheduler", IsBackground = true }; });
+            var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{machineName} Behavior Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.BehaviorSchedulerKey, behaviorScheduler, new ContainerControlledLifetimeManager());
-            var machine = new BehavioralStateMachine<TState>(name, container, logger, true);
+            var machine = new BehavioralStateMachine<TState>(machineName, container, logger, true);
             return machine;
         }
 
@@ -37,20 +36,22 @@ namespace CleanMachine.Behavioral
         /// The scheduler serializes its workflow, but will operate asynchronously with respect to incoming trigger invocations.
         /// </summary>
         /// <typeparam name="TState"></typeparam>
-        /// <param name="name">The state machine name.</param>
+        /// <param name="machineName">The state machine name.</param>
         /// <param name="logger"></param>
+        /// <param name="externalSynchronizer">An optional object to synchronize the state machine's internal triggers and signals with other external threaded work.
+        /// If none is supplied, an internal object is used.</param>
         /// <returns></returns>
-        public static BehavioralStateMachine<TState> CreateTriggerAsync<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
+        public static BehavioralStateMachine<TState> CreateTriggerAsync<TState>(string machineName, ILog logger, object externalSynchronizer = null) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
-            var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Trigger Scheduler", IsBackground = true }; });
+            var triggerScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{machineName} Trigger Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.TriggerSchedulerKey, triggerScheduler, new ContainerControlledLifetimeManager());
             if (externalSynchronizer != null)
             {
                 container.RegisterInstance(StateMachineBase.GlobalSynchronizerKey, externalSynchronizer);
             }
 
-            var machine = new BehavioralStateMachine<TState>(name, container, logger, true);
+            var machine = new BehavioralStateMachine<TState>(machineName, container, logger, true);
             return machine;
         }
 
@@ -60,22 +61,23 @@ namespace CleanMachine.Behavioral
         /// as the triggers' event handlers.
         /// The scheduler serializes its workflow, but will operate asynchronously with respect to incoming trigger invocations.
         /// </summary>
-        /// <param name="name"></param>
+        /// <typeparam name="TState"></typeparam>
+        /// <param name="machineName"></param>
         /// <param name="logger"></param>
         /// <param name="externalSynchronizer">An optional object to synchronize the state machine's internal triggers and signals with other external threaded work.
         /// If none is supplied, an internal object is used.</param>
         /// <returns></returns>
-        public static BehavioralStateMachine<TState> CreateBehaviorAsync<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
+        public static BehavioralStateMachine<TState> CreateBehaviorAsync<TState>(string machineName, ILog logger, object externalSynchronizer = null) where TState : struct
         {
             IUnityContainer container = new UnityContainer();
-            var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{name} Behavior Scheduler", IsBackground = true }; });
+            var behaviorScheduler = new EventLoopScheduler((a) => { return new Thread(a) { Name = $"{machineName} Behavior Scheduler", IsBackground = true }; });
             container.RegisterInstance(typeof(IScheduler), StateMachineBase.BehaviorSchedulerKey, behaviorScheduler, new ContainerControlledLifetimeManager());
             if (externalSynchronizer != null)
             {
                 container.RegisterInstance(StateMachineBase.GlobalSynchronizerKey, externalSynchronizer);
             }
 
-            var machine = new BehavioralStateMachine<TState>(name, container, logger, true);
+            var machine = new BehavioralStateMachine<TState>(machineName, container, logger, true);
             return machine;
         }
     }

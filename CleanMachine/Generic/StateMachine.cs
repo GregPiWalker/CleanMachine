@@ -57,7 +57,7 @@ namespace CleanMachine.Generic
             }
         }
 
-        public virtual event EventHandler<StateChangedEventArgs<TState>> StateChanged;
+        public virtual new event EventHandler<StateChangedEventArgs<TState>> StateChanged;
         public virtual event EventHandler<StateEnteredEventArgs<TState>> StateEntered;
         public virtual event EventHandler<StateExitedEventArgs<TState>> StateExited;
 
@@ -127,7 +127,7 @@ namespace CleanMachine.Generic
         /// 
         /// </summary>
         /// <param name="stateNames"></param>
-        protected override void CreateStates(IEnumerable<string> stateNames)
+        protected virtual void CreateStates(IEnumerable<string> stateNames)
         {
             if (!stateNames.Any(name => name.Equals(RequiredCommonStateValue)))
             {
@@ -156,16 +156,18 @@ namespace CleanMachine.Generic
                 return;
             }
 
+            Logger.Debug($"{Name}:  raising '{nameof(StateChanged)}' event.");
             var changeArgs = transition.ToIStateChangedArgs<TState>(args);
             try
             {
-                Logger.Debug($"{Name}:  raising '{nameof(StateChanged)}' event.");
-                StateChanged?.Invoke(this, changeArgs);
+                this.StateChanged?.Invoke(this, changeArgs);
             }
             catch (Exception ex)
             {
-                Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}' event from {Name} state machine.", ex);
+                Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}'<> event from {Name} state machine.", ex);
             }
+
+            RaiseStateChanged(new StateChangedEventArgs() { PreviousState = transition.From, ResultingState = transition.To });
         }
 
         /// <summary>

@@ -6,6 +6,8 @@ namespace CleanMachine.Interfaces
 {
     public interface IStateMachine
     {
+        event EventHandler<StateChangedEventArgs> StateChanged;
+
         /// <summary>
         /// Gets the name of this <see cref="IStateMachine"/>
         /// </summary>

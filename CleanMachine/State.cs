@@ -101,7 +101,7 @@ namespace CleanMachine
 
         internal bool IsEnabled { get; private set; }
 
-        internal bool Editable { get; private set; }
+        internal protected bool Editable { get; protected set; }
 
         public override string ToString()
         {
@@ -157,9 +157,9 @@ namespace CleanMachine
 
         internal void Edit()
         {
-            if (Editable)
+            if (!Editable)
             {
-                return;
+                _logger.Debug($"State {Name}:  editing enabled.");
             }
 
             Editable = true;
@@ -169,14 +169,13 @@ namespace CleanMachine
                 transition.Edit();
             }
 
-            _logger.Debug($"State {Name}:  editing enabled.");
         }
 
         internal void CompleteEdit()
         {
-            if (!Editable)
+            if (Editable)
             {
-                return;
+                _logger.Debug($"State {Name}:  editing completed.");
             }
 
             Editable = false;
@@ -185,8 +184,6 @@ namespace CleanMachine
             {
                 transition.CompleteEdit();
             }
-
-            _logger.Debug($"State {Name}:  editing completed.");
         }
 
         /// <summary>

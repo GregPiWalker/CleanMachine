@@ -137,7 +137,7 @@ namespace CleanMachine
             }
         }
 
-        protected bool Editable { get; private set; }
+        internal protected bool Editable { get; protected set; }
 
         /// <summary>
         /// 

@@ -26,7 +26,7 @@ namespace CleanMachine
         protected readonly List<State> _states = new List<State>();
         protected State _currentState;
         protected State _initialState;
-        private bool _autoAdvance;
+        protected bool _autoAdvance;
 
         /// <summary>
         /// This is used for all synchronization constructs internal to this machine.  When triggers are synchronous
@@ -106,6 +106,7 @@ namespace CleanMachine
         }
 
         public virtual event PropertyChangedEventHandler PropertyChanged;
+        public event EventHandler<StateChangedEventArgs> StateChanged;
 
         /// <summary>
         /// 
@@ -226,10 +227,11 @@ namespace CleanMachine
 
         /// <summary>
         /// Put this machine in edit mode, which allows you to assemble the structure.
+        /// All states are set as editable, too.
         /// </summary>
         internal void Edit()
         {
-            if (Editable || IsAssembled)
+            if (IsAssembled)
             {
                 return;
             }
@@ -239,15 +241,19 @@ namespace CleanMachine
                 state.Edit();
             }
 
+            if (!Editable)
+            {
+                Logger.Debug($"{Name}:  editing enabled.");
+            }
+
             Editable = true;
-            Logger.Debug($"{Name}:  editing enabled.");
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="stateNames"></param>
-        protected abstract void CreateStates(IEnumerable<string> stateNames);
+        //protected abstract void CreateStates(IEnumerable<string> stateNames);
 
         /// <summary>
         /// 
@@ -557,6 +563,18 @@ namespace CleanMachine
         protected void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        protected void RaiseStateChanged(StateChangedEventArgs args)
+        {
+            try
+            {
+                StateChanged?.Invoke(this, args);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}' event from {Name} state machine.", ex);
+            }
         }
 
         /// <summary>

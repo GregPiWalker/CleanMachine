@@ -25,15 +25,15 @@ namespace CleanMachine
 
         internal protected Transition Transition => _transition;
 
-        public TransitionEditor GuardWith(Func<bool> condition, string name)
+        public TransitionEditor GuardWith(Func<bool> condition, string conditionName)
         {
-            _transition.Guard = new Constraint(name, condition, _logger);
+            _transition.Guard = new Constraint(conditionName, condition, _logger);
             return this;
         }
 
-        public TransitionEditor GuardWith<TConstraint>(Func<TConstraint, bool> condition, string name)
+        public TransitionEditor GuardWith<TConstraint>(Func<TConstraint, bool> condition, string conditionName)
         {
-            _transition.Guard = new Constraint<TConstraint>(name, condition, _logger);
+            _transition.Guard = new Constraint<TConstraint>(conditionName, condition, _logger);
             return this;
         }
 

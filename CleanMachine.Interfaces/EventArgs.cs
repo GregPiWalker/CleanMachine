@@ -128,6 +128,13 @@ namespace CleanMachine.Interfaces
         public ITransition Transition { get; set; }
     }
 
+    public class StateChangedEventArgs : EventArgs
+    {
+        public IState PreviousState { get; set; }
+
+        public IState ResultingState { get; set; }
+    }
+
     public class StateEnteredEventArgs : EventArgs
     {
         public IState State { get; set; }
