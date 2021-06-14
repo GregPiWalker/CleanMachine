@@ -16,6 +16,15 @@ namespace CleanMachine.Generic
             Condition = condition;
         }
 
+        /// <summary>
+        /// Create a Constraint with a generically typed condition that uses an argument transform 
+        /// to convert the internally supplied generic parameter into the TParam type desired by the condition.
+        /// The type conversion will occur on every condition evaluation.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="condition"></param>
+        /// <param name="transform"></param>
+        /// <param name="logger"></param>
         public Constraint(string name, Func<TParam, bool> condition, Func<object, TParam> transform, ILog logger)
         {
             _logger = logger;
@@ -24,6 +33,14 @@ namespace CleanMachine.Generic
             Transform = transform;
         }
 
+        /// <summary>
+        /// Create a Constraint with a generically typed condition that uses a pre-supplied argument
+        /// to pass to the condition at evaluation time.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="condition"></param>
+        /// <param name="preconfiguredArg"></param>
+        /// <param name="logger"></param>
         public Constraint(string name, Func<TParam, bool> condition, TParam preconfiguredArg, ILog logger)
             : this(name, condition, logger)
         {
@@ -36,6 +53,10 @@ namespace CleanMachine.Generic
         /// </summary>
         public Func<TParam, bool> Condition { get; protected set; }
 
+        /// <summary>
+        /// A function that transforms the generic type that is internally provided as the
+        /// evaluation argument into a generic type that the condition needs.
+        /// </summary>
         public Func<object, TParam> Transform { get; protected set; }
 
         public bool VerboseLogging { get; set; }
@@ -60,7 +81,7 @@ namespace CleanMachine.Generic
         {
             try
             {
-                LastResult = Evaluate(argument);
+                LastResult = Evaluate(EvaluationArgument ?? argument);
                 return LastResult;
             }
             catch (Exception ex)
@@ -76,8 +97,15 @@ namespace CleanMachine.Generic
         /// <returns>bool</returns>
         protected virtual bool Evaluate(object argument)
         {
-            if (Condition == null || (Transform == null && !(argument is TParam)))
+            if (Condition == null)
             {
+                //_logger.Debug($"Failed to evaluate condition with '{Name}' constraint.");
+                return false;
+            }
+
+            if (Transform == null && !(argument is TParam))
+            {
+                _logger.Debug($"Failed to evaluate condition with '{Name}' constraint. The generic type parameter did not match the expected type.");
                 return false;
             }
 

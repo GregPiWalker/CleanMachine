@@ -297,7 +297,7 @@ namespace CleanMachine
         /// </remarks>
         /// <param name="signalSource"></param>
         /// <returns>True if the signal caused a transition; false otherwise.</returns>
-        public bool Signal(DataWaypoint signalSource)
+        public virtual bool Signal(DataWaypoint signalSource)
         {
             if (_synchronizer == null)
             {
@@ -319,11 +319,12 @@ namespace CleanMachine
 
         /// <summary>
         /// Asynchronously signal this machine to stimulate any passive transitions that exit the current state.
+        /// If a Trigger scheduler is available, the signal will be sent to it.  Otherwise, Task.Run() is used.
         /// Passive transitions do not have a Trigger.
         /// </summary>
         /// <param name="signalSource"></param>
         /// <returns></returns>
-        public async Task<bool> SignalAsync(DataWaypoint signalSource)
+        public virtual async Task<bool> SignalAsync(DataWaypoint signalSource)
         {
             if (TriggerScheduler == null)
             {
@@ -578,7 +579,7 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Update the current state in reponse to a successful transition
+        /// Execute the current state's DO behaviors in reponse to completion of a transit
         /// as signaled by the <see cref="Transition.SucceededInternal"/> event
         /// or by the <see cref="JumpToState(State)"/> signal.
         /// </summary>

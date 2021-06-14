@@ -8,6 +8,7 @@ using Diversions;
 using Diversions.Mvvm;
 using System.Threading.Tasks;
 using System.Threading;
+using CleanMachine.Generic;
 
 namespace CleanMachineDemo
 {

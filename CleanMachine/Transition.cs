@@ -309,7 +309,11 @@ namespace CleanMachine
             bool result = true;
             if (!CanTransition(args))
             {
-                _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: traversal inhibited by guard {Guard.ToString()}.");
+                if (Guard != null)
+                {
+                    _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: traversal inhibited by guard {Guard.ToString()}.");
+                }
+
                 result = false;
             }
 

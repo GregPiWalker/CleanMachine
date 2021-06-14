@@ -284,6 +284,30 @@ namespace CleanMachine
             }
         }
 
+        public static TReg? TryGetValue<TReg>(this IUnityContainer container, string instanceName) where TReg : struct
+        {
+            try
+            {
+                return container.Resolve<TReg>(instanceName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static TReg? TryGetValueRegistration<TReg>(this IUnityContainer container) where TReg : struct
+        {
+            try
+            {
+                return container.Resolve<TReg>();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         //internal static Interfaces.SignalEventArgs ToISignalArgs(this SignalEventArgs internalArgs)
         //{
         //    Interfaces.SignalEventArgs signalArgs;
