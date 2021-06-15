@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace CleanMachine
 {
     //TODO: use Diversions.DivertingBindableBase as base class
-    public abstract class StateMachineBase : IStateMachine, INotifyPropertyChanged
+    public abstract class StateMachineBase : IStateMachine, INotifyPropertyChanged, IDisposable
     {
         public const string EnteredStateKey = "EnteredState";
         public const string ExitedStateKey = "ExitedState";
@@ -27,6 +27,7 @@ namespace CleanMachine
         protected State _currentState;
         protected State _initialState;
         protected bool _autoAdvance;
+        private bool _isDisposed;
 
         /// <summary>
         /// This is used for all synchronization constructs internal to this machine.  When triggers are synchronous
@@ -63,7 +64,6 @@ namespace CleanMachine
                 // A synchronizer is not used when a trigger scheduler is provided because the scheduler
                 // already serializes work items by way of an work queue.
                 TriggerScheduler = RuntimeContainer.Resolve<IScheduler>(TriggerSchedulerKey);
-                TriggerScheduler.Schedule(() => { bool dummy = true; });
                 Logger.Debug($"{Name}:  was initialized with asynchronous triggers.");
             }
             catch
@@ -86,7 +86,6 @@ namespace CleanMachine
             try
             {
                 BehaviorScheduler = RuntimeContainer.Resolve<IScheduler>(BehaviorSchedulerKey);
-                BehaviorScheduler.Schedule(() => { bool dummy = true; });
                 Logger.Debug($"{Name}:  was initialized with asynchronous behaviors.");
             }
             catch
@@ -129,9 +128,9 @@ namespace CleanMachine
 
         public bool HasBehaviorScheduler => BehaviorScheduler != null;
 
-        internal protected IScheduler TriggerScheduler { get; }
+        internal protected IScheduler TriggerScheduler { get; private set; }
 
-        internal protected IScheduler BehaviorScheduler { get; }
+        internal protected IScheduler BehaviorScheduler { get; private set; }
 
         /// <summary>
         /// Gets a read-only collection of this machine's states.
@@ -175,6 +174,13 @@ namespace CleanMachine
         /// Gets a value indicating whether this machine is fully assembled yet.
         /// </summary>
         internal bool IsAssembled { get; private set; }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
 
         /// <summary>
         /// Set the machine's desired initial state.  This is enforced
@@ -447,6 +453,27 @@ namespace CleanMachine
                 {
                     JumpToStateUnsafe(jumpTo);
                 }
+            }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_isDisposed)
+            {
+                if (disposing)
+                {
+                    // Good chance a scheduler is going to dispose itself here, but it seems to be OK...
+                    RuntimeContainer.Dispose();
+                    //Task.Run(() => RuntimeContainer.Dispose());
+
+                    // Scheduler's are either disposed or alive, depending on with which lifecycle manager they were registered.
+                    TriggerScheduler = null;
+                    BehaviorScheduler = null;
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                _isDisposed = true;
             }
         }
 

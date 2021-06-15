@@ -27923,9 +27923,9 @@
 													},
 													"font": "Arial;13;0",
 													"left": 48,
-													"top": 24,
+													"top": 40,
 													"width": 281,
-													"height": 473
+													"height": 457
 												},
 												{
 													"_type": "UMLStateView",
@@ -28467,7 +28467,7 @@
 															"font": "Arial;13;0",
 															"left": 146,
 															"top": 151,
-															"width": 22.38818359375,
+															"width": 23.46728515625,
 															"height": 13,
 															"alpha": -1.6233796433028895,
 															"distance": 19.026297590440446,
@@ -29012,11 +29012,24 @@
 													},
 													"fillColor": "#ffe6b3",
 													"font": "Arial;13;0",
-													"left": 272,
-													"top": 296,
+													"left": 240,
+													"top": 304,
 													"width": 177,
 													"height": 73,
 													"text": "This adds a NoOp node so that construction is the same whether it is the first or last instruction."
+												},
+												{
+													"_type": "UMLTextView",
+													"_id": "AAAAAAF6CM3xAb+GXHA=",
+													"_parent": {
+														"$ref": "AAAAAAF5wL6iWI2Nt/s="
+													},
+													"font": "Arial;13;0",
+													"left": 48,
+													"top": 40,
+													"width": 96,
+													"height": 25,
+													"text": "If Then"
 												}
 											]
 										}
@@ -29155,9 +29168,9 @@
 													},
 													"font": "Arial;13;0",
 													"left": 80,
-													"top": 64,
+													"top": 48,
 													"width": 321,
-													"height": 457
+													"height": 473
 												},
 												{
 													"_type": "UMLStateView",
@@ -29879,7 +29892,7 @@
 															"font": "Arial;13;0",
 															"left": 159,
 															"top": 144,
-															"width": 22.38818359375,
+															"width": 23.46728515625,
 															"height": 13,
 															"alpha": 2.9441959734714773,
 															"distance": 10.198039027185569,
@@ -30527,6 +30540,19 @@
 													"width": 185,
 													"height": 65,
 													"text": "This adds a NoOp node so that construction is the same whether it is the first or last instruction."
+												},
+												{
+													"_type": "UMLTextView",
+													"_id": "AAAAAAF6CMzHh7+CEnc=",
+													"_parent": {
+														"$ref": "AAAAAAF5wMSTmo5lkiY="
+													},
+													"font": "Arial;13;0",
+													"left": 80,
+													"top": 48,
+													"width": 104,
+													"height": 25,
+													"text": "If Then Else"
 												}
 											]
 										}
@@ -31487,9 +31513,9 @@
 													},
 													"font": "Arial;13;0",
 													"left": 88,
-													"top": 56,
+													"top": 40,
 													"width": 265,
-													"height": 417
+													"height": 433
 												},
 												{
 													"_type": "UMLStateView",
@@ -32580,6 +32606,19 @@
 													"width": 161,
 													"height": 65,
 													"text": "Create a NoOp node so that the binder knows what the consumer node is at build time."
+												},
+												{
+													"_type": "UMLTextView",
+													"_id": "AAAAAAF6CMviQr99uQY=",
+													"_parent": {
+														"$ref": "AAAAAAF5wMzJmo/uiDQ="
+													},
+													"font": "Arial;13;0",
+													"left": 88,
+													"top": 40,
+													"width": 80,
+													"height": 25,
+													"text": "Do While"
 												}
 											]
 										}
@@ -32737,10 +32776,10 @@
 														"$ref": "AAAAAAF5wM1TX4/3YoU="
 													},
 													"font": "Arial;13;0",
-													"left": 112,
-													"top": 40,
-													"width": 225,
-													"height": 497
+													"left": 120,
+													"top": 24,
+													"width": 217,
+													"height": 513
 												},
 												{
 													"_type": "UMLStateView",
@@ -33427,12 +33466,12 @@
 															},
 															"fillColor": "#ffe6b3",
 															"font": "Arial;13;0",
-															"left": 187,
-															"top": 336,
+															"left": 199,
+															"top": 320,
 															"width": 86.70263671875,
 															"height": 13,
-															"alpha": 1.605265165917924,
-															"distance": 29.017236257093817,
+															"alpha": 1.963853947182431,
+															"distance": 44.384682042344295,
 															"hostEdge": {
 																"$ref": "AAAAAAF5wM+BHpCmSbY="
 															},
@@ -33527,11 +33566,11 @@
 															"fillColor": "#ffe6b3",
 															"font": "Arial;13;0",
 															"left": 247,
-															"top": 253,
+															"top": 256,
 															"width": 62.86083984375,
 															"height": 13,
-															"alpha": 1.318876191750764,
-															"distance": 99.6393496566492,
+															"alpha": 1.3342885662957151,
+															"distance": 101.86265262597475,
 															"hostEdge": {
 																"$ref": "AAAAAAF5wM+b9pC3XSQ="
 															},
@@ -34077,6 +34116,19 @@
 													"width": 169,
 													"height": 90,
 													"text": "Create a NoOp node so that the binder knows what the consumer node is at build time without depending on further binders."
+												},
+												{
+													"_type": "UMLTextView",
+													"_id": "AAAAAAF6CMorxr92EoY=",
+													"_parent": {
+														"$ref": "AAAAAAF5wM1TX4/3YoU="
+													},
+													"font": "Arial;13;0",
+													"left": 120,
+													"top": 24,
+													"width": 65,
+													"height": 25,
+													"text": "Jump If"
 												}
 											]
 										}
