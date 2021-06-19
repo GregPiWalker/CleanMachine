@@ -414,7 +414,7 @@ namespace CleanMachine
         {
             if (_synchronizer == null)
             {
-                return transition.AttemptTraverse(args);
+                return transition.AttemptTransit(args);
             }
             else
             {
@@ -423,7 +423,7 @@ namespace CleanMachine
                 // whether those transitions all exist in one state machine or are distributed across a set of machines.
                 lock (_synchronizer)
                 {
-                    return transition.AttemptTraverse(args);
+                    return transition.AttemptTransit(args);
                 }
             }
         }
@@ -534,7 +534,7 @@ namespace CleanMachine
             var passiveTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
             foreach (var transition in passiveTransitions)
             {
-                if (transition.AttemptTraverse(tripArgs))
+                if (transition.AttemptTransit(tripArgs))
                 {
                     return true;
                 }

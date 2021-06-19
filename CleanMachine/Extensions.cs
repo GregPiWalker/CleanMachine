@@ -104,6 +104,12 @@ namespace CleanMachine
             return (TState)Enum.Parse(typeof(TState), state);
         }
 
+        public static bool IsEnum<TEnum>(this string convert) where TEnum : struct
+        {
+            TEnum e;
+            return Enum.TryParse(convert, out e);
+        }
+
         /// <summary>
         /// Check whether this state is equal to or is a substate to the given other state.
         /// </summary>

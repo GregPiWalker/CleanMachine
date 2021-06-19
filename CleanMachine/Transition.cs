@@ -126,11 +126,11 @@ namespace CleanMachine
             {
                 if (!Editable)
                 {
-                    throw new InvalidOperationException($"Transition {Name} must be editable in order to set the effect.");
+                    throw new InvalidOperationException($"{GetType().Name} '{Name}' must be editable in order to set the effect.");
                 }
                 if (value != null && RuntimeContainer == null)
                 {
-                    throw new InvalidOperationException($"Transition {Name} must have a runtime container in order to set the effect.");
+                    throw new InvalidOperationException($"{GetType().Name} '{Name}' must have a runtime container in order to set the effect.");
                 }
 
                 _effect = value;
@@ -153,7 +153,7 @@ namespace CleanMachine
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder($"\"{_context}({Name}): ");
+            StringBuilder sb = new StringBuilder($"({_context}({Name}): ");
             for (int i = 0; i < _triggers.Count; i++)
             {
                 sb.Append(_triggers[i].ToString());
@@ -173,7 +173,7 @@ namespace CleanMachine
                 sb.Append(" / ").Append(Effect.ToString());
             }
 
-            return sb.Append("\"").ToString();
+            return sb.Append(")").ToString();
         }
 
         public void LogDiagnostics()
@@ -207,7 +207,7 @@ namespace CleanMachine
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"Transition {Name} must be editable in order to add a trigger.");
+                throw new InvalidOperationException($"{GetType().Name} '{Name}' must be editable in order to add a trigger.");
             }
 
             _triggers.Add(t);
@@ -247,7 +247,7 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Attempt to traverse this transition.  Traversing a transition involves in order:
+        /// Attempt to transit this transition.  Transitting involves in order:
         /// 1) Validating the transition attempt.
         /// 2) Appending a new <see cref="Waypoint"/> to the <see cref="TripEventArgs"/>.
         /// 3) Exiting the supplier state.
@@ -255,9 +255,9 @@ namespace CleanMachine
         /// 5) Running the EFFECT if one exists.
         /// 6) Raising <see cref="Succeeded"/> event.
         /// </summary>
-        /// <param name="args">TripEventArgs related to the attempt to traverse.</param>
-        /// <returns>True if a transition attempt was made; false otherwise.  NOT an indicator for transition success.</returns>
-        internal protected virtual bool AttemptTraverse(TripEventArgs args)
+        /// <param name="args">TripEventArgs related to the attempt to transit.</param>
+        /// <returns>True if a transit attempt was made; false otherwise.  NOT an indicator for transit success.</returns>
+        internal protected virtual bool AttemptTransit(TripEventArgs args)
         {
             if (!ValidateAttempt(args))
             {
@@ -267,13 +267,13 @@ namespace CleanMachine
             var trigger = args.FindTrigger();
             if (trigger != null)
             {
-                _logger.Info($"({Name}).{nameof(AttemptTraverse)}: traversing on behalf of '{trigger}' trigger.");
+                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transitting on behalf of '{trigger}' trigger.");
             }
             else
             {
                 var origin = args.GetTripOrigin();
                 // TODO: log signal name instead:
-                _logger.Info($"({Name}).{nameof(AttemptTraverse)}: traversing due to signal from {origin.Juncture}.");
+                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transitting due to signal from {origin.Juncture}.");
             }
 
             // Add self to the trip history.
@@ -283,11 +283,11 @@ namespace CleanMachine
 
             // After call to Enter(), the state machine's CurrentState property will be updated.
             To.Enter(args);
-            _logger.Info($"({Name}).{nameof(AttemptTraverse)}: old state exit and new state entry complete.");
+            _logger.Debug($"({Name}).{nameof(AttemptTransit)}: old state exit and new state entry complete.");
 
             if (Effect != null)
             {
-                _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: running EFFECT.");
+                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: running EFFECT.");
                 Effect?.Invoke(RuntimeContainer);
             }
 
@@ -298,8 +298,8 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Validate that traversal of this Transition is possible at present.
-        /// Traversal can only occur if the supplier State can be exited
+        /// Validate that transit of this Transition is possible at present.
+        /// Transit can only occur if the supplier State can be exited
         /// and the consumer State can be entered.
         /// </summary>
         /// <param name="args"></param>
@@ -311,7 +311,7 @@ namespace CleanMachine
             {
                 if (Guard != null)
                 {
-                    _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: traversal inhibited by guard {Guard.ToString()}.");
+                    _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transit inhibited by guard {Guard.ToString()}.");
                 }
 
                 result = false;
@@ -321,19 +321,19 @@ namespace CleanMachine
             {
                 if (!From.CanExit(this))
                 {
-                    _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: transition could not exit state {From.ToString()}.");
+                    _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transition could not exit state {From.ToString()}.");
                     result = false;
                 }
                 else if (!To.CanEnter(this))
                 {
-                    _logger.Debug($"({Name}).{nameof(AttemptTraverse)}: transition could not enter state {To.ToString()}.");
+                    _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transition could not enter state {To.ToString()}.");
                     result = false;
                 }
             }
 
             if (!result)
             {
-                _logger.Info($"({Name}).{nameof(AttemptTraverse)}: traversal failed.");
+                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transit failed.");
                 OnFailed(args);
                 return false;
             }
@@ -360,7 +360,7 @@ namespace CleanMachine
         {
             // This event is not optional, the StateMachine behavior depends on it.
             SucceededInternal?.Invoke(this, args);
-            _logger.Debug($"Transition {ToString()}: raising '{nameof(SucceededInternal)}' event.");
+            _logger.Debug($"{GetType().Name} '{ToString()}': raising '{nameof(SucceededInternal)}' event.");
 
             try
             {
@@ -368,7 +368,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Succeeded)}' event from {Name} transition.", ex);
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Succeeded)}' event from '{Name}' transition.", ex);
             }
         }
 
@@ -380,7 +380,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Failed)}' event from {Name} transition.", ex);
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Failed)}' event from '{Name}' transition.", ex);
             }
         }
 
@@ -402,7 +402,7 @@ namespace CleanMachine
 
             if (GlobalSynchronizer == null)
             {
-                AttemptTraverse(args);
+                AttemptTransit(args);
             }
             else
             {
@@ -411,7 +411,7 @@ namespace CleanMachine
                 // whether those transitions all exist in one state machine or are distributed across a set of machines.
                 lock (GlobalSynchronizer)
                 {
-                    AttemptTraverse(args);
+                    AttemptTransit(args);
                 }
             }
         }

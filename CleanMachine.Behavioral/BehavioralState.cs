@@ -28,7 +28,19 @@ namespace CleanMachine.Behavioral
         /// <param name="container"></param>
         /// <param name="logger"></param>
         public BehavioralState(string name, IUnityContainer container, ILog logger)
-            : base(name, container, logger)
+            : this(name, string.Empty, container, logger)
+        {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="stereotype"></param>
+        /// <param name="container"></param>
+        /// <param name="logger"></param>
+        public BehavioralState(string name, string stereotype, IUnityContainer container, ILog logger)
+            : base(name, stereotype, container, logger)
         {
             ValidateTrips = true;
         }

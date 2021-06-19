@@ -132,7 +132,7 @@ namespace CleanMachine
         {
             if (IsCurrentState && enterOn != null && enterOn.Supplier != enterOn.Consumer)
             {
-                _logger.Debug($"Cannot enter state {Name}.");
+                _logger.Debug($"Cannot enter {GetType().Name} '{Name}'.");
                 return false;
             }
 
@@ -148,7 +148,7 @@ namespace CleanMachine
         {
             if (!IsCurrentState)
             {
-                _logger.Debug($"Cannot exit state {Name}; not the current state.");
+                _logger.Debug($"Cannot exit {GetType().Name} '{Name}'; not the current state.");
                 return false;
             }
 
@@ -159,7 +159,7 @@ namespace CleanMachine
         {
             if (!Editable)
             {
-                _logger.Debug($"State {Name}:  editing enabled.");
+                _logger.Debug($"{GetType().Name} '{Name}':  editing enabled.");
             }
 
             Editable = true;
@@ -175,7 +175,7 @@ namespace CleanMachine
         {
             if (Editable)
             {
-                _logger.Debug($"State {Name}:  editing completed.");
+                _logger.Debug($"{GetType().Name} '{Name}':  editing completed.");
             }
 
             Editable = false;
@@ -207,7 +207,7 @@ namespace CleanMachine
 
         protected void BeginEntry(TripEventArgs tripArgs)
         {
-            _logger.Debug($"Entering state {Name}.");
+            _logger.Debug($"Entering {GetType().Name} '{Name}'.");
             var enterOn = tripArgs?.FindLastTransition() as Transition;
 
             IsCurrentState = true;
@@ -258,7 +258,7 @@ namespace CleanMachine
 
         protected void BeginExit(TripEventArgs tripArgs)
         {
-            _logger.Debug($"Exiting state {Name}.");
+            _logger.Debug($"Exiting {GetType().Name} '{Name}'.");
             IsCurrentState = false;
             Disable();
 
@@ -306,7 +306,7 @@ namespace CleanMachine
                 VisitIdentifier = new BooleanDisposable();
             }
 
-            _logger.Info($"State {Name}: enabling outbound connectors.");
+            _logger.Debug($"{GetType().Name} '{Name}': enabling outbound connectors.");
             _outboundTransitions.ForEach(t => t.Enable(VisitIdentifier));
             IsEnabled = true;
         }
@@ -318,7 +318,7 @@ namespace CleanMachine
         {
             // Dispose of the visit ID so that irrelevant trips can be cancelled.
             VisitIdentifier?.Dispose();
-            _logger.Info($"State {Name}: disabling outbound connectors.");
+            _logger.Debug($"{GetType().Name} '{Name}': disabling outbound connectors.");
             _outboundTransitions.ForEach(t => t.Disable());
             IsEnabled = false;
         }
@@ -352,7 +352,7 @@ namespace CleanMachine
             var enteredOn = tripArgs?.FindLastTransition() as Transition;
             if (enteredOn == null)
             {
-                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnEntered)}.");
+                _logger.Debug($"{GetType().Name} '{Name}': NULL transition found in {nameof(OnEntered)}.");
                 return;
             }
 
@@ -365,7 +365,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(Entered)}' event in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(Entered)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
@@ -384,7 +384,7 @@ namespace CleanMachine
             var exitedOn = tripArgs?.FindLastTransition() as Transition;
             if (exitedOn == null)
             {
-                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnExited)}.");
+                _logger.Debug($"{GetType().Name} '{Name}': NULL transition found in {nameof(OnExited)}.");
                 return;
             }
 
@@ -396,7 +396,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(Exited)}' event in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(Exited)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
@@ -413,7 +413,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(TransitionSucceeded)}' event in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(TransitionSucceeded)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
@@ -425,16 +425,16 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(TransitionFailed)}' event in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(TransitionFailed)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
-        protected virtual void RaiseTransitionSucceeded(Interfaces.TransitionEventArgs args)
+        protected virtual void RaiseTransitionSucceeded(TransitionEventArgs args)
         {
             TransitionSucceeded?.Invoke(this, args);
         }
 
-        protected virtual void RaiseTransitionFailed(Interfaces.TransitionEventArgs args)
+        protected virtual void RaiseTransitionFailed(TransitionEventArgs args)
         {
             TransitionFailed?.Invoke(this, args);
         }
