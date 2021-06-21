@@ -41,6 +41,8 @@ namespace CleanMachine
         /// </summary>
         public bool IsActive { get; protected internal set; }
 
+        public virtual bool IsSourceLazy => false;
+
         public override string ToString()
         {
             return Name;

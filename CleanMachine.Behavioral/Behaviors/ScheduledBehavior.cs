@@ -1,5 +1,6 @@
 ﻿using NodaTime;
 using Unity;
+using log4net;
 using System;
 using System.Reactive.Concurrency;
 
@@ -24,16 +25,17 @@ namespace CleanMachine.Behavioral.Behaviors
             _scheduler.Schedule(runtimeContainer, (_, t) =>
             {
                 IClock clock = null;
+                var logger = runtimeContainer.TryGetTypeRegistration<ILog>();
                 try
                 {
                     clock = runtimeContainer.Resolve<IClock>();
                     _action(runtimeContainer);
-                    OnExecutableFinished(clock);
+                    OnExecutableFinished(clock, logger);
                 }
                 catch (Exception ex)
                 {
                     Fault = ex;
-                    OnExecutableFaulted(ex, clock ?? SystemClock.Instance);
+                    OnExecutableFaulted(ex, clock ?? SystemClock.Instance, logger);
                 }
             });
         }

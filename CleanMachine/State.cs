@@ -220,12 +220,12 @@ namespace CleanMachine
             }
         }
 
-        protected void EndEntry(TripEventArgs tripArgs)
+        protected virtual void EndEntry(TripEventArgs tripArgs)
         {
             OnEntered(tripArgs);
 
-            // Now that all ENTRY work is complete, enable all transition triggers.
-            // This assigns the state's SelectionContext to all the outgoing transitions.
+            // Now that all ENTRY work is complete, enable all non-lazy transition triggers.
+            // This assigns the state's visitor identifier to all the outgoing transitions.
             Enable();
         }
 
@@ -282,14 +282,14 @@ namespace CleanMachine
             IsCurrentState = true;
         }
 
-        internal virtual Transition CreateTransitionTo(string context, State consumer)
+        internal protected virtual Transition CreateTransitionTo(string context, State consumer)
         {
             var transition = new Transition(context, this, consumer, _logger);
             AddTransition(transition);
             return transition;
         }
 
-        internal void AddTransition(Transition t)
+        internal protected void AddTransition(Transition t)
         {
             _outboundTransitions.Add(t);
             t.Succeeded += HandleTransitionSucceeded;
@@ -298,8 +298,10 @@ namespace CleanMachine
 
         /// <summary>
         /// Enable triggers on outbound connectors.
+        /// Connectors will be enabled using this state's current visitor identifier.
+        /// Note: lazy transition triggers will not be enabled.
         /// </summary>
-        internal virtual void Enable()
+        internal protected virtual void Enable()
         {
             if (ValidateTrips)
             {
@@ -311,10 +313,15 @@ namespace CleanMachine
             IsEnabled = true;
         }
 
+        internal protected void EnableLazyTriggers()
+        {
+            _outboundTransitions.ForEach(t => t.EnableLazyTriggers(VisitIdentifier));
+        }
+
         /// <summary>
         /// Disable triggers on outbound connectors.
         /// </summary>
-        internal void Disable()
+        internal protected void Disable()
         {
             // Dispose of the visit ID so that irrelevant trips can be cancelled.
             VisitIdentifier?.Dispose();

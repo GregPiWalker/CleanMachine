@@ -226,22 +226,27 @@ namespace CleanMachine
         }
 
         /// <summary>
-        /// Enable all <see cref="TriggerBase"/>s and set the current activation context.
+        /// Enable all non-lazy <see cref="TriggerBase"/>s.  Lazy triggers must explicitly be enabled later.
+        /// The supplied visit ID will be fed back to a state when the trigger attempts to transit.  If the
+        /// visit ID's match, then a transit may be allowed.
         /// </summary>
-        /// <param name="validity">The new state selection context to hold as an activation context.</param>
-        internal void Enable(IDisposable validity)
+        /// <param name="visitId">The visitation identifier that uniquely describes the state entry that caused this invocation.</param>
+        internal protected void Enable(IDisposable visitId)
         {
-            //_activationContext = stateSelectionContext;
             _enabled = true;
-            _triggers.ForEach(t => t.Activate(validity));
+            _triggers.Where(t => !t.IsSourceLazy).ToList().ForEach(t => t.Activate(visitId));
+        }
+
+        internal protected void EnableLazyTriggers(IDisposable visitId)
+        {
+            _triggers.Where(t => t.IsSourceLazy).ToList().ForEach(t => t.Activate(visitId));
         }
 
         /// <summary>
         /// Disable all <see cref="TriggerBase"/>s and clear the current activation context.
         /// </summary>
-        internal void Disable()
+        internal protected void Disable()
         {
-            //_activationContext = null;
             _enabled = false;
             _triggers.ForEach(t => t.Deactivate());
         }
@@ -282,6 +287,7 @@ namespace CleanMachine
             From.Exit(args);
 
             // After call to Enter(), the state machine's CurrentState property will be updated.
+            // Also, all non-lazy outgoing triggers will be enabled.
             To.Enter(args);
             _logger.Debug($"({Name}).{nameof(AttemptTransit)}: old state exit and new state entry complete.");
 
@@ -291,8 +297,13 @@ namespace CleanMachine
                 Effect?.Invoke(RuntimeContainer);
             }
 
-            // After call to OnSucceeded(), the new state will be settled.
+            // After call to OnSucceeded(), the new state will be settled (DO behaviors executed/scheduled).
             OnSucceeded(args);
+
+            // Now we can enable lazy outgoing triggers.  Delaying this as long as possible gives
+            // any current state DO behaviors a chance to execute and potentially affect lazy trigger
+            // source resolution.  However, if the DO is asynchronous, no guarantee of enough time is possible.
+            To.EnableLazyTriggers();
 
             return true;
         }

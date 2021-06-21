@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Windows.Threading;
 using System.Windows;
-using log4net;
-using CleanMachine;
-using Diversions;
-using Diversions.Mvvm;
 using System.Threading.Tasks;
 using System.Threading;
+using log4net;
+using Diversions;
+using Diversions.Mvvm;
 using CleanMachine.Generic;
 
 namespace CleanMachineDemo
@@ -25,7 +23,7 @@ namespace CleanMachineDemo
         {
             // Add the option to use the UI Dispatcher.  The default diverter will still be current thread.
             // Instantiation of a DispatcherSynchronizationContext needs to happen on the main application thread in order for the correct Dispatcher value to be used.
-            Diversion.AddDiverter(MarshalOption.Dispatcher, Application.Current.Dispatcher, "Invoke", new List<KeyValuePair<Type, object>>().AddKey(typeof(Delegate)).AddKey(typeof(object[])), new DispatcherSynchronizationContext());
+            Diversion.AddDiverter(MarshalOption.Dispatcher, Application.Current.Dispatcher, "Invoke", new List<KeyValuePair<Type, object>>().AddKey(typeof(Delegate)).AddKey(typeof(object[])));
         }
 
         public DemoViewModel()

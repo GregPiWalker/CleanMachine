@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Diversions.ObjectModel;
+using System;
 using System.Windows;
 
 namespace CleanMachineDemo
@@ -17,6 +18,12 @@ namespace CleanMachineDemo
             // https://docs.microsoft.com/en-us/dotnet/api/system.windows.basecompatibilitypreferences.reusedispatchersynchronizationcontextinstance?redirectedfrom=MSDN&view=netframework-4.8
             // https://stackoverflow.com/questions/13500030/comparing-synchronizationcontext
             //BaseCompatibilityPreferences.ReuseDispatcherSynchronizationContextInstance = true;
+        }
+
+        public App()
+        {
+            // This prepares all DivertingObservableCollections to automatically marshal all their work onto the main application thread via the Dispatcher.
+            DispatcherDelegates.CreateInvokeDelegate(Current.Dispatcher, Current.Dispatcher.GetType().GetMethod("Invoke", new Type[] { typeof(Delegate), typeof(object[]) }));
         }
     }
 }

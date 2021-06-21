@@ -35,6 +35,11 @@ namespace CleanMachine.Interfaces
         bool IsActive { get; }
 
         /// <summary>
+        /// 
+        /// </summary>
+        bool IsSourceLazy { get; }
+
+        /// <summary>
         /// Activate this trigger, making it responsive to surrounding events.
         /// </summary>
         /// <param name="validity"></param>

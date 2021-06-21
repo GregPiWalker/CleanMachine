@@ -7,19 +7,20 @@ using System.Reflection;
 namespace CleanMachine.Generic
 {
     /// <summary>
-    /// A trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
+    /// Creates a trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>
     public class Trigger<TSource, TEventArgs> : TriggerBase //where TEventArgs : EventArgs
     {
         private delegate void EventHandlerDelegate(object sender, TEventArgs args);
-        private readonly EventHandlerDelegate _handler;
-        private readonly EventInfo _eventInfo;
-        private readonly string _filterName;
+        private EventHandlerDelegate _handler;
+        private EventInfo _eventInfo;
+        private string _filterName;
+        private readonly Func<TSource> _lazySourceProvider;
 
         /// <summary>
-        /// 
+        /// Creates a trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
         /// </summary>
         /// <param name="source"></param>
         /// <param name="eventName"></param>
@@ -28,6 +29,63 @@ namespace CleanMachine.Generic
         /// <param name="logger"></param>
         public Trigger(TSource source, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, ILog logger)
             : base(string.Empty, source, scheduler, logger)
+        {
+            Initialize(eventName, filter);
+        }
+
+        /// <summary>
+        /// Creates a trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="eventName"></param>
+        /// <param name="scheduler"></param>
+        /// <param name="logger"></param>
+        public Trigger(TSource source, string eventName, IScheduler scheduler, ILog logger)
+            : this(source, eventName, null, scheduler, logger)
+        {
+        }
+
+        /// <summary>
+        /// Creates a trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="eventName"></param>
+        /// <param name="logger"></param>
+        public Trigger(TSource source, string eventName, ILog logger)
+            : this(source, eventName, null, null, logger)
+        {
+        }
+
+        /// <summary>
+        /// Creates a lazily-bound trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
+        /// The lazy source will be harvested when this Trigger is enabled.
+        /// </summary>
+        /// <param name="lazySource"></param>
+        /// <param name="eventName"></param>
+        /// <param name="filter"></param>
+        /// <param name="scheduler"></param>
+        /// <param name="logger"></param>
+        public Trigger(Func<TSource> lazySource, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, ILog logger)
+            : base(string.Empty, null, scheduler, logger)
+        {
+            _lazySourceProvider = lazySource;
+            Initialize(eventName, filter);
+        }
+
+        /// <summary>
+        /// Creates a lazily-bound trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
+        /// The lazy source will be harvested when this Trigger is enabled.
+        /// </summary>
+        /// <param name="lazySource"></param>
+        /// <param name="eventName"></param>
+        /// <param name="scheduler"></param>
+        /// <param name="logger"></param>
+        public Trigger(Func<TSource> lazySource, string eventName, IScheduler scheduler, ILog logger)
+            : this(lazySource, eventName, null, scheduler, logger)
+        {
+        }
+
+        private void Initialize(string eventName, Constraint<TEventArgs> filter)
         {
             _handler = HandleEventRaised;
             _eventInfo = typeof(TSource).GetEvent(eventName, FullAccessBindingFlags);
@@ -61,20 +119,12 @@ namespace CleanMachine.Generic
             _filterName = filter == null ? string.Empty : filter.Name;
         }
 
-        public Trigger(TSource source, string eventName, IScheduler scheduler, ILog logger)
-            : this(source, eventName, null, scheduler, logger)
-        {
-        }
-
-        public Trigger(TSource source, string eventName, ILog logger)
-            : this(source, eventName, null, null, logger)
-        {
-        }
-
         /// <summary>
         /// Gets the shadow implementation of the base Filter in order to provide a conditional parameter.
         /// </summary>
         public Constraint<TEventArgs> Filter { get; protected set; }
+
+        public override bool IsSourceLazy => _lazySourceProvider != null;
 
         public override string ToString()
         {
@@ -104,6 +154,19 @@ namespace CleanMachine.Generic
 
         protected override void Enable()
         {
+            if (Source == null && _lazySourceProvider != null)
+            {
+                try
+                {
+                    Source = _lazySourceProvider();
+                }
+                catch (NullReferenceException ex)
+                {
+                    _logger?.Error($"Trigger '{Name}' failed to resolve a late-bound source object.  The trigger will not function.", ex);
+                    return;
+                }
+            }
+
             var target = Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method);
 
             // Cannot use _eventInfo.AddEventHandler(Source, target) to access private members.
@@ -113,6 +176,11 @@ namespace CleanMachine.Generic
 
         protected override void Disable()
         {
+            if (Source == null)
+            {
+                return;
+            }
+
             var target = Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method);
 
             // Cannot use _eventInfo.RemoveEventHandler(Source, target) to access private members.

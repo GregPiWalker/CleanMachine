@@ -27,6 +27,7 @@ namespace CleanMachine
         protected State _currentState;
         protected State _initialState;
         protected bool _autoAdvance;
+        private readonly object _disposeLock = new object();
         private bool _isDisposed;
 
         /// <summary>
@@ -54,7 +55,7 @@ namespace CleanMachine
             RuntimeContainer = runtimeContainer ?? new UnityContainer();
 
             // If a clock hasn't been provided, then register a standard system clock.
-            if (!RuntimeContainer.HasTypeRegistration<IClock>())
+            if (!RuntimeContainer.IsRegistered<IClock>())
             {
                 RuntimeContainer.RegisterInstance<IClock>(SystemClock.Instance);
             }
@@ -70,7 +71,7 @@ namespace CleanMachine
             {
                 // When configured with synchronous triggers, this machine must have a local synchronization context.
                 // If a synchronizing object hasn't been provided, then register a new one.
-                if (!RuntimeContainer.HasTypeRegistration<object>(GlobalSynchronizerKey))
+                if (!RuntimeContainer.IsRegistered<object>(GlobalSynchronizerKey))
                 {
                     Logger.Debug($"{Name}:  was initialized for synchronous operation using a default synchronization object.");
                     RuntimeContainer.RegisterInstance(GlobalSynchronizerKey, new object());
@@ -334,18 +335,18 @@ namespace CleanMachine
         {
             if (TriggerScheduler == null)
             {
-                return Task.Run(() => Signal(signalSource)).Result;
+                return await Task.Run(() => Signal(signalSource));
             }
             else
             {
                 TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
-                TriggerScheduler.Schedule(signalSource, (_, t) => 
+                TriggerScheduler.Schedule(signalSource, (_, t) =>
                 {
                     tcs.SetResult(Signal(t));
                     return new BlankDisposable();
                 });
 
-                return tcs.Task.Result;
+                return await tcs.Task;
             }
         }
 
@@ -458,12 +459,18 @@ namespace CleanMachine
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!_isDisposed)
+            lock (_disposeLock)
             {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
                 if (disposing)
                 {
                     // Good chance a scheduler is going to dispose itself here, but it seems to be OK...
                     RuntimeContainer.Dispose();
+                    // If self-disposal has an issue, use this task instead:
                     //Task.Run(() => RuntimeContainer.Dispose());
 
                     // Scheduler's are either disposed or alive, depending on with which lifecycle manager they were registered.
@@ -471,8 +478,6 @@ namespace CleanMachine
                     BehaviorScheduler = null;
                 }
 
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
                 _isDisposed = true;
             }
         }

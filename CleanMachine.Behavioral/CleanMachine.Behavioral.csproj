@@ -15,10 +15,6 @@
       <PackageReference Include="System.Reactive" Version="5.0.0" />
       <PackageReference Include="Unity" Version="5.11.10" />
     </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\Diversions\Standard\Diversions\Diversions.csproj" />
-    </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\CleanMachine.Interfaces\CleanMachine.Interfaces.csproj" />
     </ItemGroup>

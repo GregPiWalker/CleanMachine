@@ -238,34 +238,6 @@ namespace CleanMachine
             return false;
         }
 
-        public static bool HasTypeRegistration<TReg>(this IUnityContainer container)
-        {
-            try
-            {
-                container.Resolve<TReg>();
-            }
-            catch
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public static bool HasTypeRegistration<TReg>(this IUnityContainer container, string key)
-        {
-            try
-            {
-                container.Resolve<TReg>(key);
-            }
-            catch
-            {
-                return false;
-            }
-
-            return true;
-        }
-
         public static TReg TryGetInstance<TReg>(this IUnityContainer container, string instanceName) where TReg : class
         {
             try
@@ -313,54 +285,5 @@ namespace CleanMachine
                 return null;
             }
         }
-
-        //internal static Interfaces.SignalEventArgs ToISignalArgs(this SignalEventArgs internalArgs)
-        //{
-        //    Interfaces.SignalEventArgs signalArgs;
-        //    var triggerArgs = internalArgs as TriggerEventArgs;
-        //    if (triggerArgs != null)
-        //    {
-        //        signalArgs = new Interfaces.TriggerEventArgs()
-        //        {
-        //            Trigger = triggerArgs.Trigger,
-        //            Cause = triggerArgs.Cause,
-        //            CauseArgs = triggerArgs.CauseArgs,
-        //            Signal = internalArgs.Signal
-        //        };
-        //    }
-        //    else
-        //    {
-        //        signalArgs = new Interfaces.SignalEventArgs()
-        //        {
-        //            Cause = internalArgs.Cause,
-        //            Signal = internalArgs.Signal
-        //        };
-        //    }
-
-        //    return signalArgs;
-        //}
-
-        //internal static Interfaces.TriggerEventArgs ToITriggerArgs(this TriggerEventArgs internalArgs)
-        //{
-        //    var triggerArgs = new Interfaces.TriggerEventArgs()
-        //    {
-        //        Trigger = internalArgs.Trigger,
-        //        Cause = internalArgs.Cause,
-        //        CauseArgs = internalArgs.CauseArgs
-        //    };
-
-        //    return triggerArgs;
-        //}
-
-        //internal static Interfaces.TransitionEventArgs ToITransitionArgs(this TriggerEventArgs internalArgs, Transition transition)
-        //{
-        //    var transitionArgs = new Interfaces.TransitionEventArgs()
-        //    {
-        //        TriggerArgs = internalArgs == null ? null : internalArgs.ToITriggerArgs(),
-        //        Transition = transition
-        //    };
-
-        //    return transitionArgs;
-        //}
     }
 }

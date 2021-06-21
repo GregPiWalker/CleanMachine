@@ -59,7 +59,7 @@ namespace CleanMachine.Behavioral
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"State {Name} must be editable in order to set the ENTRY behavior.");
+                throw new InvalidOperationException($"State '{Name}' must be editable in order to set the ENTRY behavior.");
             }
 
             _entryBehavior = behavior;
@@ -74,7 +74,7 @@ namespace CleanMachine.Behavioral
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"State {Name} must be editable in order to add a DO behavior.");
+                throw new InvalidOperationException($"State '{Name}' must be editable in order to add a DO behavior.");
             }
 
             _doBehaviors.Add(behavior);
@@ -95,7 +95,7 @@ namespace CleanMachine.Behavioral
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"State {Name} must be editable in order to set the EXIT behavior.");
+                throw new InvalidOperationException($"State '{Name}' must be editable in order to set the EXIT behavior.");
             }
 
             _exitBehavior = behavior;
@@ -109,7 +109,7 @@ namespace CleanMachine.Behavioral
         private IBehavior CreateBehavior(string name, Action<IUnityContainer> action)
         {
             IBehavior behavior;
-            if (RuntimeContainer.HasTypeRegistration<IScheduler>(StateMachineBase.BehaviorSchedulerKey))
+            if (RuntimeContainer.IsRegistered<IScheduler>(StateMachineBase.BehaviorSchedulerKey))
             {
                 behavior = new ScheduledBehavior(name, action, RuntimeContainer.Resolve<IScheduler>(StateMachineBase.BehaviorSchedulerKey));
             }
@@ -163,7 +163,7 @@ namespace CleanMachine.Behavioral
         {
             if (_doBehaviors.Any())
             {
-                _logger.Debug($"State {Name}:  performing DO behaviors.");
+                _logger.Debug($"State '{Name}':  performing DO behaviors.");
                 _doBehaviors.ForEach(b => OnDoBehavior(b));
             }
         }
@@ -198,25 +198,26 @@ namespace CleanMachine.Behavioral
         {
             try
             {
-                _logger.Debug($"State {Name}:  performing ENTRY behavior.");
+                _logger.Debug($"State '{Name}':  performing ENTRY behavior.");
                 _entryBehavior?.Invoke(RuntimeContainer);
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} during ENTRY behavior in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} during ENTRY behavior in State '{Name}'.", ex);
             }
         }
 
         protected void OnExitBehavior()
         {
+            //TODO: remove try/catch here since Behavior now does it.
             try
             {
-                _logger.Debug($"State {Name}:  performing EXIT behavior.");
+                _logger.Debug($"State '{Name}':  performing EXIT behavior.");
                 _exitBehavior?.Invoke(RuntimeContainer);
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} during EXIT behavior in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} during EXIT behavior in State '{Name}'.", ex);
             }
         }
 
@@ -225,17 +226,17 @@ namespace CleanMachine.Behavioral
             // State changes don't need to wait for all the DO behaviors to finish.
             if (!IsCurrentState)
             {
-                _logger.Debug($"State {Name}:  DO behavior ignored because {Name} is no longer the current state.");
+                _logger.Debug($"State '{Name}':  DO behavior ignored because {Name} is no longer the current state.");
                 return;
             }
             
-            try
+            if (doBehavior != null)
             {
-                doBehavior?.Invoke(RuntimeContainer);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error($"{ex.GetType().Name} during DO behavior in state {Name}.", ex);
+                doBehavior.Invoke(RuntimeContainer);
+                if (doBehavior.Fault != null)
+                {
+                    _logger.Error($"{doBehavior.Fault.GetType().Name} during DO behavior in state '{Name}'.", doBehavior.Fault);
+                }
             }
         }
 
@@ -249,7 +250,7 @@ namespace CleanMachine.Behavioral
             var enteredOn = tripArgs?.FindLastTransition() as Transition;
             if (enteredOn == null)
             {
-                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnEntryInitiated)}.");
+                _logger.Debug($"State '{Name}': NULL transition found in {nameof(OnEntryInitiated)}.");
                 return;
             }
 
@@ -262,7 +263,7 @@ namespace CleanMachine.Behavioral
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(EntryInitiated)}' event in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(EntryInitiated)}' event in State '{Name}'.", ex);
             }
         }
 
@@ -276,7 +277,7 @@ namespace CleanMachine.Behavioral
             var exitedOn = tripArgs?.FindLastTransition() as Transition;
             if (exitedOn == null)
             {
-                _logger.Debug($"State {Name}: NULL transition found in {nameof(OnExitInitiated)}.");
+                _logger.Debug($"State '{Name}': NULL transition found in {nameof(OnExitInitiated)}.");
                 return;
             }
 
@@ -289,7 +290,7 @@ namespace CleanMachine.Behavioral
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(ExitInitiated)}' event in state {Name}.", ex);
+                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(ExitInitiated)}' event in State '{Name}'.", ex);
             }
         }
     }

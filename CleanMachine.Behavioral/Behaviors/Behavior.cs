@@ -1,4 +1,5 @@
 ﻿using CleanMachine.Interfaces;
+using log4net;
 using NodaTime;
 using System;
 using Unity;
@@ -18,7 +19,7 @@ namespace CleanMachine.Behavioral.Behaviors
         public event EventHandler<ClockedEventArgs> Finished;
         public event EventHandler<FaultedEventArgs> Faulted;
 
-        public virtual string Description => "nothing yet";
+        public virtual string Description => "REPLACE ME";
 
         public string Name { get; protected set; }
 
@@ -26,23 +27,24 @@ namespace CleanMachine.Behavioral.Behaviors
 
         public virtual void Invoke(IUnityContainer runtimeContainer)
         {
-            var clock = runtimeContainer.Resolve<IClock>();
+            var clock = runtimeContainer.TryGetTypeRegistration<IClock>();
+            var logger = runtimeContainer.TryGetTypeRegistration<ILog>();
             try
             {
                 _action(runtimeContainer);
-                OnExecutableFinished(clock);
+                OnExecutableFinished(clock, logger);
             }
             catch (Exception e)
             {
                 Fault = e;
-                OnExecutableFaulted(e, clock);
+                OnExecutableFaulted(e, clock, logger);
             }
         }
 
         /// <summary>
         /// Raise the Finished event.
         /// </summary>
-        protected void OnExecutableFinished(IClock clock)
+        protected void OnExecutableFinished(IClock clock, ILog logger)
         {
             try
             {
@@ -50,14 +52,15 @@ namespace CleanMachine.Behavioral.Behaviors
             }
             catch (Exception ex)
             {
-                //.Log(LogType, LogMessageType.Error, GetType().ToString(), "Executable '" + Name + "' encountered exception while raising Finished event: " + e.Message, e);
+                //TODO: what if the logger is null?
+                logger?.Error($"{ex.GetType().Name} while raising event '{nameof(Finished)}' in behavior '{Name}':  {ex.Message}.", ex);
             }
         }
 
         /// <summary>
         /// Raise the Faulted event.
         /// </summary>
-        protected virtual void OnExecutableFaulted(Exception ex, IClock clock)
+        protected virtual void OnExecutableFaulted(Exception ex, IClock clock, ILog logger)
         {
             try
             {
@@ -65,7 +68,8 @@ namespace CleanMachine.Behavioral.Behaviors
             }
             catch (Exception nex)
             {
-                //.Log(LogType, LogMessageType.Error, GetType().ToString(), "Executable '" + Name + "' encountered exception while raising Faulted event: " + ex.Message, ex);
+                //TODO: what if the logger is null?
+                logger?.Error($"{nex.GetType().Name} while raising event '{nameof(Faulted)}' in behavior '{Name}':  {nex.Message}.", nex);
             }
         }
     }
