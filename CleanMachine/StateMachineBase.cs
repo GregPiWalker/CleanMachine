@@ -476,6 +476,9 @@ namespace CleanMachine
                     // Scheduler's are either disposed or alive, depending on with which lifecycle manager they were registered.
                     TriggerScheduler = null;
                     BehaviorScheduler = null;
+
+                    StateChanged = null;
+                    PropertyChanged = null;
                 }
 
                 _isDisposed = true;
@@ -507,8 +510,9 @@ namespace CleanMachine
         /// Implementations of this method should be synchronous.  That is, they should avoid
         /// calling methods or raising events asynchronously.
         /// </summary>
+        /// <param name="previousState"></param>
         /// <param name="args"></param>
-        protected abstract void OnStateChanged(TripEventArgs args);
+        protected abstract void OnStateChanged(State previousState, TripEventArgs args);
 
         /// <summary>
         /// Perform state-exited work.
@@ -561,10 +565,10 @@ namespace CleanMachine
             var vid = _currentState == null ? null : _currentState.VisitIdentifier;
             var jumpArgs = new TripEventArgs(vid, new DataWaypoint(this, nameof(JumpToState)));
             jumpTo.Enter(jumpArgs);
-            _currentState = jumpTo;
+            //_currentState = jumpTo;
             History = jumpArgs.Waypoints;
 
-            // There is no transition to signal success on a jump, so need to fake it here.
+            // There is no transition to raise a SucceededInternal event on a jump, so need to fake it here.
             HandleTransitionSucceededInternal(this, jumpArgs);
         }
 
@@ -598,7 +602,7 @@ namespace CleanMachine
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
-        protected void RaiseStateChanged(StateChangedEventArgs args)
+        protected void RaiseStateChangedBase(StateChangedEventArgs args)
         {
             try
             {
@@ -652,13 +656,15 @@ namespace CleanMachine
         /// <param name="args"></param>
         private void OnStateEntryFinished(State state, TripEventArgs args)
         {
+            var previousState = _currentState;
             _currentState = state;
 
             // Once a trip results in a state change, hold onto the route history.
             History = args.Waypoints;
 
             OnPropertyChanged(nameof(CurrentState));
-            OnStateChanged(args);
+
+            OnStateChanged(previousState, args);
         }
     }
 }

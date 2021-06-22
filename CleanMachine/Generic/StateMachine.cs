@@ -123,6 +123,15 @@ namespace CleanMachine.Generic
             JumpToState(FindState(jumpTo));
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            StateChanged = null;
+            StateEntered = null;
+            StateExited = null;
+
+            base.Dispose(disposing);
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -147,27 +156,46 @@ namespace CleanMachine.Generic
         /// <summary>
         /// Raise the <see cref="StateChanged"/> event synchronously.
         /// </summary>
+        /// <param name="previousState"></param>
         /// <param name="args"></param>
-        protected override void OnStateChanged(TripEventArgs args)
+        protected override void OnStateChanged(State previousState, TripEventArgs args)
         {
-            var transition = args.FindLastTransition() as Transition;
-            if (StateChanged == null || transition == null)
+            if (previousState == null)
             {
+                // Don't raise events for entry into the initial state.
                 return;
             }
 
-            Logger.Debug($"{Name}:  raising '{nameof(StateChanged)}' event.");
-            var changeArgs = transition.ToIStateChangedArgs<TState>(args);
-            try
+            if (StateChanged != null)
             {
-                this.StateChanged?.Invoke(this, changeArgs);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}'<> event from {Name} state machine.", ex);
+                StateChangedEventArgs<TState> changeArgs = null;
+                var transition = args.FindLastTransition() as Transition;
+                if (transition == null)
+                {
+                    changeArgs = new StateChangedEventArgs<TState>()
+                        {
+                            ResultingState = _currentState.ToEnum<TState>(),
+                            PreviousState = previousState.ToEnum<TState>(),
+                            //TransitionArgs = null
+                        };
+                }
+                else
+                {
+                    changeArgs = transition.ToIStateChangedArgs<TState>(args);
+                }
+
+                Logger.Debug($"{Name}:  raising '{nameof(StateChanged)}' event.");
+                try
+                {
+                    StateChanged?.Invoke(this, changeArgs);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}'<> event from {Name} state machine.", ex);
+                }
             }
 
-            RaiseStateChanged(new StateChangedEventArgs() { PreviousState = transition.From, ResultingState = transition.To });
+            RaiseStateChangedBase(new StateChangedEventArgs() { PreviousState = previousState, ResultingState = _currentState });
         }
 
         /// <summary>
