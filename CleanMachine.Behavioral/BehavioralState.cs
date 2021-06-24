@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reactive.Concurrency;
 using log4net;
-using CleanMachine;
+using Unity;
 using CleanMachine.Interfaces;
 using CleanMachine.Behavioral.Behaviors;
-using Unity;
-using Unity.Lifetime;
-using System.Reactive.Concurrency;
 
 namespace CleanMachine.Behavioral
 {
     public class BehavioralState : State, IStateBehavior
     {
-        protected const string EntryBehaviorName = "ENTER Behavior";
-        protected const string ExitBehaviorName = "EXIT Behavior";
-        protected const string DoBehaviorName = "DO Behavior";
+        internal const string EntryBehaviorName = "ENTER Behavior";
+        internal const string ExitBehaviorName = "EXIT Behavior";
+        internal const string DoBehaviorName = "DO Behavior";
         private readonly List<IBehavior> _doBehaviors = new List<IBehavior>();
 
         private IBehavior _entryBehavior;
@@ -48,6 +46,8 @@ namespace CleanMachine.Behavioral
         public event EventHandler<StateEnteredEventArgs> EntryInitiated;
         public event EventHandler<StateExitedEventArgs> ExitInitiated;
 
+        public int DoBehaviorCount => _doBehaviors.Count;
+
         public IEnumerable<Transition> PassiveTransitions => _outboundTransitions.OfType<Transition>().Where(t => t.IsPassive);
 
         public override string ToString()
@@ -59,7 +59,7 @@ namespace CleanMachine.Behavioral
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"State '{Name}' must be editable in order to set the ENTRY behavior.");
+                throw new InvalidOperationException($"{_context}: State '{Name}' must be editable in order to set the ENTRY behavior.");
             }
 
             _entryBehavior = behavior;
@@ -74,10 +74,10 @@ namespace CleanMachine.Behavioral
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"State '{Name}' must be editable in order to add a DO behavior.");
+                throw new InvalidOperationException($"{_context}: State '{Name}' must be editable in order to add a DO behavior.");
             }
 
-            _doBehaviors.Add(behavior);
+            AddDoBehaviorUnsafe(behavior);
         }
 
         public void AddDoBehavior(string name, Action<IUnityContainer> action)
@@ -95,7 +95,7 @@ namespace CleanMachine.Behavioral
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"State '{Name}' must be editable in order to set the EXIT behavior.");
+                throw new InvalidOperationException($"{_context}: State '{Name}' must be editable in order to set the EXIT behavior.");
             }
 
             _exitBehavior = behavior;
@@ -106,7 +106,12 @@ namespace CleanMachine.Behavioral
             SetExitBehavior(CreateBehavior(ExitBehaviorName, action));
         }
 
-        private IBehavior CreateBehavior(string name, Action<IUnityContainer> action)
+        internal void AddDoBehaviorUnsafe(IBehavior behavior)
+        {
+            _doBehaviors.Add(behavior);
+        }
+
+        internal IBehavior CreateBehavior(string name, Action<IUnityContainer> action)
         {
             IBehavior behavior;
             if (RuntimeContainer.IsRegistered<IScheduler>(StateMachineBase.BehaviorSchedulerKey))
@@ -163,7 +168,7 @@ namespace CleanMachine.Behavioral
         {
             if (_doBehaviors.Any())
             {
-                _logger.Debug($"State '{Name}':  performing DO behaviors.");
+                _logger.Debug($"{_context}: State '{Name}' performing DO behaviors.");
                 _doBehaviors.ForEach(b => OnDoBehavior(b));
             }
         }
@@ -198,12 +203,12 @@ namespace CleanMachine.Behavioral
         {
             try
             {
-                _logger.Debug($"State '{Name}':  performing ENTRY behavior.");
+                _logger.Debug($"{_context}: State '{Name}' performing ENTRY behavior.");
                 _entryBehavior?.Invoke(RuntimeContainer);
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} during ENTRY behavior in State '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} during ENTRY behavior in State '{Name}'.", ex);
             }
         }
 
@@ -212,12 +217,12 @@ namespace CleanMachine.Behavioral
             //TODO: remove try/catch here since Behavior now does it.
             try
             {
-                _logger.Debug($"State '{Name}':  performing EXIT behavior.");
+                _logger.Debug($"{_context}: State '{Name}' performing EXIT behavior.");
                 _exitBehavior?.Invoke(RuntimeContainer);
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} during EXIT behavior in State '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} during EXIT behavior in State '{Name}'.", ex);
             }
         }
 
@@ -226,7 +231,7 @@ namespace CleanMachine.Behavioral
             // State changes don't need to wait for all the DO behaviors to finish.
             if (!IsCurrentState)
             {
-                _logger.Debug($"State '{Name}':  DO behavior ignored because {Name} is no longer the current state.");
+                _logger.Debug($"{_context}: State '{Name}' DO behavior ignored because {Name} is no longer the current state.");
                 return;
             }
             
@@ -235,7 +240,7 @@ namespace CleanMachine.Behavioral
                 doBehavior.Invoke(RuntimeContainer);
                 if (doBehavior.Fault != null)
                 {
-                    _logger.Error($"{doBehavior.Fault.GetType().Name} during DO behavior in state '{Name}'.", doBehavior.Fault);
+                    _logger.Error($"{_context}: {doBehavior.Fault.GetType().Name} during DO behavior in state '{Name}'.", doBehavior.Fault);
                 }
             }
         }
@@ -250,7 +255,7 @@ namespace CleanMachine.Behavioral
             var enteredOn = tripArgs?.FindLastTransition() as Transition;
             if (enteredOn == null)
             {
-                _logger.Debug($"State '{Name}': NULL transition found in {nameof(OnEntryInitiated)}.");
+                _logger.Debug($"{_context}: State '{Name}' NULL transition found in {nameof(OnEntryInitiated)}.");
                 return;
             }
 
@@ -263,7 +268,7 @@ namespace CleanMachine.Behavioral
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(EntryInitiated)}' event in State '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} resulted from raising '{nameof(EntryInitiated)}' event in State '{Name}'.", ex);
             }
         }
 
@@ -277,7 +282,7 @@ namespace CleanMachine.Behavioral
             var exitedOn = tripArgs?.FindLastTransition() as Transition;
             if (exitedOn == null)
             {
-                _logger.Debug($"State '{Name}': NULL transition found in {nameof(OnExitInitiated)}.");
+                _logger.Debug($"{_context}: State '{Name}' NULL transition found in {nameof(OnExitInitiated)}.");
                 return;
             }
 
@@ -290,7 +295,7 @@ namespace CleanMachine.Behavioral
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(ExitInitiated)}' event in State '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} resulted from raising '{nameof(ExitInitiated)}' event in State '{Name}'.", ex);
             }
         }
     }

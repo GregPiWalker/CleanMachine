@@ -14,8 +14,7 @@ namespace CleanMachine
     {
         protected readonly ILog _logger;
         protected readonly List<Transition> _outboundTransitions = new List<Transition>();
-
-        private readonly string _context;
+        protected readonly string _context;
         private bool _isCurrentState;
         private bool _isDisposed;
 

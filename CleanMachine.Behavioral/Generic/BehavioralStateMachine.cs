@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using log4net;
 using Unity;
 using CleanMachine.Generic;
@@ -29,6 +30,37 @@ namespace CleanMachine.Behavioral.Generic
         {
         }
 
+        public new BehavioralState this[TState value]
+        {
+            get { return FindState(value) as BehavioralState; }
+        }
+
+        public void AddDoBehavior(TState state, Action<IUnityContainer> doAction, string doName = null)
+        {
+            var stateObj = this[state];
+            var name = doName ?? $"{BehavioralState.DoBehaviorName} {stateObj.DoBehaviorCount + 1}";
+            if (stateObj.Editable)
+            {
+                stateObj.AddDoBehavior(name, doAction);
+            }
+            else if (RuntimeContainer.IsRegistered<object>(GlobalSynchronizerKey))
+            {
+                var synchronizer = RuntimeContainer.TryGetInstance<object>(GlobalSynchronizerKey);
+                lock (synchronizer)
+                {
+                    stateObj.AddDoBehaviorUnsafe(stateObj.CreateBehavior(name, doAction));
+                }
+            }
+            else if (BehaviorScheduler != null)
+            {
+                BehaviorScheduler.Schedule(() => { stateObj.AddDoBehaviorUnsafe(stateObj.CreateBehavior(name, doAction)); });
+            }
+            else
+            {
+                throw new InvalidOperationException($"{Name}: State '{stateObj.Name}' must be editable in order to add a DO behavior.");
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -37,7 +69,7 @@ namespace CleanMachine.Behavioral.Generic
         {
             if (!stateNames.Any(name => name.Equals(RequiredCommonStateValue)))
             {
-                throw new InvalidOperationException($"StateMachine requires a state enum that contains the value {RequiredCommonStateValue}.");
+                throw new InvalidOperationException($"{Name}:  StateMachine requires a state enum that contains the value {RequiredCommonStateValue}.");
             }
 
             foreach (var stateName in stateNames)

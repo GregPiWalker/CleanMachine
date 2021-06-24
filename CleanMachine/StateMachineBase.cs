@@ -65,7 +65,7 @@ namespace CleanMachine
                 // A synchronizer is not used when a trigger scheduler is provided because the scheduler
                 // already serializes work items by way of an work queue.
                 TriggerScheduler = RuntimeContainer.Resolve<IScheduler>(TriggerSchedulerKey);
-                Logger.Debug($"{Name}:  was initialized with asynchronous triggers.");
+                Logger?.Debug($"{Name}:  was initialized with asynchronous triggers.");
             }
             catch
             {
@@ -73,12 +73,12 @@ namespace CleanMachine
                 // If a synchronizing object hasn't been provided, then register a new one.
                 if (!RuntimeContainer.IsRegistered<object>(GlobalSynchronizerKey))
                 {
-                    Logger.Debug($"{Name}:  was initialized for synchronous operation using a default synchronization object.");
+                    Logger?.Debug($"{Name}:  was initialized for synchronous operation using a default synchronization object.");
                     RuntimeContainer.RegisterInstance(GlobalSynchronizerKey, new object());
                 }
                 else
                 {
-                    Logger.Debug($"{Name}:  was initialized for synchronous operation.");
+                    Logger?.Debug($"{Name}:  was initialized for synchronous operation.");
                 }
             }
 
@@ -87,11 +87,11 @@ namespace CleanMachine
             try
             {
                 BehaviorScheduler = RuntimeContainer.Resolve<IScheduler>(BehaviorSchedulerKey);
-                Logger.Debug($"{Name}:  was initialized with asynchronous behaviors.");
+                Logger?.Debug($"{Name}:  was initialized with asynchronous behaviors.");
             }
             catch
             {
-                Logger.Debug($"{Name}:  was initialized with synchronous behaviors.");
+                Logger?.Debug($"{Name}:  was initialized with synchronous behaviors.");
             }
         }
 

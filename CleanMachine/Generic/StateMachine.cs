@@ -1,12 +1,10 @@
 ﻿using CleanMachine.Interfaces;
-using log4net;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 using Unity;
+using log4net;
 
 namespace CleanMachine.Generic
 {
@@ -63,7 +61,7 @@ namespace CleanMachine.Generic
 
         public new TState CurrentState => _currentState == null ? RequiredCommonStateValue.ToEnum<TState>() : _currentState.ToEnum<TState>();
 
-        public IState this[TState value]
+        public State this[TState value]
         {
             get { return FindState(value); }
         }
@@ -140,7 +138,7 @@ namespace CleanMachine.Generic
         {
             if (!stateNames.Any(name => name.Equals(RequiredCommonStateValue)))
             {
-                throw new InvalidOperationException($"StateMachine requires a state enum that contains the value {RequiredCommonStateValue}.");
+                throw new InvalidOperationException($"{Name}: StateMachine requires a state enum that contains the value {RequiredCommonStateValue}.");
             }
 
             foreach (var stateName in stateNames)
