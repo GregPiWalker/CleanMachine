@@ -233,6 +233,11 @@ namespace CleanMachine
         /// <param name="visitId">The visitation identifier that uniquely describes the state entry that caused this invocation.</param>
         internal protected void Enable(IDisposable visitId)
         {
+            if (_enabled)
+            {
+                return;
+            }
+
             _enabled = true;
             _triggers.Where(t => !t.IsSourceLazy).ToList().ForEach(t => t.Activate(visitId));
         }
@@ -247,6 +252,11 @@ namespace CleanMachine
         /// </summary>
         internal protected void Disable()
         {
+            if (!_enabled)
+            {
+                return;
+            }
+
             _enabled = false;
             _triggers.ForEach(t => t.Deactivate());
         }

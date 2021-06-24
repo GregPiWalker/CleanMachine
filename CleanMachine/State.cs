@@ -10,20 +10,22 @@ using Unity.Lifetime;
 
 namespace CleanMachine
 {
-    public class State : IState
+    public class State : IState, IDisposable
     {
         protected readonly ILog _logger;
         protected readonly List<Transition> _outboundTransitions = new List<Transition>();
-        
+
+        private readonly string _context;
         private bool _isCurrentState;
+        private bool _isDisposed;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
         /// <param name="logger"></param>
-        public State(string name, IUnityContainer runtimeContainer, ILog logger)
-            : this(name, null, runtimeContainer, logger)
+        public State(string name, string context, IUnityContainer runtimeContainer, ILog logger)
+            : this(name, context, null, runtimeContainer, logger)
         {
         }
 
@@ -33,9 +35,10 @@ namespace CleanMachine
         /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
         /// <param name="stereotype"></param>
         /// <param name="logger"></param>
-        public State(string name, string stereotype, IUnityContainer runtimeContainer, ILog logger)
+        public State(string name, string context, string stereotype, IUnityContainer runtimeContainer, ILog logger)
         {
             Name = name;
+            _context = context;
             Stereotype = stereotype;
             RuntimeContainer = runtimeContainer;
             _logger = logger;
@@ -132,7 +135,7 @@ namespace CleanMachine
         {
             if (IsCurrentState && enterOn != null && enterOn.Supplier != enterOn.Consumer)
             {
-                _logger.Debug($"Cannot enter {GetType().Name} '{Name}'.");
+                _logger.Debug($"{_context}: Cannot enter {GetType().Name} '{Name}'.");
                 return false;
             }
 
@@ -148,7 +151,7 @@ namespace CleanMachine
         {
             if (!IsCurrentState)
             {
-                _logger.Debug($"Cannot exit {GetType().Name} '{Name}'; not the current state.");
+                _logger.Debug($"{_context}: Cannot exit {GetType().Name} '{Name}'; not the current state.");
                 return false;
             }
 
@@ -159,7 +162,7 @@ namespace CleanMachine
         {
             if (!Editable)
             {
-                _logger.Debug($"{GetType().Name} '{Name}':  editing enabled.");
+                _logger.Debug($"{_context}: {GetType().Name} '{Name}'  editing enabled.");
             }
 
             Editable = true;
@@ -175,7 +178,7 @@ namespace CleanMachine
         {
             if (Editable)
             {
-                _logger.Debug($"{GetType().Name} '{Name}':  editing completed.");
+                _logger.Debug($"{_context}: {GetType().Name} '{Name}'  editing completed.");
             }
 
             Editable = false;
@@ -207,12 +210,12 @@ namespace CleanMachine
 
         protected void BeginEntry(TripEventArgs tripArgs)
         {
-            _logger.Debug($"Entering {GetType().Name} '{Name}'.");
+            _logger.Debug($"{_context}: Entering {GetType().Name} '{Name}'.");
             var enterOn = tripArgs?.FindLastTransition() as Transition;
 
             IsCurrentState = true;
-            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.EnteredStateKey, this, new ContainerControlledLifetimeManager());
-            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.EnteredOnKey, enterOn, new ContainerControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.EnteredStateKey, this, new ExternallyControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.EnteredOnKey, enterOn, new ExternallyControlledLifetimeManager());
 
             if (tripArgs != null)
             {
@@ -258,13 +261,13 @@ namespace CleanMachine
 
         protected void BeginExit(TripEventArgs tripArgs)
         {
-            _logger.Debug($"Exiting {GetType().Name} '{Name}'.");
+            _logger.Debug($"{_context}: Exiting {GetType().Name} '{Name}'.");
             IsCurrentState = false;
             Disable();
 
             var exitOn = tripArgs?.FindLastTransition() as Transition;
-            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.ExitedStateKey, this, new ContainerControlledLifetimeManager());
-            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.ExitedOnKey, exitOn, new ContainerControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(IState), StateMachineBase.ExitedStateKey, this, new ExternallyControlledLifetimeManager());
+            RuntimeContainer.RegisterInstance(typeof(ITransition), StateMachineBase.ExitedOnKey, exitOn, new ExternallyControlledLifetimeManager());
         }
 
         protected void EndExit(TripEventArgs tripArgs)
@@ -303,12 +306,17 @@ namespace CleanMachine
         /// </summary>
         internal protected virtual void Enable()
         {
+            if (IsEnabled)
+            {
+                return;
+            }
+
             if (ValidateTrips)
             {
                 VisitIdentifier = new BooleanDisposable();
             }
 
-            _logger.Debug($"{GetType().Name} '{Name}': enabling outbound connectors.");
+            _logger.Debug($"{_context}: {GetType().Name} '{Name}' enabling outbound connectors.");
             _outboundTransitions.ForEach(t => t.Enable(VisitIdentifier));
             IsEnabled = true;
         }
@@ -323,9 +331,14 @@ namespace CleanMachine
         /// </summary>
         internal protected void Disable()
         {
+            if (!IsEnabled)
+            {
+                return;
+            }
+
             // Dispose of the visit ID so that irrelevant trips can be cancelled.
             VisitIdentifier?.Dispose();
-            _logger.Debug($"{GetType().Name} '{Name}': disabling outbound connectors.");
+            _logger.Debug($"{_context}: {GetType().Name} '{Name}' disabling outbound connectors.");
             _outboundTransitions.ForEach(t => t.Disable());
             IsEnabled = false;
         }
@@ -359,7 +372,7 @@ namespace CleanMachine
             var enteredOn = tripArgs?.FindLastTransition() as Transition;
             if (enteredOn == null)
             {
-                _logger.Debug($"{GetType().Name} '{Name}': NULL transition found in {nameof(OnEntered)}.");
+                _logger.Debug($"{_context}: {GetType().Name} '{Name}' NULL transition found in {nameof(OnEntered)}.");
                 return;
             }
 
@@ -372,7 +385,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(Entered)}' event in {GetType().Name} '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} resulted from raising '{nameof(Entered)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
@@ -391,7 +404,7 @@ namespace CleanMachine
             var exitedOn = tripArgs?.FindLastTransition() as Transition;
             if (exitedOn == null)
             {
-                _logger.Debug($"{GetType().Name} '{Name}': NULL transition found in {nameof(OnExited)}.");
+                _logger.Debug($"{_context}: {GetType().Name} '{Name}' NULL transition found in {nameof(OnExited)}.");
                 return;
             }
 
@@ -403,7 +416,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(Exited)}' event in {GetType().Name} '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} resulted from raising '{nameof(Exited)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
@@ -420,7 +433,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(TransitionSucceeded)}' event in {GetType().Name} '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} resulted from raising '{nameof(TransitionSucceeded)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
@@ -432,7 +445,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} resulted from raising '{nameof(TransitionFailed)}' event in {GetType().Name} '{Name}'.", ex);
+                _logger.Error($"{_context}: {ex.GetType().Name} resulted from raising '{nameof(TransitionFailed)}' event in {GetType().Name} '{Name}'.", ex);
             }
         }
 
@@ -444,6 +457,36 @@ namespace CleanMachine
         protected virtual void RaiseTransitionFailed(TransitionEventArgs args)
         {
             TransitionFailed?.Invoke(this, args);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_isDisposed)
+            {
+                if (disposing)
+                {
+                    IsCurrentState = false;
+                    Disable();
+                    //TODO: do transitions need disposal?
+                    _outboundTransitions.Clear();
+                }
+
+                _isDisposed = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        // ~State()
+        // {
+        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        //     Dispose(disposing: false);
+        // }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 

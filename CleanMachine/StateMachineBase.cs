@@ -475,6 +475,8 @@ namespace CleanMachine
 
                 if (disposing)
                 {
+                    _states.ForEach(s => s.Dispose());
+
                     // Good chance a scheduler is going to dispose itself here, but it seems to be OK...
                     RuntimeContainer.Dispose();
                     // If self-disposal has an issue, use this task instead:
@@ -486,6 +488,7 @@ namespace CleanMachine
 
                     StateChanged = null;
                     PropertyChanged = null;
+                    _currentState = null;
                 }
 
                 _isDisposed = true;

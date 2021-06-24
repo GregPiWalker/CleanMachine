@@ -27,8 +27,8 @@ namespace CleanMachine.Behavioral
         /// <param name="name">The unique name the defines this <see cref="BehavioralState"/>.</param>
         /// <param name="container"></param>
         /// <param name="logger"></param>
-        public BehavioralState(string name, IUnityContainer container, ILog logger)
-            : this(name, string.Empty, container, logger)
+        public BehavioralState(string name, string context, IUnityContainer container, ILog logger)
+            : this(name, context, string.Empty, container, logger)
         {
         }
 
@@ -39,8 +39,8 @@ namespace CleanMachine.Behavioral
         /// <param name="stereotype"></param>
         /// <param name="container"></param>
         /// <param name="logger"></param>
-        public BehavioralState(string name, string stereotype, IUnityContainer container, ILog logger)
-            : base(name, stereotype, container, logger)
+        public BehavioralState(string name, string context, string stereotype, IUnityContainer container, ILog logger)
+            : base(name, context, stereotype, container, logger)
         {
             ValidateTrips = true;
         }

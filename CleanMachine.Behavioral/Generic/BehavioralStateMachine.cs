@@ -42,7 +42,7 @@ namespace CleanMachine.Behavioral.Generic
 
             foreach (var stateName in stateNames)
             {
-                var state = new BehavioralState(stateName, RuntimeContainer, Logger);
+                var state = new BehavioralState(stateName, Name, RuntimeContainer, Logger);
                 _states.Add(state);
                 state.EnteredInternal += HandleStateEnteredInternal;
                 state.Entered += HandleStateEntered;
