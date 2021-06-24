@@ -36,12 +36,12 @@ namespace CleanMachine
         {
             if (fromState == null)
             {
-                throw new ArgumentException($"{context} transition cannot have a null supplier (fromState).");
+                throw new ArgumentException($"{context}: transition cannot have a null supplier (fromState).");
             }
 
             if (toState == null)
             {
-                throw new ArgumentException($"{context} transition cannot have a null consumer (toState).");
+                throw new ArgumentException($"{context}: transition cannot have a null consumer (toState).");
             }
 
             From = fromState;
@@ -126,11 +126,11 @@ namespace CleanMachine
             {
                 if (!Editable)
                 {
-                    throw new InvalidOperationException($"{GetType().Name} '{Name}' must be editable in order to set the effect.");
+                    throw new InvalidOperationException($"{GetType().Name} '{Name}' must be editable in order to set the effect in {_context}.");
                 }
                 if (value != null && RuntimeContainer == null)
                 {
-                    throw new InvalidOperationException($"{GetType().Name} '{Name}' must have a runtime container in order to set the effect.");
+                    throw new InvalidOperationException($"{GetType().Name} '{Name}' must have a runtime container in order to set the effect in {_context}.");
                 }
 
                 _effect = value;
@@ -207,7 +207,7 @@ namespace CleanMachine
         {
             if (!Editable)
             {
-                throw new InvalidOperationException($"{GetType().Name} '{Name}' must be editable in order to add a trigger.");
+                throw new InvalidOperationException($"{GetType().Name} '{Name}' must be editable in order to add a trigger to {_context}.");
             }
 
             _triggers.Add(t);
@@ -272,13 +272,13 @@ namespace CleanMachine
             var trigger = args.FindTrigger();
             if (trigger != null)
             {
-                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transitting on behalf of '{trigger}' trigger.");
+                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transitting on behalf of '{trigger}' trigger.");
             }
             else
             {
                 var origin = args.GetTripOrigin();
                 // TODO: log signal name instead:
-                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transitting due to signal from {origin.Juncture}.");
+                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transitting due to signal from {origin.Juncture}.");
             }
 
             // Add self to the trip history.
@@ -289,11 +289,11 @@ namespace CleanMachine
             // After call to Enter(), the state machine's CurrentState property will be updated.
             // Also, all non-lazy outgoing triggers will be enabled.
             To.Enter(args);
-            _logger.Debug($"({Name}).{nameof(AttemptTransit)}: old state exit and new state entry complete.");
+            _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} old state exit and new state entry complete.");
 
             if (Effect != null)
             {
-                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: running EFFECT.");
+                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} running EFFECT.");
                 Effect?.Invoke(RuntimeContainer);
             }
 
@@ -322,7 +322,7 @@ namespace CleanMachine
             {
                 if (Guard != null)
                 {
-                    _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transit inhibited by guard {Guard.ToString()}.");
+                    _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transit inhibited by guard {Guard.ToString()}.");
                 }
 
                 result = false;
@@ -332,19 +332,19 @@ namespace CleanMachine
             {
                 if (!From.CanExit(this))
                 {
-                    _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transition could not exit state {From.ToString()}.");
+                    _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transition could not exit state {From.ToString()}.");
                     result = false;
                 }
                 else if (!To.CanEnter(this))
                 {
-                    _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transition could not enter state {To.ToString()}.");
+                    _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transition could not enter state {To.ToString()}.");
                     result = false;
                 }
             }
 
             if (!result)
             {
-                _logger.Debug($"({Name}).{nameof(AttemptTransit)}: transit failed.");
+                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transit failed.");
                 OnFailed(args);
                 return false;
             }
@@ -371,7 +371,7 @@ namespace CleanMachine
         {
             // This event is not optional, the StateMachine behavior depends on it.
             SucceededInternal?.Invoke(this, args);
-            _logger.Debug($"{GetType().Name} '{ToString()}': raising '{nameof(SucceededInternal)}' event.");
+            _logger.Debug($"{_context}: {GetType().Name} '{ToString()}' raising '{nameof(SucceededInternal)}' event.");
 
             try
             {
@@ -379,7 +379,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Succeeded)}' event from '{Name}' transition.", ex);
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Succeeded)}' event from '{Name}' transition in {_context}.", ex);
             }
         }
 
@@ -391,7 +391,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Failed)}' event from '{Name}' transition.", ex);
+                _logger.Error($"{ex.GetType().Name} while raising '{nameof(Failed)}' event from '{Name}' transition in {_context}.", ex);
             }
         }
 

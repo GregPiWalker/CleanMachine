@@ -151,7 +151,7 @@ namespace CleanMachine
         /// <summary>
         /// Gets a value indicating whether the machine should automatically attempt another
         /// state transition after a successful transition.  When the machine stimulates
-        /// a state, only passive Transitions will be attempted.
+        /// a state, only passive Transitions will be attempted if <see cref="UsePassiveRestriction"/> is true.
         /// </summary>
         public bool AutoAdvance
         {
@@ -165,6 +165,12 @@ namespace CleanMachine
                 _autoAdvance = value;
             }
         }
+
+        /// <summary>
+        /// Gets/sets a value indicating whether auto-advancing through transitions should only
+        /// function on the subset of passive <see cref="Transition"/>s that have no <see cref="ITrigger"/>s.
+        /// </summary>
+        public bool UsePassiveRestriction { get; set; }
 
         /// <summary>
         /// 
@@ -198,7 +204,7 @@ namespace CleanMachine
             var state = FindState(initialState);
             if (state == null)
             {
-                throw new ArgumentException($"{Name} does not contain a state named {initialState}.");
+                throw new ArgumentException($"{Name} does not contain a state named '{initialState}'.");
             }
 
             _initialState = state;
@@ -224,6 +230,7 @@ namespace CleanMachine
             }
 
             Logger.Debug($"{Name}:  editing disabled.");
+            Logger.Debug($"{Name} state machine configured with {nameof(AutoAdvance)}={AutoAdvance}, {nameof(UsePassiveRestriction)}={UsePassiveRestriction}, InitialState={_initialState.Name}.");
 
             // Don't auto-advance when we are entering the initial state.
             var useAutoAdvance = _autoAdvance;
@@ -278,13 +285,13 @@ namespace CleanMachine
             var supplier = FindState(supplierState);
             if (supplier == null)
             {
-                throw new InvalidOperationException($"{Name} does not contain state {supplierState}");
+                throw new InvalidOperationException($"{Name} does not contain state '{supplierState}'");
             }
 
             var consumer = FindState(consumerState);
             if (consumer == null)
             {
-                throw new InvalidOperationException($"{Name} does not contain state {consumerState}");
+                throw new InvalidOperationException($"{Name} does not contain state '{consumerState}'");
             }
 
             var transition = supplier.CreateTransitionTo(Name, consumer);
@@ -397,7 +404,7 @@ namespace CleanMachine
                 throw new InvalidOperationException($"{Name} must be fully assembled before it can enter the inital state.");
             }
 
-            Logger.Info($"{Name}:  entering initial state {_initialState.Name}.");
+            Logger.Info($"{Name}:  entering initial state '{_initialState.Name}'.");
             JumpToState(_initialState);
         }
 
@@ -531,17 +538,25 @@ namespace CleanMachine
         protected abstract void HandleStateEntered(object sender, StateEnteredEventArgs args);
 
         /// <summary>
-        /// Stimulate the currently enabled passive transitions to attempt to exit the current state.
-        /// 
-        /// TODO: Change this? Only passive transitions are stimulated because presence of a trigger is
-        /// taken to indicate that only the trigger should be able to stimulate the transition.
+        /// Stimulate the currently enabled transitions to attempt to exit the current state.
+        /// If <see cref="UsePassiveRestriction"/> is true, then only passive transit attempts will
+        /// be made here.
         /// </summary>
         /// <param name="signalSource"></param>
         /// <returns>True if the signal caused a transition; false otherwise.</returns>
         protected virtual bool StimulateUnsafe(TripEventArgs tripArgs)
         {
-            var passiveTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
-            foreach (var transition in passiveTransitions)
+            IEnumerable<Transition> viableTransitions;
+            if (UsePassiveRestriction)
+            {
+                viableTransitions = _currentState.Transitions.Where(t => t.IsPassive).OfType<Transition>();
+            }
+            else
+            {
+                viableTransitions = _currentState.Transitions.OfType<Transition>();
+            }
+
+            foreach (var transition in viableTransitions)
             {
                 if (transition.AttemptTransit(tripArgs))
                 {
@@ -554,10 +569,10 @@ namespace CleanMachine
 
         protected void JumpToStateUnsafe(State jumpTo)
         {
-            Logger.Debug($"{Name}:  jumping to state {jumpTo.Name}.");
+            Logger.Debug($"{Name}:  jumping to state '{jumpTo.Name}'.");
             if (!jumpTo.CanEnter(null))
             {
-                Logger.Warn($"{Name}:  state {jumpTo.Name} has false CanEnter value.");
+                Logger.Warn($"{Name}:  state '{jumpTo.Name}' has false CanEnter value.");
                 //throw new InvalidOperationException($"{Name}:  state {jumpTo.Name} could not be entered.");
             }
 

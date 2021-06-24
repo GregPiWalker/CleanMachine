@@ -103,5 +103,13 @@ namespace CleanMachine
             _transition.AddTrigger(trigger);
             return this;
         }
+
+        // TODO: If this capability is useful, add it to PropertyChangedTrigger
+        //public TransitionEditor TriggerWithLazyProperty(Func<INotifyPropertyChanged> lazySender, string propertyNameChain = "")
+        //{
+        //    var trigger = new PropertyChangedTrigger(lazySender, propertyNameChain, _triggerScheduler, _logger);
+        //    _transition.AddTrigger(trigger);
+        //    return this;
+        //}
     }
 }

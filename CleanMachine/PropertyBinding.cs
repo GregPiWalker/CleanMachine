@@ -1,6 +1,7 @@
 ﻿using log4net;
 using System;
 using System.ComponentModel;
+using System.Reflection;
 
 namespace CleanMachine
 {
@@ -20,10 +21,14 @@ namespace CleanMachine
         /// </summary>
         private readonly PropertyBinding _child;
 
+        private readonly PropertyBinding _parent;
+
         /// <summary>
         /// 
         /// </summary>
         private INotifyPropertyChanged _propertyOwner;
+
+        private PropertyInfo _propertyInfo;
 
         /// <summary>
         /// Create a chain of <see cref="PropertyBinding"/>s where this instance is a parent
@@ -32,9 +37,10 @@ namespace CleanMachine
         /// </summary>
         /// <param name="propertyNameChain"></param>
         /// <param name="logger"></param>
-        public PropertyBinding(string propertyNameChain, ILog logger)
+        public PropertyBinding(string propertyNameChain, PropertyBinding parent, ILog logger)
         {
             _logger = logger;
+            _parent = parent;
 
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))
             {
@@ -43,7 +49,7 @@ namespace CleanMachine
                 PropertyName = propertyNameChain.Substring(0, splitIndex);
                 // Strip PropertyName off the chain and give the remainder to a new child object.
                 var remainder = propertyNameChain.Substring(splitIndex + 1, propertyNameChain.Length - splitIndex - 1);
-                _child = new PropertyBinding(remainder, logger);
+                _child = new PropertyBinding(remainder, this, logger);
             }
             else
             {
@@ -61,15 +67,12 @@ namespace CleanMachine
         public string PropertyName { get; }
 
         /// <summary>
-        /// Gets the <see cref="PropertyBinding"/> corresponding to the last property in the chain.
+        /// Gets the <see cref="PropertyBinding"/> corresponding to the first property in the chain.
         /// </summary>
-        public PropertyBinding Last
-        {
-            get { return _child == null ? this : _child.Last; }
-        }
+        private PropertyBinding First => (_parent == null) ? this : _parent.First;
 
         /// <summary>
-        /// 
+        /// Gets/sets this binding's property owner, and propagates the owner into a child.
         /// </summary>
         public INotifyPropertyChanged PropertyOwner
         {
@@ -83,10 +86,21 @@ namespace CleanMachine
 
                 SubscribeToPropertyOwner(false);
                 _propertyOwner = value;
+                // Only need to set this once.
+                if (_propertyInfo == null)
+                {
+                    _propertyInfo = _propertyOwner?.GetType().GetProperty(PropertyName);
+                }
                 SubscribeToPropertyOwner(true);
 
                 // Propagate here because the initial binding owner has been set.
                 PropagateOwnerAssociations();
+                if (_parent == null)
+                {
+                    // This is the first binding in the chain and the owner association has changed,
+                    // so signal out that the owner's property's value has changed.
+                    OnBoundPropertyChanged(PropertyOwner, PropertyName);
+                }
             }
         }
 
@@ -105,13 +119,7 @@ namespace CleanMachine
         /// </summary>
         private void PropagateOwnerAssociations()
         {
-            if (_child == null)
-            {
-                // This is the last binding in the chain and an ancestor's initial owner association was set,
-                // so signal out that the owner's property's value has changed.
-                OnBoundPropertyChanged(PropertyOwner);
-            }
-            else
+            if (_child != null)
             {
                 try
                 {
@@ -133,14 +141,14 @@ namespace CleanMachine
             if (_propertyOwner != null)
             {
                 // This will hookup the child's PropertyChanged event handler.
-                var info = _propertyOwner.GetType().GetProperty(PropertyName);
-                var value = info.GetValue(_propertyOwner) as INotifyPropertyChanged;
-                if (value == null)
+                //var info = _propertyOwner.GetType().GetProperty(PropertyName);
+                var value = _propertyInfo.GetValue(_propertyOwner);
+                if (value != null && !(value is INotifyPropertyChanged))
                 {
-                    throw new ArgumentException($"Binding Error: {info.Name} is not an INotifyPropertyChanged instance.");
+                    throw new ArgumentException($"Binding Error: Property {_propertyInfo.Name} on object {_propertyOwner.GetType().Name} is not an INotifyPropertyChanged instance.");
                 }
 
-                _child.PropertyOwner = value;
+                _child.PropertyOwner = value as INotifyPropertyChanged;
             }
             else
             {
@@ -179,19 +187,19 @@ namespace CleanMachine
                 return;
             }
 
-            // Do not raise the BoundPropertyChanged event here in order to prevent a possible feedback loop of property updates.
-            // If this classes user needs the local property change notification, it must listen directly to that notifier rather than this binding.
+            // This binding's property value might have changed to null or a new object.  Either way, the chain is affected.
+            PropagateOwnerAssociations();
 
-            // The last binding in the chain always needs to echo a property change from any other ancestor in the chain.
-            Last.OnBoundPropertyChanged(PropertyOwner);
+            // The first binding in the chain always needs to echo a property change from any other descendant in the chain.
+            First.OnBoundPropertyChanged(PropertyOwner, PropertyName);
         }
 
         /// <summary>
         /// Notify that this Binding's property value changed somehow.
         /// </summary>
-        private void OnBoundPropertyChanged(object sourceOwner)
+        private void OnBoundPropertyChanged(object sourceOwner, string sourceName)
         {
-            BoundPropertyChanged?.Invoke(this, new BoundPropertyChangedEventArgs(PropertyName, sourceOwner));
+            BoundPropertyChanged?.Invoke(this, new BoundPropertyChangedEventArgs(sourceName, sourceOwner));
         }
     }
 

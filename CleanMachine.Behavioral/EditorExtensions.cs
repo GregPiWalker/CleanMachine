@@ -42,16 +42,16 @@ namespace CleanMachine.Behavioral
             return editor;
         }
 
-        public static TransitionEditor TriggerWithStateChange<TState>(this TransitionEditor editor, StateMachineBase observerMachine, StateMachine<TState> changeSource, TState toState) where TState : struct
+        public static TransitionEditor TriggerWithStateChange<TState>(this TransitionEditor editor, StateMachine<TState> changeSource, StateMachineBase observerMachine = null, TState? toStateFilter = null) where TState : struct
         {
-            var trigger = new StateChangedTrigger<TState>(changeSource, toState, observerMachine.TriggerScheduler, editor.Logger);
+            var trigger = new StateChangedTrigger<TState>(changeSource, toStateFilter, observerMachine?.TriggerScheduler, editor.Logger);
             editor.Transition.AddTrigger(trigger);
             return editor;
         }
 
-        public static TransitionEditor TriggerWithStateChange<TState>(this TransitionEditor editor, StateMachineBase observerMachine, List<StateMachine<TState>> changeSources, TState toState) where TState : struct
+        public static TransitionEditor TriggerWithStateChange<TState>(this TransitionEditor editor, List<StateMachine<TState>> changeSources, StateMachineBase observerMachine = null, TState? toStateFilter = null) where TState : struct
         {
-            var trigger = new StateChangedTrigger<TState>(changeSources, toState, observerMachine.TriggerScheduler, editor.Logger);
+            var trigger = new StateChangedTrigger<TState>(changeSources, toStateFilter, observerMachine?.TriggerScheduler, editor.Logger);
             editor.Transition.AddTrigger(trigger);
             return editor;
         }

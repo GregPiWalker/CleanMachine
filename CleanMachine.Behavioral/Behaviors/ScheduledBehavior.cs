@@ -34,6 +34,7 @@ namespace CleanMachine.Behavioral.Behaviors
                 }
                 catch (Exception ex)
                 {
+                    //TODO: attach the exception to the runtime container somehow
                     Fault = ex;
                     OnExecutableFaulted(ex, clock ?? SystemClock.Instance, logger);
                 }

@@ -41,7 +41,7 @@ namespace CleanMachine
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))
             {
                 // Build the entire chain of PropertyBinding objects for the given nested properties.
-                _propertyBinding = new PropertyBinding(propertyNameChain, logger);
+                _propertyBinding = new PropertyBinding(propertyNameChain, null, logger);
                 // Now set the entire chain of references using the source object as the top-level parent.
                 //NestedObserver's property is set now, ok to use that name.
                 _propertyBinding.PropertyOwner = source;
@@ -66,7 +66,7 @@ namespace CleanMachine
             }
             else
             {
-                _propertyBinding.Last.BoundPropertyChanged += HandleNestedPropertyChanged;
+                _propertyBinding.BoundPropertyChanged += HandleNestedPropertyChanged;
             }
         }
 
@@ -78,10 +78,7 @@ namespace CleanMachine
             }
             else
             {
-                if (_propertyBinding.Last != null)
-                {
-                    _propertyBinding.Last.BoundPropertyChanged -= HandleNestedPropertyChanged;
-                }
+                _propertyBinding.BoundPropertyChanged -= HandleNestedPropertyChanged;
             }
         }
 
