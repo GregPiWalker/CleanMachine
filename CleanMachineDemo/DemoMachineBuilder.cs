@@ -54,7 +54,7 @@ namespace CleanMachineDemo
             // Transition from THREE to ONE
             var threeToOne = three.TransitionTo(DemoState.One)
                 .GuardWith(() => model.Children.All(c => c.StateMachine.CurrentState == ChildState.Ready), "All Children Ready")
-                .TriggerWithStateChange(builder.Machine, model.Children.Select(c => c.StateMachine).ToList(), ChildState.Ready)
+                .TriggerWithStateChange(model.Children.Select(c => c.StateMachine).ToList(), builder.Machine, ChildState.Ready)
                 .TriggerWithEvent<DemoModel, DemoEventArgs>(model, nameof(model.TriggerEvent));
         }
 
