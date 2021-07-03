@@ -12,7 +12,7 @@ namespace CleanMachine
 {
     public class State : IState, IDisposable
     {
-        protected readonly ILog _logger;
+        protected readonly Logger _logger;
         protected readonly List<Transition> _outboundTransitions = new List<Transition>();
         protected readonly string _context;
         private bool _isCurrentState;
@@ -23,7 +23,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
         /// <param name="logger"></param>
-        public State(string name, string context, IUnityContainer runtimeContainer, ILog logger)
+        public State(string name, string context, IUnityContainer runtimeContainer, Logger logger)
             : this(name, context, null, runtimeContainer, logger)
         {
         }
@@ -34,7 +34,7 @@ namespace CleanMachine
         /// <param name="name">The unique name the defines this <see cref="State"/>.</param>
         /// <param name="stereotype"></param>
         /// <param name="logger"></param>
-        public State(string name, string context, string stereotype, IUnityContainer runtimeContainer, ILog logger)
+        public State(string name, string context, string stereotype, IUnityContainer runtimeContainer, Logger logger)
         {
             Name = name;
             _context = context;
@@ -134,7 +134,7 @@ namespace CleanMachine
         {
             if (IsCurrentState && enterOn != null && enterOn.Supplier != enterOn.Consumer)
             {
-                _logger.Debug($"{_context}: Cannot enter {GetType().Name} '{Name}'.");
+                _logger.Trace($"{_context}: Cannot enter {GetType().Name} '{Name}'.");
                 return false;
             }
 
@@ -150,7 +150,7 @@ namespace CleanMachine
         {
             if (!IsCurrentState)
             {
-                _logger.Debug($"{_context}: Cannot exit {GetType().Name} '{Name}'; not the current state.");
+                _logger.Trace($"{_context}: Cannot exit {GetType().Name} '{Name}'; not the current state.");
                 return false;
             }
 
@@ -161,7 +161,7 @@ namespace CleanMachine
         {
             if (!Editable)
             {
-                _logger.Debug($"{_context}: {GetType().Name} '{Name}'  editing enabled.");
+                _logger.Trace($"{_context}: {GetType().Name} '{Name}'  editing enabled.");
             }
 
             Editable = true;
@@ -170,14 +170,13 @@ namespace CleanMachine
             {
                 transition.Edit();
             }
-
         }
 
         internal void CompleteEdit()
         {
             if (Editable)
             {
-                _logger.Debug($"{_context}: {GetType().Name} '{Name}'  editing completed.");
+                _logger.Trace($"{_context}: {GetType().Name} '{Name}'  editing completed.");
             }
 
             Editable = false;
@@ -260,7 +259,7 @@ namespace CleanMachine
 
         protected void BeginExit(TripEventArgs tripArgs)
         {
-            _logger.Debug($"{_context}: Exiting {GetType().Name} '{Name}'.");
+            _logger.Trace($"{_context}: Exiting {GetType().Name} '{Name}'.");
             IsCurrentState = false;
             Disable();
 
@@ -315,7 +314,7 @@ namespace CleanMachine
                 VisitIdentifier = new BooleanDisposable();
             }
 
-            _logger.Debug($"{_context}: {GetType().Name} '{Name}' enabling outbound connectors.");
+            _logger.Trace($"{_context}: {GetType().Name} '{Name}' enabling outbound connectors.");
             _outboundTransitions.ForEach(t => t.Enable(VisitIdentifier));
             IsEnabled = true;
         }
@@ -337,7 +336,7 @@ namespace CleanMachine
 
             // Dispose of the visit ID so that irrelevant trips can be cancelled.
             VisitIdentifier?.Dispose();
-            _logger.Debug($"{_context}: {GetType().Name} '{Name}' disabling outbound connectors.");
+            _logger.Trace($"{_context}: {GetType().Name} '{Name}' disabling outbound connectors.");
             _outboundTransitions.ForEach(t => t.Disable());
             IsEnabled = false;
         }
@@ -371,7 +370,7 @@ namespace CleanMachine
             var enteredOn = tripArgs?.FindLastTransition() as Transition;
             if (enteredOn == null)
             {
-                _logger.Debug($"{_context}: {GetType().Name} '{Name}' NULL transition found in {nameof(OnEntered)}.");
+                _logger.Trace($"{_context}: {GetType().Name} '{Name}' NULL transition found in {nameof(OnEntered)}.");
                 return;
             }
 
@@ -403,7 +402,7 @@ namespace CleanMachine
             var exitedOn = tripArgs?.FindLastTransition() as Transition;
             if (exitedOn == null)
             {
-                _logger.Debug($"{_context}: {GetType().Name} '{Name}' NULL transition found in {nameof(OnExited)}.");
+                _logger.Trace($"{_context}: {GetType().Name} '{Name}' NULL transition found in {nameof(OnExited)}.");
                 return;
             }
 

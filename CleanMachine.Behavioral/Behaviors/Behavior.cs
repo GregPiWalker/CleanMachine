@@ -27,31 +27,36 @@ namespace CleanMachine.Behavioral.Behaviors
 
         public virtual void Invoke(IUnityContainer runtimeContainer)
         {
-            var clock = runtimeContainer.TryGetTypeRegistration<IClock>();
-            var logger = runtimeContainer.TryGetTypeRegistration<ILog>();
             try
             {
                 _action(runtimeContainer);
-                OnExecutableFinished(clock, logger);
+                OnExecutableFinished(runtimeContainer);
             }
             catch (Exception e)
             {
                 Fault = e;
-                OnExecutableFaulted(e, clock, logger);
+                OnExecutableFaulted(e, runtimeContainer);
             }
         }
 
         /// <summary>
         /// Raise the Finished event.
         /// </summary>
-        protected void OnExecutableFinished(IClock clock, ILog logger)
+        protected void OnExecutableFinished(IUnityContainer runtimeContainer)
         {
+            if (Finished == null)
+            {
+                return;
+            }
+
             try
             {
+                var clock = runtimeContainer.TryGetTypeRegistration<IClock>();
                 Finished?.Invoke(this, new ClockedEventArgs(clock));
             }
             catch (Exception ex)
             {
+                var logger = runtimeContainer.TryGetTypeRegistration<ILog>();
                 //TODO: what if the logger is null?
                 logger?.Error($"{ex.GetType().Name} while raising event '{nameof(Finished)}' in behavior '{Name}':  {ex.Message}.", ex);
             }
@@ -60,14 +65,21 @@ namespace CleanMachine.Behavioral.Behaviors
         /// <summary>
         /// Raise the Faulted event.
         /// </summary>
-        protected virtual void OnExecutableFaulted(Exception ex, IClock clock, ILog logger)
+        protected virtual void OnExecutableFaulted(Exception ex, IUnityContainer runtimeContainer)
         {
+            if (Faulted == null)
+            {
+                return;
+            }
+
             try
             {
+                var clock = runtimeContainer.TryGetTypeRegistration<IClock>();
                 Faulted?.Invoke(this, new FaultedEventArgs(ex, clock));
             }
             catch (Exception nex)
             {
+                var logger = runtimeContainer.TryGetTypeRegistration<ILog>();
                 //TODO: what if the logger is null?
                 logger?.Error($"{nex.GetType().Name} while raising event '{nameof(Faulted)}' in behavior '{Name}':  {nex.Message}.", nex);
             }

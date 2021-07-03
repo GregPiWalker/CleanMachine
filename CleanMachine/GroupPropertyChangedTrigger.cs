@@ -10,12 +10,12 @@ namespace CleanMachine
         private readonly string _filterProperty;
         private readonly object _handlerSync = new object();
 
-        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, IScheduler scheduler, ILog logger)
+        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, IScheduler scheduler, Logger logger)
             : this(sourceGroup, string.Empty, scheduler, logger)
         {
         }
         
-        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, string propertyFilter, IScheduler scheduler, ILog logger)
+        public GroupPropertyChangedTrigger(List<TSource> sourceGroup, string propertyFilter, IScheduler scheduler, Logger logger)
             : base($"{sourceGroup.GetType().Name}.(Group)PropertyChanged", sourceGroup, scheduler, logger)
         {
             _filterProperty = propertyFilter;

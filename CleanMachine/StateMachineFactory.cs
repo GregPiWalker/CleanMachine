@@ -7,12 +7,7 @@ namespace CleanMachine
     public static class StateMachineFactory
     {
         /// <summary>
-        /// Create a StateMachine that transitions synchronously.  An option is given whether to make the UML behaviors
-        /// (ENTRY, DO, EXIT, EFFECT) synchronous or not.  If asynchronous behaviors is chosen, a scheduler with a 
-        /// dedicated background thread is instantiated for running them.  This optional scheduler serializes its workflow,
-        /// but will operate asynchronously with respect to transitions and incoming trigger invocations.
-        /// If synchronous behaviors is chosen, then transitions, behaviors and trigger invocations will all occur
-        /// on the current thread.
+        /// Create a StateMachine that transits synchronously.
         /// </summary>
         /// <typeparam name="TState"></typeparam>
         /// <param name="name"></param>

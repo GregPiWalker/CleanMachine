@@ -11,17 +11,17 @@ namespace CleanMachine
     public class TransitionEditor
     {
         protected readonly Transition _transition;
-        protected readonly ILog _logger;
+        protected readonly Logger _logger;
         protected readonly IScheduler _triggerScheduler;
 
-        internal TransitionEditor(Transition transition, IScheduler triggerScheduler, ILog logger)
+        internal TransitionEditor(Transition transition, IScheduler triggerScheduler, Logger logger)
         {
             _transition = transition;
             _logger = logger;
             _triggerScheduler = triggerScheduler;
         }
 
-        internal protected ILog Logger => _logger;
+        internal protected Logger Logger => _logger;
 
         internal protected Transition Transition => _transition;
 

@@ -27,7 +27,7 @@ namespace CleanMachine.Generic
         /// <param name="filter"></param>
         /// <param name="scheduler"></param>
         /// <param name="logger"></param>
-        public Trigger(TSource source, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, ILog logger)
+        public Trigger(TSource source, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, Logger logger)
             : base(string.Empty, source, scheduler, logger)
         {
             Initialize(eventName, filter);
@@ -40,7 +40,7 @@ namespace CleanMachine.Generic
         /// <param name="eventName"></param>
         /// <param name="scheduler"></param>
         /// <param name="logger"></param>
-        public Trigger(TSource source, string eventName, IScheduler scheduler, ILog logger)
+        public Trigger(TSource source, string eventName, IScheduler scheduler, Logger logger)
             : this(source, eventName, null, scheduler, logger)
         {
         }
@@ -51,7 +51,7 @@ namespace CleanMachine.Generic
         /// <param name="source"></param>
         /// <param name="eventName"></param>
         /// <param name="logger"></param>
-        public Trigger(TSource source, string eventName, ILog logger)
+        public Trigger(TSource source, string eventName, Logger logger)
             : this(source, eventName, null, null, logger)
         {
         }
@@ -65,7 +65,7 @@ namespace CleanMachine.Generic
         /// <param name="filter"></param>
         /// <param name="scheduler"></param>
         /// <param name="logger"></param>
-        public Trigger(Func<TSource> lazySource, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, ILog logger)
+        public Trigger(Func<TSource> lazySource, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, Logger logger)
             : base(string.Empty, null, scheduler, logger)
         {
             _lazySourceProvider = lazySource;
@@ -80,7 +80,7 @@ namespace CleanMachine.Generic
         /// <param name="eventName"></param>
         /// <param name="scheduler"></param>
         /// <param name="logger"></param>
-        public Trigger(Func<TSource> lazySource, string eventName, IScheduler scheduler, ILog logger)
+        public Trigger(Func<TSource> lazySource, string eventName, IScheduler scheduler, Logger logger)
             : this(lazySource, eventName, null, scheduler, logger)
         {
         }

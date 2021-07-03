@@ -14,12 +14,12 @@ namespace CleanMachine
     {
         public const BindingFlags FullAccessBindingFlags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
         protected readonly IScheduler _tripScheduler;
-        protected readonly ILog _logger;
+        protected readonly Logger _logger;
         protected BooleanDisposable _visitorId;
         //TODO: looks like this should be the same object as the Machine's sync object, when no trigger scheduler is used.
         private readonly object _visitLock = new object();
 
-        public TriggerBase(string name, object source, IScheduler tripScheduler, ILog logger)
+        public TriggerBase(string name, object source, IScheduler tripScheduler, Logger logger)
         {
             _tripScheduler = tripScheduler;
             _logger = logger;
@@ -130,14 +130,14 @@ namespace CleanMachine
                 // Provide escape route in case the trigger was deactivated while the trip was waiting to be serviced.
                 if (!IsActive)
                 {
-                    _logger.Debug($"{Name}.{nameof(OnTriggered)}:  trigger trip rejected for '{ToString()}'. Trigger is currently inactive.");
+                    _logger.Trace($"{Name}.{nameof(OnTriggered)}:  trigger trip rejected for '{ToString()}'. Trigger is currently inactive.");
                     return false;
                 }
 
                 // Provide escape route in case the trip became irrelevant while it was waiting to be serviced.
                 if (_visitorId != null && _visitorId.IsDisposed)
                 {
-                    _logger.Debug($"{Name}.{nameof(OnTriggered)}:  trigger trip rejected for  '{ToString()}'.  The trip is no longer valid in relation to its surroundings.");
+                    _logger.Trace($"{Name}.{nameof(OnTriggered)}:  trigger trip rejected for  '{ToString()}'.  The trip is no longer valid in relation to its surroundings.");
                     return false;
                 }
             }

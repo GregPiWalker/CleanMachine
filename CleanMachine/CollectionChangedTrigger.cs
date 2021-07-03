@@ -10,12 +10,12 @@ namespace CleanMachine
     {
         private readonly int _tripFilter;
 
-        public CollectionChangedTrigger(INotifyCollectionChanged source, IScheduler tripScheduler, ILog logger)
+        public CollectionChangedTrigger(INotifyCollectionChanged source, IScheduler tripScheduler, Logger logger)
             : this(source, -1, tripScheduler, logger)
         {
         }
 
-        public CollectionChangedTrigger(INotifyCollectionChanged source, int tripFilter, IScheduler tripScheduler, ILog logger)
+        public CollectionChangedTrigger(INotifyCollectionChanged source, int tripFilter, IScheduler tripScheduler, Logger logger)
             : base($"{source.GetType().Name}.{nameof(source.CollectionChanged)}", source, tripScheduler, logger)
         {
             _tripFilter = tripFilter;
@@ -45,15 +45,15 @@ namespace CleanMachine
                 var itemCount = collection.Count;
                 if (_tripFilter < 0 || _tripFilter == itemCount)
                 {
-                    if (VerboseLogging)
-                    {
-                        _logger.Debug($"{nameof(CollectionChangedTrigger)} '{Name}' tripping for item count change: {itemCount} items remaining");
-                    }
+                    //if (VerboseLogging)
+                    //{
+                        _logger.Trace($"{nameof(CollectionChangedTrigger)} '{Name}' tripping for item count change: {itemCount} items remaining");
+                    //}
                     Trip(sender, args);
                 }
-                else if (VerboseLogging)
+                else// if (VerboseLogging)
                 {
-                    _logger.Debug($"{nameof(CollectionChangedTrigger)} '{Name}' ignoring change on collection with {itemCount} items.");
+                    _logger.Trace($"{nameof(CollectionChangedTrigger)} '{Name}' ignoring change on collection with {itemCount} items.");
                 }
             }
         }

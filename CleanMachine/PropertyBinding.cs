@@ -14,7 +14,7 @@ namespace CleanMachine
     /// </summary>
     public class PropertyBinding : IDisposable
     {
-        private readonly ILog _logger;
+        private readonly Logger _logger;
 
         /// <summary>
         /// The <see cref="PropertyBinding"/> corresponding to the next descendant property in the chain.
@@ -37,7 +37,7 @@ namespace CleanMachine
         /// </summary>
         /// <param name="propertyNameChain"></param>
         /// <param name="logger"></param>
-        public PropertyBinding(string propertyNameChain, PropertyBinding parent, ILog logger)
+        public PropertyBinding(string propertyNameChain, PropertyBinding parent, Logger logger)
         {
             _logger = logger;
             _parent = parent;

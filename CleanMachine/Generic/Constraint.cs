@@ -6,9 +6,9 @@ namespace CleanMachine.Generic
 {
     public class Constraint<TParam> : IConstraint
     {
-        private readonly ILog _logger;
+        private readonly Logger _logger;
 
-        public Constraint(string name, Func<TParam, bool> condition, ILog logger)
+        public Constraint(string name, Func<TParam, bool> condition, Logger logger)
             : this(name, condition, null, logger)
         {
             _logger = logger;
@@ -25,7 +25,7 @@ namespace CleanMachine.Generic
         /// <param name="condition"></param>
         /// <param name="transform"></param>
         /// <param name="logger"></param>
-        public Constraint(string name, Func<TParam, bool> condition, Func<object, TParam> transform, ILog logger)
+        public Constraint(string name, Func<TParam, bool> condition, Func<object, TParam> transform, Logger logger)
         {
             _logger = logger;
             Name = name;
@@ -41,7 +41,7 @@ namespace CleanMachine.Generic
         /// <param name="condition"></param>
         /// <param name="preconfiguredArg"></param>
         /// <param name="logger"></param>
-        public Constraint(string name, Func<TParam, bool> condition, TParam preconfiguredArg, ILog logger)
+        public Constraint(string name, Func<TParam, bool> condition, TParam preconfiguredArg, Logger logger)
             : this(name, condition, logger)
         {
             EvaluationArgument = preconfiguredArg;

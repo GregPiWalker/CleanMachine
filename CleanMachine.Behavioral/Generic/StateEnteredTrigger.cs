@@ -16,7 +16,7 @@ namespace CleanMachine.Behavioral.Generic
         private readonly IState _state;
 
         //TODO: Change this to accept a collection like StateChangedTrigger
-        public StateEnteredTrigger(StateMachine<TState> source, TState? tripOnState, IScheduler tripScheduler, ILog logger)
+        public StateEnteredTrigger(StateMachine<TState> source, TState? tripOnState, IScheduler tripScheduler, Logger logger)
             : base($"{typeof(StateMachine<TState>).Name}.{nameof(source.StateEntered)}<{typeof(StateEnteredEventArgs<TState>).Name}>", source, tripScheduler, logger)
         {
             if (tripOnState.HasValue)
@@ -27,7 +27,7 @@ namespace CleanMachine.Behavioral.Generic
             _filterState = tripOnState;
         }
 
-        public StateEnteredTrigger(StateMachine<TState> source, IScheduler tripScheduler, ILog logger)
+        public StateEnteredTrigger(StateMachine<TState> source, IScheduler tripScheduler, Logger logger)
             : this(source, null, tripScheduler, logger)
         {
         }

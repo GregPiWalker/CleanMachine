@@ -91,5 +91,27 @@ namespace CleanMachine.Behavioral
             var machine = new BehavioralStateMachine<TState>(machineName, container, logger, true);
             return machine;
         }
+
+        /// <summary>
+        /// Create a synchronous BehavioralStateMachine without any ISchedulers.
+        /// Behaviors and trigger invocations will all occur on the current thread.
+        /// </summary>
+        /// <typeparam name="TState"></typeparam>
+        /// <param name="name"></param>
+        /// <param name="logger"></param>
+        /// <param name="externalSynchronizer">An object to synchronize the state machine's internal triggers and signals with other external threaded work.
+        /// If none is supplied, an internal object is used.</param>
+        /// <returns></returns>
+        public static BehavioralStateMachine<TState> Create<TState>(string name, ILog logger, object externalSynchronizer = null) where TState : struct
+        {
+            IUnityContainer container = null;
+            if (externalSynchronizer != null)
+            {
+                container = new UnityContainer();
+                container.RegisterInstance(StateMachineBase.GlobalSynchronizerKey, externalSynchronizer);
+            }
+
+            return new BehavioralStateMachine<TState>(name, container, logger, true);
+        }
     }
 }

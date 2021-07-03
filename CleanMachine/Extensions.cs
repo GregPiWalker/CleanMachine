@@ -240,50 +240,66 @@ namespace CleanMachine
 
         public static TReg TryGetInstance<TReg>(this IUnityContainer container, string instanceName) where TReg : class
         {
-            try
+            if (container.IsRegistered<TReg>(instanceName))
             {
-                return container.Resolve<TReg>(instanceName);
+                try
+                {
+                    return container.Resolve<TReg>(instanceName);
+                }
+                catch
+                {
+                }
             }
-            catch
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public static TReg TryGetTypeRegistration<TReg>(this IUnityContainer container) where TReg : class
         {
-            try
+            if (container.IsRegistered<TReg>())
             {
-                return container.Resolve<TReg>();
+                try
+                {
+                    return container.Resolve<TReg>();
+                }
+                catch
+                {
+                }
             }
-            catch
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public static TReg? TryGetValue<TReg>(this IUnityContainer container, string instanceName) where TReg : struct
         {
-            try
+            if (container.IsRegistered<TReg>(instanceName))
             {
-                return container.Resolve<TReg>(instanceName);
+                try
+                {
+                    return container.Resolve<TReg>(instanceName);
+                }
+                catch
+                {
+                }
             }
-            catch
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public static TReg? TryGetValueRegistration<TReg>(this IUnityContainer container) where TReg : struct
         {
-            try
+            if (container.IsRegistered<TReg>())
             {
-                return container.Resolve<TReg>();
+                try
+                {
+                    return container.Resolve<TReg>();
+                }
+                catch
+                {
+                }
             }
-            catch
-            {
-                return null;
-            }
+
+            return null;
         }
     }
 }

@@ -19,12 +19,12 @@ namespace CleanMachine.Generic
         /// <param name="filter"></param>
         /// <param name="tripScheduler"></param>
         /// <param name="logger"></param>
-        public DelegateTrigger(TSource source, string eventName, Constraint<TEventArgs> filter, IScheduler tripScheduler, ILog logger)
+        public DelegateTrigger(TSource source, string eventName, Constraint<TEventArgs> filter, IScheduler tripScheduler, Logger logger)
             : base(source, eventName, filter, tripScheduler, logger)
         {
         }
 
-        public DelegateTrigger(TSource source, string eventName, IScheduler tripScheduler, ILog logger)
+        public DelegateTrigger(TSource source, string eventName, IScheduler tripScheduler, Logger logger)
             : this(source, eventName, null, tripScheduler, logger)
         {
         }

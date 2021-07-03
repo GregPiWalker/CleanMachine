@@ -6,9 +6,9 @@ namespace CleanMachine
 {
     public class Constraint : IConstraint
     {
-        private readonly ILog _logger;
+        private readonly Logger _logger;
 
-        public Constraint(string name, Func<bool> condition, ILog logger)
+        public Constraint(string name, Func<bool> condition, Logger logger)
         {
             _logger = logger;
             Name = name;

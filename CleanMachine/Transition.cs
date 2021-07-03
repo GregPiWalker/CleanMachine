@@ -12,7 +12,7 @@ namespace CleanMachine
     {
         protected readonly string _context;
         protected readonly List<TriggerBase> _triggers = new List<TriggerBase>();
-        protected readonly ILog _logger;
+        protected readonly Logger _logger;
         protected IConstraint _guard;
         protected IBehavior _effect;
         protected bool _enabled;
@@ -26,12 +26,12 @@ namespace CleanMachine
         /// <param name="fromState"></param>
         /// <param name="toState"></param>
         /// <param name="logger"></param>
-        public Transition(string context, State fromState, State toState, ILog logger)
+        public Transition(string context, State fromState, State toState, Logger logger)
             : this(context, null, fromState, toState, logger)
         {
         }
 
-        public Transition(string context, string stereotype, State fromState, State toState, ILog logger)
+        public Transition(string context, string stereotype, State fromState, State toState, Logger logger)
             : this(context, stereotype, logger)
         {
             if (fromState == null)
@@ -48,7 +48,7 @@ namespace CleanMachine
             To = toState;
         }
 
-        protected Transition(string context, string stereotype, ILog logger)
+        protected Transition(string context, string stereotype, Logger logger)
         {
             _context = context;
             _logger = logger;
@@ -282,13 +282,13 @@ namespace CleanMachine
             var trigger = args.FindTrigger();
             if (trigger != null)
             {
-                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transitting on behalf of '{trigger}' trigger.");
+                _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} transitting on behalf of '{trigger}' trigger.");
             }
             else
             {
                 var origin = args.GetTripOrigin();
                 // TODO: log signal name instead:
-                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transitting due to signal from {origin.Juncture}.");
+                _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} transitting due to signal from {origin.Juncture}.");
             }
 
             // Add self to the trip history.
@@ -299,11 +299,11 @@ namespace CleanMachine
             // After call to Enter(), the state machine's CurrentState property will be updated.
             // Also, all non-lazy outgoing triggers will be enabled.
             To.Enter(args);
-            _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} old state exit and new state entry complete.");
+            _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} old state exit and new state entry complete.");
 
             if (Effect != null)
             {
-                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} running EFFECT.");
+                _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} running EFFECT.");
                 Effect?.Invoke(RuntimeContainer);
             }
 
@@ -332,7 +332,7 @@ namespace CleanMachine
             {
                 if (Guard != null)
                 {
-                    _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transit inhibited by guard {Guard.ToString()}.");
+                    _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} transit inhibited by guard {Guard.ToString()}.");
                 }
 
                 result = false;
@@ -342,19 +342,19 @@ namespace CleanMachine
             {
                 if (!From.CanExit(this))
                 {
-                    _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transition could not exit state {From.ToString()}.");
+                    _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} transition could not exit state {From.ToString()}.");
                     result = false;
                 }
                 else if (!To.CanEnter(this))
                 {
-                    _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transition could not enter state {To.ToString()}.");
+                    _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} transition could not enter state {To.ToString()}.");
                     result = false;
                 }
             }
 
             if (!result)
             {
-                _logger.Debug($"{_context}: ({Name}).{nameof(AttemptTransit)} transit failed.");
+                _logger.Trace($"{_context}: ({Name}).{nameof(AttemptTransit)} transit failed.");
                 OnFailed(args);
                 return false;
             }
@@ -381,7 +381,7 @@ namespace CleanMachine
         {
             // This event is not optional, the StateMachine behavior depends on it.
             SucceededInternal?.Invoke(this, args);
-            _logger.Debug($"{_context}: {GetType().Name} '{ToString()}' raising '{nameof(SucceededInternal)}' event.");
+            _logger.Trace($"{_context}: {GetType().Name} '{ToString()}' raising '{nameof(SucceededInternal)}' event.");
 
             try
             {

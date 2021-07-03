@@ -51,21 +51,32 @@ namespace CleanMachine
         protected StateMachineBase(string name, IUnityContainer runtimeContainer, ILog logger)
         {
             Name = name;
-            Logger = logger;
+            Logger = new Logger(logger);
             RuntimeContainer = runtimeContainer ?? new UnityContainer();
+            RuntimeContainer.RegisterInstance(Logger);
 
             // If a clock hasn't been provided, then register a standard system clock.
             if (!RuntimeContainer.IsRegistered<IClock>())
             {
                 RuntimeContainer.RegisterInstance<IClock>(SystemClock.Instance);
             }
-                        
+
+            if (logger == null && RuntimeContainer.IsRegistered<ILog>())
+            {
+                Logger.Log = RuntimeContainer.Resolve<ILog>();
+            }
+
+            if (Logger.Log != null)
+            {
+                Logger.Enable = true;
+            }
+
             try
             {
                 // A synchronizer is not used when a trigger scheduler is provided because the scheduler
                 // already serializes work items by way of an work queue.
                 TriggerScheduler = RuntimeContainer.Resolve<IScheduler>(TriggerSchedulerKey);
-                Logger?.Debug($"{Name}:  was initialized with asynchronous triggers.");
+                Logger.Debug($"{Name}:  was initialized with asynchronous triggers.");
             }
             catch
             {
@@ -73,12 +84,12 @@ namespace CleanMachine
                 // If a synchronizing object hasn't been provided, then register a new one.
                 if (!RuntimeContainer.IsRegistered<object>(GlobalSynchronizerKey))
                 {
-                    Logger?.Debug($"{Name}:  was initialized for synchronous operation using a default synchronization object.");
+                    Logger.Debug($"{Name}:  was initialized for synchronous operation using a default synchronization object.");
                     RuntimeContainer.RegisterInstance(GlobalSynchronizerKey, new object());
                 }
                 else
                 {
-                    Logger?.Debug($"{Name}:  was initialized for synchronous operation.");
+                    Logger.Debug($"{Name}:  was initialized for synchronous operation.");
                 }
             }
 
@@ -87,11 +98,11 @@ namespace CleanMachine
             try
             {
                 BehaviorScheduler = RuntimeContainer.Resolve<IScheduler>(BehaviorSchedulerKey);
-                Logger?.Debug($"{Name}:  was initialized with asynchronous behaviors.");
+                Logger.Debug($"{Name}:  was initialized with asynchronous behaviors.");
             }
             catch
             {
-                Logger?.Debug($"{Name}:  was initialized with synchronous behaviors.");
+                Logger.Debug($"{Name}:  was initialized with synchronous behaviors.");
             }
         }
 
@@ -121,7 +132,7 @@ namespace CleanMachine
         /// <summary>
         /// 
         /// </summary>
-        public ILog Logger { get; }
+        public Logger Logger { get; }
 
         public IState CurrentState => _currentState;
 
@@ -229,7 +240,7 @@ namespace CleanMachine
                 state.CompleteEdit();
             }
 
-            Logger.Debug($"{Name}:  editing disabled.");
+            Logger.Trace($"{Name}:  editing disabled.");
             Logger.Debug($"{Name} state machine configured with {nameof(AutoAdvance)}={AutoAdvance}, {nameof(UsePassiveRestriction)}={UsePassiveRestriction}, InitialState={_initialState.Name}.");
 
             // Don't auto-advance when we are entering the initial state.
@@ -257,7 +268,7 @@ namespace CleanMachine
 
             if (!Editable)
             {
-                Logger.Debug($"{Name}:  editing enabled.");
+                Logger.Trace($"{Name}:  editing enabled.");
             }
 
             Editable = true;
@@ -404,7 +415,7 @@ namespace CleanMachine
                 throw new InvalidOperationException($"{Name} must be fully assembled before it can enter the inital state.");
             }
 
-            Logger.Info($"{Name}:  entering initial state '{_initialState.Name}'.");
+            Logger.Trace($"{Name}:  entering initial state '{_initialState.Name}'.");
             JumpToState(_initialState);
         }
 
@@ -572,7 +583,7 @@ namespace CleanMachine
 
         protected void JumpToStateUnsafe(State jumpTo)
         {
-            Logger.Debug($"{Name}:  jumping to state '{jumpTo.Name}'.");
+            Logger.Trace($"{Name}:  jumping to state '{jumpTo.Name}'.");
             if (!jumpTo.CanEnter(null))
             {
                 Logger.Warn($"{Name}:  state '{jumpTo.Name}' has false CanEnter value.");

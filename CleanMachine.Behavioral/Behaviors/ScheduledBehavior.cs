@@ -30,13 +30,13 @@ namespace CleanMachine.Behavioral.Behaviors
                 {
                     clock = runtimeContainer.Resolve<IClock>();
                     _action(runtimeContainer);
-                    OnExecutableFinished(clock, logger);
+                    OnExecutableFinished(runtimeContainer);
                 }
                 catch (Exception ex)
                 {
                     //TODO: attach the exception to the runtime container somehow
                     Fault = ex;
-                    OnExecutableFaulted(ex, clock ?? SystemClock.Instance, logger);
+                    OnExecutableFaulted(ex, runtimeContainer);
                 }
             });
         }

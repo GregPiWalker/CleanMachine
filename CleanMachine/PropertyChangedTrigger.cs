@@ -20,7 +20,7 @@ namespace CleanMachine
         /// <param name="source"></param>
         /// <param name="tripScheduler"></param>
         /// <param name="logger"></param>
-        public PropertyChangedTrigger(INotifyPropertyChanged source, IScheduler tripScheduler, ILog logger)
+        public PropertyChangedTrigger(INotifyPropertyChanged source, IScheduler tripScheduler, Logger logger)
             : this(source, null, tripScheduler, logger)
         {
         }
@@ -35,7 +35,7 @@ namespace CleanMachine
         /// <param name="propertyNameChain">optional property name chain to use as a filter</param>
         /// <param name="tripScheduler"></param>
         /// <param name="logger"></param>
-        public PropertyChangedTrigger(INotifyPropertyChanged source, string propertyNameChain, IScheduler tripScheduler, ILog logger)
+        public PropertyChangedTrigger(INotifyPropertyChanged source, string propertyNameChain, IScheduler tripScheduler, Logger logger)
             : base($"{source.GetType().Name}.{nameof(source.PropertyChanged)}", source, tripScheduler, logger)
         {
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))

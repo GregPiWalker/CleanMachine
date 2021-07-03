@@ -15,18 +15,18 @@ namespace CleanMachine.Behavioral.Generic
     {
         private readonly TState? _filterState;
 
-        public StateChangedTrigger(List<StateMachine<TState>> source, TState? tripOnState, IScheduler tripScheduler, ILog logger)
+        public StateChangedTrigger(List<StateMachine<TState>> source, TState? tripOnState, IScheduler tripScheduler, Logger logger)
             : base($"{typeof(StateMachine<TState>).Name}.StateChanged<{typeof(StateChangedEventArgs<TState>).Name}>", source, tripScheduler, logger)
         {
             _filterState = tripOnState;
         }
 
-        public StateChangedTrigger(StateMachine<TState> source, TState? tripOnState, IScheduler tripScheduler, ILog logger)
+        public StateChangedTrigger(StateMachine<TState> source, TState? tripOnState, IScheduler tripScheduler, Logger logger)
             : this(new List<StateMachine<TState>>() { source }, tripOnState, tripScheduler, logger)
         {
         }
 
-        public StateChangedTrigger(StateMachine<TState> source, IScheduler tripScheduler, ILog logger)
+        public StateChangedTrigger(StateMachine<TState> source, IScheduler tripScheduler, Logger logger)
             : this(source, null, tripScheduler, logger)
         {
         }
