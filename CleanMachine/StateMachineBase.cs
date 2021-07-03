@@ -628,7 +628,14 @@ namespace CleanMachine
         /// <param name="name">The property name.</param>
         protected void OnPropertyChanged(string name)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            try
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"{ex.GetType().Name} during '{nameof(PropertyChanged)}' event from {Name} {GetType().Name}.", ex);
+            }
         }
 
         protected void RaiseStateChangedBase(StateChangedEventArgs args)
@@ -639,7 +646,7 @@ namespace CleanMachine
             }
             catch (Exception ex)
             {
-                Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}' event from {Name} state machine.", ex);
+                Logger.Error($"{ex.GetType().Name} during '{nameof(StateChanged)}' event from {Name} {GetType().Name}.", ex);
             }
         }
 
