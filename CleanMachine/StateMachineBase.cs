@@ -324,6 +324,11 @@ namespace CleanMachine
         /// <returns>True if the signal caused a transition; false otherwise.</returns>
         public virtual bool Signal(DataWaypoint signalSource)
         {
+            if (_isDisposed)
+            {
+                return false;
+            }
+
             if (_synchronizer == null)
             {
                 var tripArgs = new TripEventArgs(_currentState.VisitIdentifier, signalSource);
@@ -379,6 +384,11 @@ namespace CleanMachine
         /// <returns></returns>
         internal bool TryTransitionTo(string toState, TripEventArgs args)
         {
+            if (_isDisposed)
+            {
+                return false;
+            }
+
             var transitions = _currentState.FindTransitions(toState);
             var state = _currentState;
             foreach (var transition in transitions)
