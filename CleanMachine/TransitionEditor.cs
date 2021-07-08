@@ -69,21 +69,21 @@ namespace CleanMachine
             return this;
         }
 
-        public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs
+        public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs where TSource : class
         {
             var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
-        public TransitionEditor TriggerWithEvent<TSource, TDelegate, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs
+        public TransitionEditor TriggerWithEvent<TSource, TDelegate, TFilterArgs>(TSource source, string eventName) where TFilterArgs : EventArgs where TSource : class
         {
             var trigger = new DelegateTrigger<TSource, TDelegate, TFilterArgs>(source, eventName, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);
             return this;
         }
 
-        public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName, Constraint<TFilterArgs> filter) where TFilterArgs : EventArgs
+        public TransitionEditor TriggerWithEvent<TSource, TFilterArgs>(TSource source, string eventName, Constraint<TFilterArgs> filter) where TFilterArgs : EventArgs where TSource : class
         {
             var trigger = new Trigger<TSource, TFilterArgs>(source, eventName, filter, _triggerScheduler, _logger);
             _transition.AddTrigger(trigger);

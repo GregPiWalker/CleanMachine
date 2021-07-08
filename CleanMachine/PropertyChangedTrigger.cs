@@ -11,8 +11,8 @@ namespace CleanMachine
     /// </summary>
     public class PropertyChangedTrigger : TriggerBase
     {
-        private readonly string _filterProperty;
-        private readonly PropertyBinding _propertyBinding;
+        private string _filterProperty;
+        private PropertyBinding _propertyBinding;
 
         /// <summary>
         /// Create an unfiltered trigger that trips for all PropertyChanged events from the source.
@@ -41,7 +41,7 @@ namespace CleanMachine
             if (!string.IsNullOrEmpty(propertyNameChain) && propertyNameChain.Contains("."))
             {
                 // Build the entire chain of PropertyBinding objects for the given nested properties.
-                _propertyBinding = new PropertyBinding(propertyNameChain, null, logger);
+                _propertyBinding = new PropertyBinding(propertyNameChain, null, _logger);
                 // Now set the entire chain of references using the source object as the top-level parent.
                 //NestedObserver's property is set now, ok to use that name.
                 _propertyBinding.PropertyOwner = source;
@@ -49,6 +49,11 @@ namespace CleanMachine
 
             // Either way, hold on to the entire string.  For nested properties, this is needed for deep copying.
             _filterProperty = propertyNameChain;
+        }
+
+        protected PropertyChangedTrigger(object source, IScheduler tripScheduler, Logger logger)
+            : base(null, source, tripScheduler, logger)
+        {
         }
 
         private INotifyPropertyChanged PropertyOwner => Source as INotifyPropertyChanged;

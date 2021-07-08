@@ -69,7 +69,12 @@ namespace CleanMachine
         /// <summary>
         /// Gets the <see cref="PropertyBinding"/> corresponding to the first property in the chain.
         /// </summary>
-        private PropertyBinding First => (_parent == null) ? this : _parent.First;
+        internal PropertyBinding First => (_parent == null) ? this : _parent.First;
+
+        /// <summary>
+        /// Gets the <see cref="PropertyBinding"/> corresponding to the last property in the chain.
+        /// </summary>
+        internal PropertyBinding Last => (_child == null) ? this : _child.Last;
 
         /// <summary>
         /// Gets/sets this binding's property owner, and propagates the owner into a child.
@@ -114,6 +119,11 @@ namespace CleanMachine
             }
         }
 
+        internal object GetPropertyValue()
+        {
+            return _propertyInfo?.GetValue(_propertyOwner);
+        }
+
         /// <summary>
         /// Walk the property chain and set property owner associations on the way.
         /// </summary>
@@ -142,7 +152,7 @@ namespace CleanMachine
             {
                 // This will hookup the child's PropertyChanged event handler.
                 //var info = _propertyOwner.GetType().GetProperty(PropertyName);
-                var value = _propertyInfo.GetValue(_propertyOwner);
+                var value = GetPropertyValue();
                 if (value != null && !(value is INotifyPropertyChanged))
                 {
                     throw new ArgumentException($"Binding Error: Property {_propertyInfo.Name} on object {_propertyOwner.GetType().Name} is not an INotifyPropertyChanged instance.");

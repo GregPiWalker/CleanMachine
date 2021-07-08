@@ -6,18 +6,19 @@ using System.Reflection;
 
 namespace CleanMachine.Generic
 {
+    //TODO: Consider making this IDisposable
+
     /// <summary>
     /// Creates a trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>
-    public class Trigger<TSource, TEventArgs> : TriggerBase //where TEventArgs : EventArgs
+    public class Trigger<TSource, TEventArgs> : TriggerBase where TSource : class //where TEventArgs : EventArgs
     {
         private delegate void EventHandlerDelegate(object sender, TEventArgs args);
         private EventHandlerDelegate _handler;
         private EventInfo _eventInfo;
         private string _filterName;
-        private readonly Func<TSource> _lazySourceProvider;
 
         /// <summary>
         /// Creates a trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
@@ -56,45 +57,25 @@ namespace CleanMachine.Generic
         {
         }
 
-        /// <summary>
-        /// Creates a lazily-bound trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
-        /// The lazy source will be harvested when this Trigger is enabled.
-        /// </summary>
-        /// <param name="lazySource"></param>
-        /// <param name="eventName"></param>
-        /// <param name="filter"></param>
-        /// <param name="scheduler"></param>
-        /// <param name="logger"></param>
-        public Trigger(Func<TSource> lazySource, string eventName, Constraint<TEventArgs> filter, IScheduler scheduler, Logger logger)
-            : base(string.Empty, null, scheduler, logger)
-        {
-            _lazySourceProvider = lazySource;
-            Initialize(eventName, filter);
-        }
+        protected virtual Type EventSourceType => typeof(TSource);
 
-        /// <summary>
-        /// Creates a lazily-bound trigger that responds to an event of type <see cref="EventHandler{TEventArgs}"/>.
-        /// The lazy source will be harvested when this Trigger is enabled.
-        /// </summary>
-        /// <param name="lazySource"></param>
-        /// <param name="eventName"></param>
-        /// <param name="scheduler"></param>
-        /// <param name="logger"></param>
-        public Trigger(Func<TSource> lazySource, string eventName, IScheduler scheduler, Logger logger)
-            : this(lazySource, eventName, null, scheduler, logger)
-        {
-        }
-
-        private void Initialize(string eventName, Constraint<TEventArgs> filter)
+        protected void Initialize(string eventName, Constraint<TEventArgs> filter)
         {
             _handler = HandleEventRaised;
-            _eventInfo = typeof(TSource).GetEvent(eventName, FullAccessBindingFlags);
+            FindEventInfo(eventName);
+            Filter = filter;
+            _filterName = filter == null ? string.Empty : filter.Name;
+        }
+
+        protected void FindEventInfo(string eventName)
+        {
+            _eventInfo = EventSourceType.GetEvent(eventName, FullAccessBindingFlags);
             if (_eventInfo == null)
             {
                 // First try to get events from inherited interfaces.  This must be done
                 // explicitly when the source is an interface because its Type class does 
                 // not return events that are inherited from other interfaces.
-                foreach (var interfaceT in typeof(TSource).GetInterfaces())
+                foreach (var interfaceT in EventSourceType.GetInterfaces())
                 {
                     _eventInfo = interfaceT.GetEvent(eventName, FullAccessBindingFlags);
                     if (_eventInfo != null)
@@ -106,7 +87,7 @@ namespace CleanMachine.Generic
 
             if (_eventInfo == null)
             {
-                throw new ArgumentException($"No event named {eventName} was found on the {typeof(TSource)} type.");
+                throw new ArgumentException($"No event named {eventName} was found on the {EventSourceType.Name} type.");
             }
 
             if (_eventInfo.EventHandlerType != GetExpectedType())
@@ -114,9 +95,7 @@ namespace CleanMachine.Generic
                 throw new ArgumentException($"{eventName} has the wrong delegate type {_eventInfo.EventHandlerType.Name}.  Expected {GetExpectedType().Name}.");
             }
 
-            Name = $"{typeof(TSource).Name}.{eventName}<{GetExpectedType().Name}>";
-            Filter = filter;
-            _filterName = filter == null ? string.Empty : filter.Name;
+            Name = $"{EventSourceType.Name}.{eventName}<{GetExpectedType().Name}>";
         }
 
         /// <summary>
@@ -124,7 +103,7 @@ namespace CleanMachine.Generic
         /// </summary>
         public Constraint<TEventArgs> Filter { get; protected set; }
 
-        public override bool IsSourceLazy => _lazySourceProvider != null;
+        protected bool IsAttachedToSourceEvent { get; private set; }
 
         public override string ToString()
         {
@@ -154,24 +133,13 @@ namespace CleanMachine.Generic
 
         protected override void Enable()
         {
-            if (Source == null && _lazySourceProvider != null)
+            if (Source == null)
             {
-                try
-                {
-                    Source = _lazySourceProvider();
-                }
-                catch (NullReferenceException ex)
-                {
-                    _logger?.Error($"Trigger '{Name}' failed to resolve a late-bound source object.  The trigger will not function.", ex);
-                    return;
-                }
+                _logger.Error($"Trigger '{Name}' failed to resolve a source object.  The trigger will not function.");
+                return;
             }
 
-            var target = Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method);
-
-            // Cannot use _eventInfo.AddEventHandler(Source, target) to access private members.
-            MethodInfo addMethodInfo = _eventInfo.GetAddMethod(true);
-            addMethodInfo.Invoke(Source, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
+            AttachToSourceEvent(Source);
         }
 
         protected override void Disable()
@@ -181,11 +149,41 @@ namespace CleanMachine.Generic
                 return;
             }
 
+            DetachFromSourceEvent(Source);
+        }
+
+        protected void AttachToSourceEvent(object evSource)
+        {
+            if (IsAttachedToSourceEvent)
+            {
+                return;
+            }
+
+            var target = Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method);
+
+            // Cannot use _eventInfo.AddEventHandler(Source, target) to access private members.
+            MethodInfo addMethodInfo = _eventInfo.GetAddMethod(true);
+            addMethodInfo.Invoke(evSource, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
+            IsAttachedToSourceEvent = true;
+
+            _logger.Debug($"{GetType().Name} '{Name}': IsAttachedToSourceEvent=true.");
+        }
+
+        protected void DetachFromSourceEvent(object evSource)
+        {
+            if (!IsAttachedToSourceEvent)
+            {
+                return;
+            }
+
             var target = Delegate.CreateDelegate(_eventInfo.EventHandlerType, _handler.Target, _handler.Method);
 
             // Cannot use _eventInfo.RemoveEventHandler(Source, target) to access private members.
             MethodInfo removeMethodInfo = _eventInfo.GetRemoveMethod(true);
-            removeMethodInfo.Invoke(Source, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
+            removeMethodInfo.Invoke(evSource, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
+            IsAttachedToSourceEvent = false;
+
+            _logger.Debug($"{GetType().Name} '{Name}': IsAttachedToSourceEvent=false.");
         }
 
         protected virtual Type GetExpectedType()

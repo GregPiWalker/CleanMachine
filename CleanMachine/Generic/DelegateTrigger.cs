@@ -9,7 +9,7 @@ namespace CleanMachine.Generic
     /// </summary>
     /// <typeparam name="TSource"></typeparam>
     /// <typeparam name="TEventArgs"></typeparam>
-    public class DelegateTrigger<TSource, TDelegate, TEventArgs> : Trigger<TSource, TEventArgs> //where TEventArgs : EventArgs
+    public class DelegateTrigger<TSource, TDelegate, TEventArgs> : Trigger<TSource, TEventArgs> where TSource : class //where TEventArgs : EventArgs
     {
         /// <summary>
         /// 
