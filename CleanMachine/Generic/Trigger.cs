@@ -166,7 +166,7 @@ namespace CleanMachine.Generic
             addMethodInfo.Invoke(evSource, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
             IsAttachedToSourceEvent = true;
 
-            _logger.Debug($"{GetType().Name} '{Name}': IsAttachedToSourceEvent=true.");
+            _logger.Trace($"{GetType().Name} '{Name}': Is attached.");
         }
 
         protected void DetachFromSourceEvent(object evSource)
@@ -183,7 +183,7 @@ namespace CleanMachine.Generic
             removeMethodInfo.Invoke(evSource, FullAccessBindingFlags, null, new object[] { target }, CultureInfo.CurrentCulture);
             IsAttachedToSourceEvent = false;
 
-            _logger.Debug($"{GetType().Name} '{Name}': IsAttachedToSourceEvent=false.");
+            _logger.Trace($"{GetType().Name} '{Name}': Is detached.");
         }
 
         protected virtual Type GetExpectedType()
