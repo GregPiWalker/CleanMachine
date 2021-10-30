@@ -1,4 +1,6 @@
 ﻿
+using CleanMachine.Interfaces.Generic;
+
 namespace CleanMachine.Generic
 {
     /// <summary>
@@ -6,9 +8,9 @@ namespace CleanMachine.Generic
     /// </summary>
     public class StateEditor<TState> where TState : struct
     {
-        internal StateEditor(StateMachine<TState> machine, TState state)
+        internal StateEditor(IStateMachine<TState> machine, TState state)
         {
-            Machine = machine;
+            Machine = machine as StateMachine<TState>;
             State = state;
         }
 

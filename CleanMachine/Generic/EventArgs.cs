@@ -2,14 +2,14 @@
 
 namespace CleanMachine.Generic
 {
-    public class StateChangedEventArgs<TState> : EventArgs
-    {
-        public TState PreviousState { get; set; }
+    //public class StateChangedEventArgs<TState> : EventArgs
+    //{
+    //    public TState PreviousState { get; set; }
 
-        public TState ResultingState { get; set; }
+    //    public TState ResultingState { get; set; }
 
-        public Interfaces.TransitionEventArgs TransitionArgs { get; set; }
-    }
+    //    public Interfaces.TransitionEventArgs TransitionArgs { get; set; }
+    //}
 
     public class StateEnteredEventArgs<TState> : EventArgs where TState : struct
     {

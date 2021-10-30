@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CleanMachine.Interfaces.Generic;
+using System;
 
 namespace CleanMachine.Generic
 {
@@ -7,9 +8,9 @@ namespace CleanMachine.Generic
     /// </summary>
     public class MachineEditor<TState> : IDisposable where TState : struct
     {
-        public MachineEditor(StateMachine<TState> machine)
+        public MachineEditor(IStateMachine<TState> machine)
         {
-            Machine = machine;
+            Machine = machine as StateMachine<TState>;
         }
 
         public StateMachine<TState> Machine { get; }
@@ -20,10 +21,10 @@ namespace CleanMachine.Generic
         /// </summary>
         /// <param name="machine"></param>
         /// <returns></returns>
-        public static MachineEditor<TState> Edit(StateMachine<TState> machine)
+        public static MachineEditor<TState> Edit(IStateMachine<TState> machine)
         {
             var instance = new MachineEditor<TState>(machine);
-            machine.Edit();
+            instance.Machine.Edit();
             return instance;
         }
 

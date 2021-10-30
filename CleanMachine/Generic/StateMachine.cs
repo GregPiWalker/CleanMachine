@@ -1,4 +1,5 @@
 ﻿using CleanMachine.Interfaces;
+using CleanMachine.Interfaces.Generic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ using log4net;
 
 namespace CleanMachine.Generic
 {
-    public class StateMachine<TState> : StateMachineBase where TState : struct
+    public class StateMachine<TState> : StateMachineBase, IStateMachine<TState> where TState : struct
     {
         public const string RequiredCommonStateValue = "Unknown";
 

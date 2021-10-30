@@ -6,7 +6,7 @@ using System.Threading;
 using log4net;
 using Diversions;
 using Diversions.Mvvm;
-using CleanMachine.Generic;
+using CleanMachine.Interfaces.Generic;
 
 namespace CleanMachineDemo
 {

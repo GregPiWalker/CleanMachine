@@ -1,4 +1,5 @@
 ﻿using CleanMachine.Generic;
+using CleanMachine.Interfaces.Generic;
 using log4net;
 using System;
 using System.Collections.Generic;
