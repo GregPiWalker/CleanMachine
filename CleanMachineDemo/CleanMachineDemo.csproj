@@ -16,7 +16,7 @@
       <PackageReference Include="log4net" Version="2.0.12" />
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.9.0" />
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.9.0" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
       <PackageReference Include="Prism.Core" Version="8.0.0.1909" />
     </ItemGroup>
 
